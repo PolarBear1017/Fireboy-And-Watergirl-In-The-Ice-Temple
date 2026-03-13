@@ -4,6 +4,9 @@ project(REPLACE_WITH_YOUR_PROJECT_NAME)
 set(CMAKE_CXX_STANDARD 17)
 
 cmake_policy(SET CMP0135 NEW)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+endif()
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
@@ -21,6 +24,14 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(ptsd)
+
+FetchContent_Declare(
+    nlohmann_json
+
+    URL         https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+)
+
+FetchContent_MakeAvailable(nlohmann_json)
 
 include(files.cmake)
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
@@ -57,4 +68,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/i
 target_link_libraries(${PROJECT_NAME}
     SDL2::SDL2main
     PTSD
+    nlohmann_json::nlohmann_json
 )
