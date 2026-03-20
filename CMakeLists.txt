@@ -39,13 +39,16 @@ set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 list(TRANSFORM SRC_FILES PREPEND ${SRC_DIR}/)
 list(TRANSFORM INCLUDE_FILES PREPEND ${INCLUDE_DIR}/)
 
-# file(GLOB_RECURSE SRC_FILES src/*)
-# file(GLOB_RECURSE HEADER_FILES include/*)
+# 自動抓取 src 資料夾下所有的 .cpp 檔案
+file(GLOB ALL_SOURCES "src/*.cpp")
+# 自動抓取 include 資料夾下所有的 .hpp 檔案
+file(GLOB ALL_HEADERS "include/*.hpp")
 
-add_executable(${PROJECT_NAME}
+add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp
-    ${SRC_FILES}
-    ${INCLUDE_FILES}
+    ${ALL_SOURCES}
+    ${ALL_HEADERS}
+    ${SRC_FILES}    # 保留原本可能存在的其他變數
 )
 
 if(MSVC)
