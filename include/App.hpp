@@ -9,6 +9,7 @@
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
 #include "Util/Renderer.hpp"
+#include "LevelManager.hpp"
 
 class App {
 public:
@@ -51,6 +52,10 @@ private:
     std::shared_ptr<Util::GameObject> m_StartButtonObject;
     std::shared_ptr<AtlasSprite> m_GamePlaceholderSprite;
     float m_StartButtonBaseScale = 1.0F;
+
+    std::shared_ptr<SpriteAtlas> m_GameAtlas;
+    std::shared_ptr<SpriteAtlas> m_GroundAtlas;
+    std::shared_ptr<LevelManager> m_LevelManager;
 };
 
 #endif

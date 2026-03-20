@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
+#include <string>
 
 #include "config.hpp"
 
@@ -22,6 +24,10 @@ std::string BuildReferencePath() {
 
 std::string BuildAtlasPath(const std::string &fileName) {
     return BuildReferencePath() + "/atlasses/" + fileName;
+}
+
+std::string BuildSpritePath(const std::string &fileName) {
+    return std::string(RESOURCE_DIR) + "/sprites/" + fileName;
 }
 
 std::string BuildImagePath(const std::string &fileName) {
@@ -64,6 +70,12 @@ void App::Start() {
     m_MenuBackgroundAtlas =
         std::make_shared<SpriteAtlas>(BuildAtlasPath("MenuBackgrounds.png"),
                                       BuildAtlasPath("MenuBackgrounds.json"));
+
+    m_GameAtlas = std::make_shared<SpriteAtlas>(BuildSpritePath("atlas.png"),
+                                                BuildSpritePath("atlas.json"));
+    m_GroundAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("GroundAssets.png"),
+                                                  BuildAtlasPath("GroundAssets.json"));
+    m_LevelManager = std::make_shared<LevelManager>(m_GroundAtlas);
 
     SwitchScene(Scene::Cover);
     m_CurrentState = State::UPDATE;
@@ -168,16 +180,22 @@ void App::BuildGameScene() {
     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
     m_SceneRoot->AddChild(backgroundObject);
 
-    m_GamePlaceholderSprite =
-        std::make_shared<AtlasSprite>(m_MenuBackgroundAtlas, "Loading0000");
-    const auto placeholderScale =
-        ComputeContainScale(m_GamePlaceholderSprite->GetSize(), 480.0F, 220.0F);
-    auto placeholderObject =
-        MakeAtlasObject(m_GamePlaceholderSprite, {0.0F, 0.0F}, kTitleZ,
-                        placeholderScale);
-    m_SceneRoot->AddChild(placeholderObject);
+    // Load Level 1 Map
+    std::vector<std::string> mapData = {
+        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "X.....................................X",
+        "X...................XXXXX.............X",
+        "X.......XXXXX.................XXXX....X",
+        "X.....................................X",
+        "X.....XXXX......XXXX..........XXXX....X",
+        "X.....................................X",
+        "X........XXXX...........XXXX..........X",
+        "X.....................................X",
+        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    };
+    m_LevelManager->LoadLevel(mapData, m_SceneRoot);
 
-    LOG_INFO("Entered game scene placeholder.");
+    LOG_INFO("Entered Level 1.");
 }
 
 void App::UpdateCoverScene() {
