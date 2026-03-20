@@ -33,7 +33,6 @@ void AtlasSprite::Draw(const Core::Matrices &data) {
     m_Atlas->GetTexture()->Bind(UNIFORM_SURFACE_LOCATION);
 
     s_Program->Bind();
-    s_Program->Validate();
     m_VertexArray->Bind();
     m_VertexArray->DrawTriangles();
 }
