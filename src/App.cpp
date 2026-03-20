@@ -1,221 +1,209 @@
 #include "App.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 #include "config.hpp"
 
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
+#include "Util/Time.hpp"
 
 namespace {
-std::vector<App::PreviewDefinition> BuildPreviewDefinitions() {
-    const auto basePath = std::string(RESOURCE_DIR);
-    const auto referencePath =
-        basePath + "/reference/fireboy_and_watergirl_3";
-    const auto atlasPath = referencePath + "/atlasses";
-    const auto imagePath = referencePath + "/images";
+constexpr float kBackgroundZ = -10.0F;
+constexpr float kDecorationZ = -5.0F;
+constexpr float kTitleZ = 0.0F;
+constexpr float kButtonZ = 5.0F;
 
-    return {
-        {App::PreviewKind::Atlas, "char_assets", atlasPath + "/CharAssets.png",
-         atlasPath + "/CharAssets.json"},
-        {App::PreviewKind::Atlas, "ground_assets", atlasPath + "/GroundAssets.png",
-         atlasPath + "/GroundAssets.json"},
-        {App::PreviewKind::Atlas, "mechanics_assets", atlasPath + "/MechAssets.png",
-         atlasPath + "/MechAssets.json"},
-        {App::PreviewKind::Atlas, "menu_assets", atlasPath + "/MenuAssets.png",
-         atlasPath + "/MenuAssets.json"},
-        {App::PreviewKind::Atlas, "menu_backgrounds",
-         atlasPath + "/MenuBackgrounds.png",
-         atlasPath + "/MenuBackgrounds.json"},
-        {App::PreviewKind::Atlas, "popup_assets", atlasPath + "/PopupAssets.png",
-         atlasPath + "/PopupAssets.json"},
-        {App::PreviewKind::Atlas, "ice_temple_assets",
-         atlasPath + "/TempleAssets.png", atlasPath + "/TempleAssets.json"},
-        {App::PreviewKind::Image, "beam", imagePath + "/Beam.png", ""},
-        {App::PreviewKind::Image, "game_name_ice",
-         imagePath + "/GameNameIce.png", ""},
-        {App::PreviewKind::Image, "temple_hall_ice",
-         imagePath + "/TempleHallIce.jpg", ""},
-    };
+std::string BuildReferencePath() {
+    return std::string(RESOURCE_DIR) + "/reference/fireboy_and_watergirl_3";
+}
+
+std::string BuildAtlasPath(const std::string &fileName) {
+    return BuildReferencePath() + "/atlasses/" + fileName;
+}
+
+std::string BuildImagePath(const std::string &fileName) {
+    return BuildReferencePath() + "/images/" + fileName;
+}
+
+float ComputeContainScale(const glm::vec2 &size, const float maxWidth,
+                          const float maxHeight) {
+    if (size.x <= 0.0F || size.y <= 0.0F) {
+        return 1.0F;
+    }
+
+    return std::max(0.1F, std::min(maxWidth / size.x, maxHeight / size.y));
+}
+
+float ComputeCoverScale(const glm::vec2 &size, const float minWidth,
+                        const float minHeight) {
+    if (size.x <= 0.0F || size.y <= 0.0F) {
+        return 1.0F;
+    }
+
+    return std::max(minWidth / size.x, minHeight / size.y);
+}
+
+std::shared_ptr<Util::GameObject> MakeAtlasObject(
+    const std::shared_ptr<AtlasSprite> &drawable, const glm::vec2 &translation,
+    const float zIndex, const float scale) {
+    auto object = std::make_shared<Util::GameObject>(drawable, zIndex);
+    object->m_Transform.translation = translation;
+    object->m_Transform.scale = {scale, scale};
+    return object;
 }
 } // namespace
 
 void App::Start() {
     LOG_TRACE("Start");
 
-    m_PreviewDefinitions = BuildPreviewDefinitions();
-    if (m_PreviewDefinitions.empty()) {
-        LOG_ERROR("No preview definitions configured. App enters END state.");
-        m_CurrentState = State::END;
-        return;
-    }
+    m_MenuAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("MenuAssets.png"),
+                                                BuildAtlasPath("MenuAssets.json"));
+    m_MenuBackgroundAtlas =
+        std::make_shared<SpriteAtlas>(BuildAtlasPath("MenuBackgrounds.png"),
+                                      BuildAtlasPath("MenuBackgrounds.json"));
 
-    m_PreviewObject = std::make_shared<Util::GameObject>();
-    m_Root.AddChild(m_PreviewObject);
-
-    LoadPreviewByIndex(0);
-    LOG_INFO("Use LEFT/RIGHT key to switch frame.");
-    LOG_INFO("Use UP/DOWN key to switch preview asset.");
-
+    SwitchScene(Scene::Cover);
     m_CurrentState = State::UPDATE;
 }
 
 void App::Update() {
-    if (Util::Input::IsKeyUp(Util::Keycode::LEFT)) {
-        ShiftFrame(-1);
+    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+        m_CurrentState = State::END;
+        return;
     }
-    if (Util::Input::IsKeyUp(Util::Keycode::RIGHT)) {
-        ShiftFrame(1);
-    }
-    if (Util::Input::IsKeyUp(Util::Keycode::UP)) {
-        ShiftPreview(-1);
-    }
-    if (Util::Input::IsKeyUp(Util::Keycode::DOWN)) {
-        ShiftPreview(1);
+
+    switch (m_CurrentScene) {
+        case Scene::Cover:
+            UpdateCoverScene();
+            break;
+
+        case Scene::Game:
+            UpdateGameScene();
+            break;
     }
 
     m_Root.Update();
-
-    /*
-     * Do not touch the code below as they serve the purpose for
-     * closing the window.
-     */
-    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) ||
-        Util::Input::IfExit()) {
-        m_CurrentState = State::END;
-    }
 }
 
 void App::End() { // NOLINT(this method will mutate members in the future)
     LOG_TRACE("End");
 }
 
-void App::LoadPreviewByIndex(const std::size_t index) {
-    if (m_PreviewDefinitions.empty()) {
-        return;
+void App::SwitchScene(const Scene scene) {
+    m_CurrentScene = scene;
+
+    switch (scene) {
+        case Scene::Cover:
+            BuildCoverScene();
+            break;
+
+        case Scene::Game:
+            BuildGameScene();
+            break;
     }
-
-    m_CurrentPreviewIndex = index % m_PreviewDefinitions.size();
-    const auto &definition = m_PreviewDefinitions[m_CurrentPreviewIndex];
-    m_FrameNames.clear();
-    m_CurrentFrameIndex = 0;
-
-    if (definition.kind == PreviewKind::Atlas) {
-        m_ImagePreview.reset();
-        m_Atlas = std::make_shared<SpriteAtlas>(definition.imagePath, definition.jsonPath);
-        m_FrameNames = m_Atlas->GetFrameNames();
-
-        if (m_FrameNames.empty()) {
-            LOG_ERROR("Atlas '{}' has no available frames.", definition.name);
-            return;
-        }
-
-        const auto initialFrame = FindInitialFrame(*m_Atlas, m_FrameNames);
-        m_AtlasSprite = std::make_shared<AtlasSprite>(m_Atlas, initialFrame);
-        if (m_PreviewObject != nullptr) {
-            m_PreviewObject->SetDrawable(m_AtlasSprite);
-        }
-
-        const auto startIt =
-            std::find(m_FrameNames.begin(), m_FrameNames.end(), initialFrame);
-        const auto startIndex =
-            startIt == m_FrameNames.end()
-                ? 0
-                : static_cast<std::size_t>(std::distance(m_FrameNames.begin(), startIt));
-
-        ApplyPreviewScale(m_AtlasSprite->GetSize());
-        LOG_INFO("Atlas '{}' loaded with {} frames.", definition.name,
-                 m_FrameNames.size());
-        SetFrameByIndex(startIndex);
-        return;
-    }
-
-    m_AtlasSprite.reset();
-    m_Atlas.reset();
-    m_ImagePreview = std::make_shared<Util::Image>(definition.imagePath);
-    if (m_PreviewObject != nullptr) {
-        m_PreviewObject->SetDrawable(m_ImagePreview);
-    }
-    ApplyPreviewScale(m_ImagePreview->GetSize());
-    LOG_INFO("Image '{}' loaded.", definition.name);
 }
 
-std::string App::FindInitialFrame(const SpriteAtlas &atlas,
-                                  const std::vector<std::string> &frameNames) {
-    static const std::array<const char *, 8> preferredFrames = {
-        "fire_head_idle0000",
-        "water_head_idle0000",
-        "FireBoy0000",
-        "WaterGirl0000",
-        "BackGround0000",
-        "Block0000",
-        "Button0000",
-        "_default0000",
-    };
-
-    for (const auto *name : preferredFrames) {
-        if (atlas.HasFrame(name)) {
-            return name;
-        }
-    }
-
-    return frameNames.front();
+void App::ResetSceneRoot() {
+    m_Root = Util::Renderer{};
+    m_SceneRoot = std::make_shared<Util::GameObject>();
+    m_Root.AddChild(m_SceneRoot);
+    m_StartButtonObject.reset();
+    m_StartButtonSprite.reset();
+    m_GamePlaceholderSprite.reset();
 }
 
-void App::ApplyPreviewScale(const glm::vec2 &size) {
-    if (m_PreviewObject == nullptr || size.x <= 0.0F || size.y <= 0.0F) {
-        return;
-    }
+void App::BuildCoverScene() {
+    ResetSceneRoot();
 
-    constexpr float maxPreviewWidth = WINDOW_WIDTH * 0.8F;
-    constexpr float maxPreviewHeight = WINDOW_HEIGHT * 0.8F;
+    const auto background =
+        std::make_shared<Util::Image>(BuildImagePath("TempleHallIce.jpg"));
+    const auto backgroundScale = ComputeCoverScale(background->GetSize(),
+                                                   static_cast<float>(WINDOW_WIDTH),
+                                                   static_cast<float>(WINDOW_HEIGHT));
+    auto backgroundObject =
+        std::make_shared<Util::GameObject>(background, kBackgroundZ);
+    backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
+    m_SceneRoot->AddChild(backgroundObject);
 
-    const auto scaleX = maxPreviewWidth / size.x;
-    const auto scaleY = maxPreviewHeight / size.y;
-    const auto uniformScale = std::max(0.1F, std::min(scaleX, scaleY));
+    const auto beam =
+        std::make_shared<Util::Image>(BuildImagePath("Beam.png"));
+    const auto beamScale = ComputeContainScale(beam->GetSize(), 520.0F, 340.0F);
+    auto beamObject = std::make_shared<Util::GameObject>(beam, kDecorationZ);
+    beamObject->m_Transform.translation = {250.0F, -10.0F};
+    beamObject->m_Transform.scale = {beamScale, beamScale};
+    m_SceneRoot->AddChild(beamObject);
 
-    m_PreviewObject->m_Transform.translation = {0.0F, 0.0F};
-    m_PreviewObject->m_Transform.scale = {uniformScale, uniformScale};
+    const auto title = std::make_shared<Util::Image>(BuildImagePath("GameNameIce.png"));
+    const auto titleScale = ComputeContainScale(title->GetSize(), 760.0F, 220.0F);
+    auto titleObject = std::make_shared<Util::GameObject>(title, kTitleZ);
+    titleObject->m_Transform.translation = {0.0F, 120.0F};
+    titleObject->m_Transform.scale = {titleScale, titleScale};
+    m_SceneRoot->AddChild(titleObject);
+
+    m_StartButtonSprite =
+        std::make_shared<AtlasSprite>(m_MenuAtlas, "StoneButton0000");
+    m_StartButtonBaseScale =
+        ComputeContainScale(m_StartButtonSprite->GetSize(), 320.0F, 110.0F);
+    m_StartButtonObject =
+        MakeAtlasObject(m_StartButtonSprite, {0.0F, -245.0F}, kButtonZ,
+                        m_StartButtonBaseScale);
+    m_SceneRoot->AddChild(m_StartButtonObject);
+
+    LOG_INFO("Cover scene loaded. Press ENTER or SPACE to continue.");
 }
 
-void App::ShiftFrame(const int delta) {
-    if (m_FrameNames.empty()) {
-        return;
-    }
-    const auto frameCount = static_cast<int>(m_FrameNames.size());
-    auto next = static_cast<int>(m_CurrentFrameIndex) + delta;
-    if (next < 0) {
-        next = frameCount - 1;
-    } else if (next >= frameCount) {
-        next = 0;
-    }
-    SetFrameByIndex(static_cast<std::size_t>(next));
+void App::BuildGameScene() {
+    ResetSceneRoot();
+
+    const auto background =
+        std::make_shared<Util::Image>(BuildImagePath("TempleHallIce.jpg"));
+    const auto backgroundScale = ComputeCoverScale(background->GetSize(),
+                                                   static_cast<float>(WINDOW_WIDTH),
+                                                   static_cast<float>(WINDOW_HEIGHT));
+    auto backgroundObject =
+        std::make_shared<Util::GameObject>(background, kBackgroundZ);
+    backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
+    m_SceneRoot->AddChild(backgroundObject);
+
+    m_GamePlaceholderSprite =
+        std::make_shared<AtlasSprite>(m_MenuBackgroundAtlas, "Loading0000");
+    const auto placeholderScale =
+        ComputeContainScale(m_GamePlaceholderSprite->GetSize(), 480.0F, 220.0F);
+    auto placeholderObject =
+        MakeAtlasObject(m_GamePlaceholderSprite, {0.0F, 0.0F}, kTitleZ,
+                        placeholderScale);
+    m_SceneRoot->AddChild(placeholderObject);
+
+    LOG_INFO("Entered game scene placeholder.");
 }
 
-void App::ShiftPreview(const int delta) {
-    if (m_PreviewDefinitions.empty()) {
-        return;
+void App::UpdateCoverScene() {
+    if (m_StartButtonObject != nullptr && m_StartButtonSprite != nullptr) {
+        const auto elapsedSeconds = Util::Time::GetElapsedTimeMs() / 1000.0F;
+        const auto pulse = 1.0F + 0.04F * std::sin(elapsedSeconds * 4.0F);
+        m_StartButtonObject->m_Transform.scale = {
+            m_StartButtonBaseScale * pulse,
+            m_StartButtonBaseScale * pulse,
+        };
+
+        const auto activeFrame =
+            std::fmod(elapsedSeconds, 1.0F) < 0.5F ? "StoneButton0000"
+                                                   : "StoneButton0001";
+        m_StartButtonSprite->SetFrame(activeFrame);
     }
 
-    const auto previewCount = static_cast<int>(m_PreviewDefinitions.size());
-    auto next = static_cast<int>(m_CurrentPreviewIndex) + delta;
-    if (next < 0) {
-        next = previewCount - 1;
-    } else if (next >= previewCount) {
-        next = 0;
+    if (Util::Input::IsKeyUp(Util::Keycode::RETURN) ||
+        Util::Input::IsKeyUp(Util::Keycode::KP_ENTER) ||
+        Util::Input::IsKeyUp(Util::Keycode::SPACE)) {
+        SwitchScene(Scene::Game);
     }
-
-    LoadPreviewByIndex(static_cast<std::size_t>(next));
 }
 
-void App::SetFrameByIndex(const std::size_t index) {
-    if (m_AtlasSprite == nullptr || m_FrameNames.empty()) {
-        return;
+void App::UpdateGameScene() {
+    if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
+        SwitchScene(Scene::Cover);
     }
-    m_CurrentFrameIndex = index % m_FrameNames.size();
-    m_AtlasSprite->SetFrame(m_FrameNames[m_CurrentFrameIndex]);
-    ApplyPreviewScale(m_AtlasSprite->GetSize());
-    LOG_INFO("Atlas '{}' frame: {}", m_PreviewDefinitions[m_CurrentPreviewIndex].name,
-             m_FrameNames[m_CurrentFrameIndex]);
 }

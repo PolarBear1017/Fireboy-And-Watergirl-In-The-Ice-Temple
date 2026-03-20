@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(REPLACE_WITH_YOUR_PROJECT_NAME)
+project(FireboyAndWatergirlIceTemple)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -39,16 +39,16 @@ set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 list(TRANSFORM SRC_FILES PREPEND ${SRC_DIR}/)
 list(TRANSFORM INCLUDE_FILES PREPEND ${INCLUDE_DIR}/)
 
-# file(GLOB_RECURSE SRC_FILES src/*)
-# file(GLOB_RECURSE HEADER_FILES include/*)
+# 自動抓取 src 資料夾下所有的 .cpp 檔案
+file(GLOB ALL_SOURCES "src/*.cpp")
+# 自動抓取 include 資料夾下所有的 .hpp 檔案
+file(GLOB ALL_HEADERS "include/*.hpp")
 
-add_executable(${PROJECT_NAME}
+add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp
-    ${SRC_FILES}
-    ${HEADER_FILES}
-        src/Character.cpp
-        include/Character.hpp
-        include/Element.hpp
+    ${ALL_SOURCES}
+    ${ALL_HEADERS}
+    ${SRC_FILES}    # 保留原本可能存在的其他變數
 )
 
 if(MSVC)
@@ -57,7 +57,7 @@ else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
     target_compile_definitions(${PROJECT_NAME} PRIVATE RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Resources")
 else()
     message(FATAL_ERROR "relative RESOURCE_DIR is WIP, Please use `-DCMAKE_BUILD_TYPE=Debug` build for now.")
