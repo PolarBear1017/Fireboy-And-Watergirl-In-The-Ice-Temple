@@ -201,7 +201,13 @@ void App::BuildGameScene() {
     // Build the Fireboy character
     auto fireboySprite = std::make_shared<AtlasSprite>(m_GameAtlas, "fire_head_idle0000");
     m_FireBoy = std::make_shared<Character>(fireboySprite, Element::FIRE);
-    m_FireBoy->m_Transform.translation = {0.0f, 0.0f};
+    if (levelData.hasFireSpawn) {
+        m_FireBoy->m_Transform.translation =
+            m_LevelManager->TileToWorldPosition(levelData.fireSpawn.row,
+                                                levelData.fireSpawn.col);
+    } else {
+        m_FireBoy->m_Transform.translation = {0.0F, 0.0F};
+    }
     m_SceneRoot->AddChild(m_FireBoy);
 
     LOG_INFO("Entered Level 1.");
@@ -237,5 +243,6 @@ void App::UpdateGameScene() {
     // --- 呼叫火娃的邏輯 ---
     if (m_FireBoy != nullptr) {
         m_FireBoy->Update();
+        m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
     }
 }

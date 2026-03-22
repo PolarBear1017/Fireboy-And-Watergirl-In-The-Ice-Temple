@@ -34,6 +34,11 @@ public:
     void LoadLevel(const std::vector<std::string>& mapData, const std::shared_ptr<Util::GameObject>& root);
 
     [[nodiscard]] const LevelParseResult& GetLevelData() const { return m_LevelData; }
+    [[nodiscard]] bool IsSolidTile(int row, int col) const;
+    [[nodiscard]] bool IsLavaTile(int row, int col) const;
+    [[nodiscard]] bool IsWaterTile(int row, int col) const;
+    [[nodiscard]] glm::vec2 TileToWorldPosition(int row, int col) const;
+    [[nodiscard]] float GetTileSize() const { return m_TileSize; }
 
 private:
     bool ValidateLevel(const std::vector<std::string>& mapData) const;
@@ -47,6 +52,8 @@ private:
 
     std::shared_ptr<SpriteAtlas> m_Atlas;
     LevelParseResult m_LevelData;
+    std::vector<std::string> m_MapData;
+    float m_TileSize = 32.0F;
 };
 
 #endif
