@@ -5,6 +5,7 @@
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
 #include "Element.hpp"
+#include "AtlasSprite.hpp"
 
 class Character : public Util::GameObject {
 private:
@@ -15,7 +16,7 @@ private:
     Element m_Element;
 
 public:
-    Character(const std::string& imagePath, Element element);
+    Character(const std::shared_ptr<AtlasSprite>& sprite, Element element);
     void Update();
 
     [[nodiscard]] glm::vec2 GetVelocity() const { return m_Velocity; }
