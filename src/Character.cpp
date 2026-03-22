@@ -18,7 +18,7 @@ void Character::Update() {
     if (m_Transform.translation.y <= -200.0f) {
         m_Transform.translation.y = -200.0f;
         m_Velocity.y = 0.0f;
-        m_IsGrounded = true;
+        m_GroundState = GroundState::GROUND;
     }
 
     LOG_DEBUG("X: {}, Y: {}, Vx: {}",
@@ -32,25 +32,24 @@ void Character::ProcessInput() {
     if (m_Element == Element::FIRE) {
         if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {m_Velocity.x -= 5.0f;}
         if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) {m_Velocity.x += 5.0f;}
-        if (Util::Input::IsKeyPressed(Util::Keycode::UP) && m_IsGrounded) {
+        if (Util::Input::IsKeyPressed(Util::Keycode::UP) && IsGrounded()) {
             m_Velocity.y += m_JumpForce;
-            m_IsGrounded = false;
+            m_GroundState = GroundState::AIR;
         }
     }
     if (m_Element == Element::WATER) {
         if (Util::Input::IsKeyPressed(Util::Keycode::A)) {m_Velocity.x -= 5.0f;}
         if (Util::Input::IsKeyPressed(Util::Keycode::D)) {m_Velocity.x += 5.0f;}
-        if (Util::Input::IsKeyPressed(Util::Keycode::W) && m_IsGrounded) {
+        if (Util::Input::IsKeyPressed(Util::Keycode::W) && IsGrounded()) {
             m_Velocity.y += m_JumpForce;
-            m_IsGrounded = false;
+            m_GroundState = GroundState::AIR;
         }
     }
-
 }
 
-
 void Character::ApplyGravity() {
-    if (!m_IsGrounded) {
+    if (!IsGrounded()) {
         m_Velocity.y -= m_Gravity;
     }
 }
+
