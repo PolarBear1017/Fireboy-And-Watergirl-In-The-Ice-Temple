@@ -12,6 +12,7 @@
 #include "Util/Logger.hpp"
 #include "Util/Time.hpp"
 
+
 namespace {
 constexpr float kBackgroundZ = -10.0F;
 constexpr float kDecorationZ = -5.0F;
@@ -71,8 +72,11 @@ void App::Start() {
         std::make_shared<SpriteAtlas>(BuildAtlasPath("MenuBackgrounds.png"),
                                       BuildAtlasPath("MenuBackgrounds.json"));
 
-    m_GameAtlas = std::make_shared<SpriteAtlas>(BuildSpritePath("atlas.png"),
-                                                BuildSpritePath("atlas.json"));
+    m_GameAtlas = std::make_shared<SpriteAtlas>(
+        BuildAtlasPath("CharAssets.png"),
+        BuildAtlasPath("CharAssets.json")
+    );
+
     m_GroundAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("GroundAssets.png"),
                                                   BuildAtlasPath("GroundAssets.json"));
     m_LevelManager = std::make_shared<LevelManager>(m_GroundAtlas);
@@ -195,6 +199,12 @@ void App::BuildGameScene() {
     };
     m_LevelManager->LoadLevel(mapData, m_SceneRoot);
 
+    // Build the Fireboy character
+    auto fireboySprite = std::make_shared<AtlasSprite>(m_GameAtlas, "fire_head_idle0000");
+    m_FireBoy = std::make_shared<Character>(fireboySprite, Element::FIRE);
+    m_FireBoy->m_Transform.translation = {0.0f, 0.0f};
+    m_SceneRoot->AddChild(m_FireBoy);
+
     LOG_INFO("Entered Level 1.");
 }
 
@@ -223,5 +233,10 @@ void App::UpdateCoverScene() {
 void App::UpdateGameScene() {
     if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
         SwitchScene(Scene::Cover);
+    }
+
+    // --- 呼叫火娃的邏輯 ---
+    if (m_FireBoy != nullptr) {
+        m_FireBoy->Update();
     }
 }
