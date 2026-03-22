@@ -38,7 +38,11 @@ public:
 private:
     bool ValidateLevel(const std::vector<std::string>& mapData) const;
     void RegisterTile(char tileChar, int row, int col);
-    std::string ResolveFrameName(char tileChar) const;
+    [[nodiscard]] bool HasSameTile(const std::vector<std::string>& mapData, int row,
+                                   int col, char tileChar) const;
+    [[nodiscard]] std::string ResolveFrameName(
+        const std::vector<std::string>& mapData, int row, int col,
+        char tileChar) const;
     float ResolveZIndex(char tileChar) const;
 
     std::shared_ptr<SpriteAtlas> m_Atlas;

@@ -101,13 +101,53 @@ void LevelManager::RegisterTile(const char tileChar, const int row, const int co
     }
 }
 
-std::string LevelManager::ResolveFrameName(const char tileChar) const {
+bool LevelManager::HasSameTile(const std::vector<std::string>& mapData, const int row,
+                               const int col, const char tileChar) const {
+    if (row < 0 || col < 0) {
+        return false;
+    }
+
+    if (row >= static_cast<int>(mapData.size())) {
+        return false;
+    }
+
+    if (col >= static_cast<int>(mapData[row].size())) {
+        return false;
+    }
+
+    return mapData[row][col] == tileChar;
+}
+
+std::string LevelManager::ResolveFrameName(const std::vector<std::string>& mapData,
+                                           const int row, const int col,
+                                           const char tileChar) const {
+    const bool hasLeft = HasSameTile(mapData, row, col - 1, tileChar);
+    const bool hasRight = HasSameTile(mapData, row, col + 1, tileChar);
+
     switch (tileChar) {
         case 'X':
+            if (!hasLeft && hasRight) {
+                return "BlackBoxLeft0000";
+            }
+            if (hasLeft && !hasRight) {
+                return "BlackBoxRight0000";
+            }
             return "BlackBox0000";
         case 'L':
+            if (!hasLeft && hasRight) {
+                return "FireBoxLeft0000";
+            }
+            if (hasLeft && !hasRight) {
+                return "FireBoxRight0000";
+            }
             return "FireBox0000";
         case 'W':
+            if (!hasLeft && hasRight) {
+                return "WaterBoxLeft0000";
+            }
+            if (hasLeft && !hasRight) {
+                return "WaterBoxRight0000";
+            }
             return "WaterBox0000";
         case 'F':
             return "FireBox0000";
@@ -160,7 +200,7 @@ void LevelManager::LoadLevel(const std::vector<std::string>& mapData,
 
             const char tileChar = mapData[y][x];
             RegisterTile(tileChar, y, x);
-            const std::string frameName = ResolveFrameName(tileChar);
+            const std::string frameName = ResolveFrameName(mapData, y, x, tileChar);
             if (frameName.empty() || !m_Atlas->HasFrame(frameName)) {
                 continue;
             }

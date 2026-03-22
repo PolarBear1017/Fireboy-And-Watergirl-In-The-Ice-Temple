@@ -80,6 +80,8 @@ void App::Start() {
 
     m_GroundAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("GroundAssets.png"),
                                                   BuildAtlasPath("GroundAssets.json"));
+    m_TempleAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("TempleAssets.png"),
+                                                  BuildAtlasPath("TempleAssets.json"));
     m_LevelManager = std::make_shared<LevelManager>(m_GroundAtlas);
 
     SwitchScene(Scene::Cover);
