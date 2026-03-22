@@ -7,6 +7,7 @@
 
 #include "config.hpp"
 
+#include "Levels.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
@@ -184,28 +185,16 @@ void App::BuildGameScene() {
     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
     m_SceneRoot->AddChild(backgroundObject);
 
-    // Temporary Level 1 layout.
-    // `X` solid terrain, `F/G` spawn markers, `L/W` hazard pools.
-    std::vector<std::string> mapData = {
-        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        "X.....................................X",
-        "X.....................................X",
-        "X.............XXXX....................X",
-        "X.....................................X",
-        "X......XXXX..............XXXX.........X",
-        "X.....................................X",
-        "X.................XXXXX...............X",
-        "X.....................................X",
-        "X....XXXX.............................X",
-        "X.......................XXXX..........X",
-        "X.....................................X",
-        "X........XXXX..................XXXX...X",
-        "X.....................................X",
-        "X..FXXX.......LLL...WWW....XXXXX..G...X",
-        "X.....................................X",
-        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    };
-    m_LevelManager->LoadLevel(mapData, m_SceneRoot);
+    m_LevelManager->LoadLevel(Levels::kLevel1, m_SceneRoot);
+
+    const auto &levelData = m_LevelManager->GetLevelData();
+    if (levelData.hasFireSpawn && levelData.hasWaterSpawn) {
+        LOG_INFO("Level parsed. Fire spawn=(" +
+                 std::to_string(levelData.fireSpawn.row) + "," +
+                 std::to_string(levelData.fireSpawn.col) + "), Water spawn=(" +
+                 std::to_string(levelData.waterSpawn.row) + "," +
+                 std::to_string(levelData.waterSpawn.col) + ")");
+    }
 
     // Build the Fireboy character
     auto fireboySprite = std::make_shared<AtlasSprite>(m_GameAtlas, "fire_head_idle0000");
