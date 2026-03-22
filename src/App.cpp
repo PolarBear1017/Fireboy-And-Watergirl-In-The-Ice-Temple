@@ -180,16 +180,24 @@ void App::BuildGameScene() {
     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
     m_SceneRoot->AddChild(backgroundObject);
 
-    // Load Level 1 Map
+    // Temporary Level 1 layout.
+    // `X` solid terrain, `F/G` spawn markers, `L/W` hazard pools.
     std::vector<std::string> mapData = {
         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         "X.....................................X",
-        "X...................XXXXX.............X",
-        "X.......XXXXX.................XXXX....X",
         "X.....................................X",
-        "X.....XXXX......XXXX..........XXXX....X",
+        "X.............XXXX....................X",
         "X.....................................X",
-        "X........XXXX...........XXXX..........X",
+        "X......XXXX..............XXXX.........X",
+        "X.....................................X",
+        "X.................XXXXX...............X",
+        "X.....................................X",
+        "X....XXXX.............................X",
+        "X.......................XXXX..........X",
+        "X.....................................X",
+        "X........XXXX..................XXXX...X",
+        "X.....................................X",
+        "X..FXXX.......LLL...WWW....XXXXX..G...X",
         "X.....................................X",
         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
     };

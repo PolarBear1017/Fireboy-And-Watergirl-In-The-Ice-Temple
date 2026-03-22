@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 class LevelManager {
 public:
@@ -15,6 +16,8 @@ public:
     void LoadLevel(const std::vector<std::string>& mapData, const std::shared_ptr<Util::GameObject>& root);
 
 private:
+    std::string ResolveFrameName(char tileChar) const;
+    float ResolveZIndex(char tileChar) const;
     std::shared_ptr<SpriteAtlas> m_Atlas;
 };
 
