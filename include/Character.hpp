@@ -35,7 +35,9 @@ public:
 
     void SetPosition(const glm::vec2& position) { m_Transform.translation = position; }
     void SetVelocity(const glm::vec2& velocity) { m_Velocity = velocity; }
-    void SetGrounded(bool grounded) { m_IsGrounded = grounded; }
+    void SetGrounded(bool grounded) {
+        m_GroundState = grounded ? GroundState::GROUND : GroundState::AIR;
+    }
 
     void ProcessInput();
     void ApplyGravity();
