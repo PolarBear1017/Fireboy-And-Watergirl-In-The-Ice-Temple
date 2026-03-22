@@ -1,10 +1,11 @@
 
-#ifndef REPLACE_WITH_YOUR_PROJECT_NAME_CHARACTER_HPP
-#define REPLACE_WITH_YOUR_PROJECT_NAME_CHARACTER_HPP
+#ifndef CHARACTER_HPP
+#define CHARACTER_HPP
 
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
 #include "Element.hpp"
+#include "GroundState.hpp"
 #include "AtlasSprite.hpp"
 
 class Character : public Util::GameObject {
@@ -12,7 +13,7 @@ private:
     glm::vec2 m_Velocity = {0.0f, 0.0f};
     float m_Gravity = 0.5f;
     float m_JumpForce = 5.0f;
-    bool m_IsGrounded = true;
+    GroundState m_GroundState = GroundState::GROUND;
     Element m_Element;
 
 public:
@@ -24,8 +25,13 @@ public:
     [[nodiscard]] glm::vec2 GetCollisionSize() const { return {32.0F, 32.0F}; }
     [[nodiscard]] float GetGravity() const { return m_Gravity; }
     [[nodiscard]] float GetJumpForce() const { return m_JumpForce; }
-    [[nodiscard]] bool IsGrounded() const {return m_IsGrounded; }
+    [[nodiscard]] GroundState GetGroundState() const {return m_GroundState; }
     [[nodiscard]] Element GetElement() const { return m_Element; }
+    [[nodiscard]] bool IsGrounded() const {
+        return m_GroundState == GroundState::GROUND
+            || m_GroundState == GroundState::SLOPE
+            || m_GroundState == GroundState::MOVING_PLATFORM;
+    }
 
     void SetPosition(const glm::vec2& position) { m_Transform.translation = position; }
     void SetVelocity(const glm::vec2& velocity) { m_Velocity = velocity; }
@@ -37,4 +43,4 @@ public:
 };
 
 
-#endif //REPLACE_WITH_YOUR_PROJECT_NAME_CHARACTER_HPP
+#endif //CHARACTER_HPP
