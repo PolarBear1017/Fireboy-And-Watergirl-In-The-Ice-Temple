@@ -56,6 +56,7 @@ private:
 
     std::shared_ptr<SpriteAtlas> m_GameAtlas;
     std::shared_ptr<SpriteAtlas> m_GroundAtlas;
+    std::shared_ptr<SpriteAtlas> m_TempleAtlas;
     std::shared_ptr<LevelManager> m_LevelManager;
 
     std::shared_ptr<Character> m_FireBoy;
