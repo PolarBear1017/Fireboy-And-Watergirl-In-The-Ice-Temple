@@ -21,6 +21,8 @@ public:
     void Update();
 
     [[nodiscard]] glm::vec2 GetVelocity() const { return m_Velocity; }
+    [[nodiscard]] glm::vec2 GetPosition() const { return m_Transform.translation; }
+    [[nodiscard]] glm::vec2 GetCollisionSize() const { return {32.0F, 32.0F}; }
     [[nodiscard]] float GetGravity() const { return m_Gravity; }
     [[nodiscard]] float GetJumpForce() const { return m_JumpForce; }
     [[nodiscard]] GroundState GetGroundState() const {return m_GroundState; }
@@ -30,6 +32,10 @@ public:
             || m_GroundState == GroundState::SLOPE
             || m_GroundState == GroundState::MOVING_PLATFORM;
     }
+
+    void SetPosition(const glm::vec2& position) { m_Transform.translation = position; }
+    void SetVelocity(const glm::vec2& velocity) { m_Velocity = velocity; }
+    void SetGrounded(bool grounded) { m_IsGrounded = grounded; }
 
     void ProcessInput();
     void ApplyGravity();

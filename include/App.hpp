@@ -9,6 +9,7 @@
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
 #include "Util/Renderer.hpp"
+#include "CollisionSystem.hpp"
 #include "LevelManager.hpp"
 #include "Character.hpp"
 
@@ -58,6 +59,7 @@ private:
     std::shared_ptr<SpriteAtlas> m_GroundAtlas;
     std::shared_ptr<SpriteAtlas> m_TempleAtlas;
     std::shared_ptr<LevelManager> m_LevelManager;
+    CollisionSystem m_CollisionSystem;
 
     std::shared_ptr<Character> m_FireBoy;
 };
