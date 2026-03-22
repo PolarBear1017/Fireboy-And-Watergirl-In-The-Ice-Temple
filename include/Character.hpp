@@ -9,20 +9,24 @@
 class Character : public Util::GameObject {
 private:
     glm::vec2 m_Velocity = {0.0f, 0.0f};
-    float m_Gravity;
-    float m_JumpForce;
-    bool m_IsGrounded = false;
+    float m_Gravity = 0.5f;
+    float m_JumpForce = 5.0f;
+    bool m_IsGrounded = true;
     Element m_Element;
 
 public:
     Character(const std::string& imagePath, Element element);
     void Update();
 
-    glm::vec2 GetVelocity() const { return m_Velocity; }
-    float GetGravity() const { return m_Gravity; }
-    float GetJumpForce() const { return m_JumpForce; }
-    bool IsGrounded() const {return m_IsGrounded; }
-    Element GetElement() const { return m_Element; }
+    [[nodiscard]] glm::vec2 GetVelocity() const { return m_Velocity; }
+    [[nodiscard]] float GetGravity() const { return m_Gravity; }
+    [[nodiscard]] float GetJumpForce() const { return m_JumpForce; }
+    [[nodiscard]] bool IsGrounded() const {return m_IsGrounded; }
+    [[nodiscard]] Element GetElement() const { return m_Element; }
+
+    void ProcessInput();
+    void ApplyGravity();
+
 };
 
 

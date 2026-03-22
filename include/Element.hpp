@@ -6,7 +6,8 @@ enum class Element {
     NEUTRAL,
     FIRE,
     WATER,
-    TOXIC
+    TOXIC,
+    ICE
 };
 
 #endif //REPLACE_WITH_YOUR_PROJECT_NAME_ELEMENT_HPP
