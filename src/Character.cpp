@@ -15,12 +15,6 @@ void Character::Update() {
 
     m_Transform.translation += m_Velocity;
 
-    if (m_Transform.translation.y <= -200.0f) {
-        m_Transform.translation.y = -200.0f;
-        m_Velocity.y = 0.0f;
-        m_IsGrounded = true;
-    }
-
     LOG_DEBUG("X: {}, Y: {}, Vx: {}",
               m_Transform.translation.x,
               m_Transform.translation.y,

@@ -7,6 +7,66 @@
 LevelManager::LevelManager(std::shared_ptr<SpriteAtlas> atlas)
     : m_Atlas(std::move(atlas)) {}
 
+bool LevelManager::IsSolidTile(const int row, const int col) const {
+    if (row < 0 || col < 0) {
+        return false;
+    }
+
+    if (row >= static_cast<int>(m_MapData.size())) {
+        return false;
+    }
+
+    if (col >= static_cast<int>(m_MapData[row].size())) {
+        return false;
+    }
+
+    return m_MapData[row][col] == 'X';
+}
+
+bool LevelManager::IsLavaTile(const int row, const int col) const {
+    if (row < 0 || col < 0) {
+        return false;
+    }
+
+    if (row >= static_cast<int>(m_MapData.size())) {
+        return false;
+    }
+
+    if (col >= static_cast<int>(m_MapData[row].size())) {
+        return false;
+    }
+
+    return m_MapData[row][col] == 'L';
+}
+
+bool LevelManager::IsWaterTile(const int row, const int col) const {
+    if (row < 0 || col < 0) {
+        return false;
+    }
+
+    if (row >= static_cast<int>(m_MapData.size())) {
+        return false;
+    }
+
+    if (col >= static_cast<int>(m_MapData[row].size())) {
+        return false;
+    }
+
+    return m_MapData[row][col] == 'W';
+}
+
+glm::vec2 LevelManager::TileToWorldPosition(const int row, const int col) const {
+    const float startX =
+        -(static_cast<float>(WINDOW_WIDTH) / 2.0F) + (m_TileSize / 2.0F);
+    const float startY =
+        (static_cast<float>(WINDOW_HEIGHT) / 2.0F) - (m_TileSize / 2.0F);
+
+    return {
+        startX + static_cast<float>(col) * m_TileSize,
+        startY - static_cast<float>(row) * m_TileSize,
+    };
+}
+
 bool LevelManager::ValidateLevel(const std::vector<std::string>& mapData) const {
     if (mapData.empty()) {
         LOG_ERROR("LevelManager: mapData is empty.");
@@ -185,12 +245,14 @@ void LevelManager::LoadLevel(const std::vector<std::string>& mapData,
     }
 
     m_LevelData = {};
+    m_MapData = mapData;
 
-    const float tileSize = 32.0f;
     const int rows = static_cast<int>(mapData.size());
     const int cols = static_cast<int>(mapData[0].size());
-    const float startX = -(static_cast<float>(WINDOW_WIDTH) / 2.0f) + (tileSize / 2.0f);
-    const float startY = (static_cast<float>(WINDOW_HEIGHT) / 2.0f) - (tileSize / 2.0f);
+    const float startX =
+        -(static_cast<float>(WINDOW_WIDTH) / 2.0F) + (m_TileSize / 2.0F);
+    const float startY =
+        (static_cast<float>(WINDOW_HEIGHT) / 2.0F) - (m_TileSize / 2.0F);
 
     for (int y = 0; y < rows; ++y) {
         for (int x = 0; x < cols; ++x) {
@@ -210,15 +272,15 @@ void LevelManager::LoadLevel(const std::vector<std::string>& mapData,
                 std::make_shared<Util::GameObject>(sprite, ResolveZIndex(tileChar));
 
             tileObj->m_Transform.translation = {
-                startX + static_cast<float>(x) * tileSize,
-                startY - static_cast<float>(y) * tileSize,
+                startX + static_cast<float>(x) * m_TileSize,
+                startY - static_cast<float>(y) * m_TileSize,
             };
 
             const auto actualSize = sprite->GetSize();
             if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
                 tileObj->m_Transform.scale = {
-                    tileSize / actualSize.x,
-                    tileSize / actualSize.y,
+                    m_TileSize / actualSize.x,
+                    m_TileSize / actualSize.y,
                 };
             }
 
