@@ -21,10 +21,10 @@ void Character::Update() {
         m_GroundState = GroundState::GROUND;
     }
 
-    LOG_DEBUG("X: {}, Y: {}, Vx: {}",
-              m_Transform.translation.x,
-              m_Transform.translation.y,
-              m_Velocity.x);
+    // LOG_DEBUG("X: {}, Y: {}, Vx: {}",
+    //           m_Transform.translation.x,
+    //           m_Transform.translation.y,
+    //           m_Velocity.x);
 }
 
 void Character::ProcessInput() {

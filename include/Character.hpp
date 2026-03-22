@@ -12,7 +12,7 @@ class Character : public Util::GameObject {
 private:
     glm::vec2 m_Velocity = {0.0f, 0.0f};
     float m_Gravity = 0.5f;
-    float m_JumpForce = 5.0f;
+    float m_JumpForce = 12.5f;
     GroundState m_GroundState = GroundState::GROUND;
     Element m_Element;
 
@@ -35,7 +35,7 @@ public:
 
     void SetPosition(const glm::vec2& position) { m_Transform.translation = position; }
     void SetVelocity(const glm::vec2& velocity) { m_Velocity = velocity; }
-    void SetGrounded(bool grounded) { m_IsGrounded = grounded; }
+    void SetGroundState(const GroundState groundState) { m_GroundState = groundState; }
 
     void ProcessInput();
     void ApplyGravity();

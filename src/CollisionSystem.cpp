@@ -44,7 +44,7 @@ void CollisionSystem::ResolveCharacterHazards(
                                                 : levelData.waterSpawn;
     character.SetPosition(levelManager.TileToWorldPosition(spawn.row, spawn.col));
     character.SetVelocity({0.0F, 0.0F});
-    character.SetGrounded(false);
+    character.SetGroundState(GroundState::AIR);
 }
 
 void CollisionSystem::ResolveCharacterTerrain(
@@ -117,7 +117,7 @@ void CollisionSystem::ResolveCharacterTerrain(
         }
     }
 
-    character.SetGrounded(false);
+    character.SetGroundState(GroundState::AIR);
     if (velocity.y <= 0.0F) {
         const TileCoord bottomLeft =
             WorldToTile({position.x - halfWidth + 1.0F, position.y - halfHeight},
@@ -136,7 +136,7 @@ void CollisionSystem::ResolveCharacterTerrain(
                 levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
             position.y = tileCenter.y + tileSize * 0.5F + halfHeight;
             velocity.y = 0.0F;
-            character.SetGrounded(true);
+            character.SetGroundState(GroundState::GROUND);
         }
     }
 
