@@ -1,11 +1,12 @@
 #ifndef LEVEL_MANAGER_HPP
 #define LEVEL_MANAGER_HPP
 
+#include "LevelDefinition.hpp"
 #include "SpriteAtlas.hpp"
 #include "Util/GameObject.hpp"
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 struct TileCoord {
     int row = 0;
@@ -32,6 +33,8 @@ public:
     
     // Loads the level and populates the given root node with tiles
     void LoadLevel(const std::vector<std::string>& mapData, const std::shared_ptr<Util::GameObject>& root);
+    void LoadLevel(const LevelDefinition& level,
+                   const std::shared_ptr<Util::GameObject>& root);
 
     [[nodiscard]] const LevelParseResult& GetLevelData() const { return m_LevelData; }
     [[nodiscard]] bool IsSolidTile(int row, int col) const;
@@ -42,17 +45,21 @@ public:
 
 private:
     bool ValidateLevel(const std::vector<std::string>& mapData) const;
-    void RegisterTile(char tileChar, int row, int col);
-    [[nodiscard]] bool HasSameTile(const std::vector<std::string>& mapData, int row,
-                                   int col, char tileChar) const;
-    [[nodiscard]] std::string ResolveFrameName(
-        const std::vector<std::string>& mapData, int row, int col,
-        char tileChar) const;
-    float ResolveZIndex(char tileChar) const;
+    bool ValidateLevelDefinition(const LevelDefinition& level) const;
+    void RegisterTerrain(TerrainType terrain, int row, int col);
+    void RegisterObject(const LevelObject& object);
+    [[nodiscard]] bool IsValidGroundCoord(int row, int col) const;
+    [[nodiscard]] bool HasSameTerrain(const LevelDefinition& level, int row, int col,
+                                      TerrainType terrain) const;
+    [[nodiscard]] std::string ResolveGroundFrameName(const LevelDefinition& level, int row,
+                                                     int col, TerrainType terrain) const;
+    [[nodiscard]] float ResolveGroundZIndex(TerrainType terrain) const;
+    [[nodiscard]] std::string ResolveObjectFrameName(LevelObjectType type) const;
+    [[nodiscard]] float ResolveObjectZIndex(LevelObjectType type) const;
 
     std::shared_ptr<SpriteAtlas> m_Atlas;
     LevelParseResult m_LevelData;
-    std::vector<std::string> m_MapData;
+    LevelDefinition m_LevelDefinition;
     float m_TileSize = 32.0F;
 };
 
