@@ -62,6 +62,7 @@ private:
     CollisionSystem m_CollisionSystem;
 
     std::shared_ptr<Character> m_FireBoy;
+    std::shared_ptr<Character> m_WaterGirl;
 };
 
 #endif

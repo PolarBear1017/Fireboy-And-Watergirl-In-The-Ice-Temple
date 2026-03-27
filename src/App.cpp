@@ -209,6 +209,17 @@ void App::BuildGameScene() {
     }
     m_SceneRoot->AddChild(m_FireBoy);
 
+    // Build the Watergirl character
+    m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
+    if (levelData.hasFireSpawn) {
+        m_WaterGirl->m_Transform.translation =
+            m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row,
+                                                levelData.waterSpawn.col);
+    } else {
+        m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
+    }
+    m_SceneRoot->AddChild(m_WaterGirl);
+
     LOG_INFO("Entered Level 1.");
 }
 
@@ -243,5 +254,9 @@ void App::UpdateGameScene() {
     if (m_FireBoy != nullptr) {
         m_FireBoy->Update();
         m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
+    }
+    if (m_WaterGirl != nullptr) {
+        m_WaterGirl->Update();
+        m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
     }
 }

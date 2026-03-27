@@ -81,70 +81,72 @@ void Character::ApplyGravity() {
 }
 
 void Character::UpdateAnimation() {
-    // std::string prefix = (m_Element == Element::FIRE) ? "fire" : "water";
-    //
-    // std::string action = "legs_idle";
-    // int maxFrames = 1;
-    //
-    // if (!IsGrounded()) {
-    //     action = "legs_idle";
-    //     maxFrames = 1;
-    // } else if (m_Velocity.x != 0.0f) {
-    //     action = "legs_running";
-    //     maxFrames = 8;
-    // }
-    //
-    // m_AnimationTimer += 0.016f;
-    // if (m_AnimationTimer > 0.1f) {
-    //     m_AnimationFrame++;
-    //     m_AnimationTimer = 0.0f;
-    // }
-    //
-    // if (m_AnimationFrame >= maxFrames) {
-    //     m_AnimationFrame = 0;
-    // }
-    //
-    // std::ostringstream ss;
-    // ss << prefix << "_" << action
-    //    << std::setw(4) << std::setfill('0') << m_AnimationFrame;
-    //
-    // m_Sprite->SetFrame(ss.str());
-    //
-    // if (m_Velocity.x > 0) {
-    //     m_Transform.scale.x = std::abs(m_Transform.scale.x);
-    // } else if (m_Velocity.x < 0) {
-    //     m_Transform.scale.x = -std::abs(m_Transform.scale.x);
-    // }
 
     std::string prefix = (m_Element == Element::FIRE) ? "fire" : "water";
+
+    // Default Status: Idle
     std::string legsAction = "legs_idle";
     std::string headAction = "head_idle";
     int legsMaxFrames = 1;
+    int headMaxFrames = (m_Element == Element::FIRE) ? 19 : 30;
 
-    if (!IsGrounded()) {
-        legsAction = "legs_idle";
-        headAction = "head_idle";
-    } else if (std::abs(m_Velocity.x) > 0.1f) {
+    if (m_Velocity.x != 0) {
         legsAction = "legs_running";
-        headAction = "head_idle";
         legsMaxFrames = 8;
+        headAction = "head_jumping";
+        headMaxFrames = 11;
+    } else {
+        legsAction = "legs_idle";
+        legsMaxFrames = 1;
+
+        if (m_Velocity.y > 0) {
+            headAction = "head_rising";
+            headMaxFrames = (m_Element == Element::FIRE) ? 5 : 11;
+        } else if (m_Velocity.y < 0) {
+            headAction = "head_falling";
+            headMaxFrames = (m_Element == Element::FIRE) ? 5 : 11;
+        } else {
+            headAction = "head_idle";
+            headMaxFrames = (m_Element == Element::FIRE) ? 19 : 30;
+        }
+        m_HeadObject->m_Transform.rotation = 0.0f;
     }
 
+    // if (m_Velocity.x != 0 && m_Velocity.y != 0) {
+    //     float tiltAngle = m_Velocity.y * 0.02f;
+    //
+    //     // 防呆：限制最大旋轉角度，避免速度太快時頭被扭斷
+    //     if (tiltAngle > 0.3f) tiltAngle = 0.3f;
+    //     if (tiltAngle < -0.3f) tiltAngle = -0.3f;
+    //     // 關鍵：如果角色正面向左邊 (scale.x < 0)，旋轉方向要反過來，
+    //     // 不然往左跳時，頭會變成「往後仰」而不是往前看！
+    //     if (m_Transform.scale.x < 0) {
+    //         tiltAngle = -tiltAngle;
+    //     }
+    //     // 把算出來的角度套用到頭的 GameObject 上
+    //     m_HeadObject->m_Transform.rotation = tiltAngle;
+    // }
+
     m_AnimationTimer += 0.016f;
-    if (m_AnimationTimer > 0.08f) {
+    if (m_AnimationTimer > 0.05f) {
         m_AnimationFrame++;
         m_AnimationTimer = 0.0f;
     }
-    if (m_AnimationFrame >= legsMaxFrames) { m_AnimationFrame = 0; }
+
+    int currentLegsFrame = m_AnimationFrame % legsMaxFrames;
+    int currentHeadFrame = m_AnimationFrame % headMaxFrames;
 
     std::ostringstream ss_legs;
-    ss_legs << prefix << "_" << legsAction << std::setw(4) << std::setfill('0') << m_AnimationFrame;
+    ss_legs << prefix << "_" << legsAction << std::setw(4) << std::setfill('0') << currentLegsFrame;
     m_LegsSprite->SetFrame(ss_legs.str());
 
     std::ostringstream ss_head;
-    ss_head << prefix << "_" << headAction << "0000";
+    ss_head << prefix << "_" << headAction << std::setw(4) << std::setfill('0') << currentHeadFrame;
     m_HeadSprite->SetFrame(ss_head.str());
 
-    if (m_Velocity.x > 0) { m_Transform.scale.x = std::abs(m_Transform.scale.x); }
-    else if (m_Velocity.x < 0) { m_Transform.scale.x = -std::abs(m_Transform.scale.x); }
+    if (m_Velocity.x > 0) {
+        m_Transform.scale.x = std::abs(m_Transform.scale.x);
+    } else if (m_Velocity.x < 0) {
+        m_Transform.scale.x = -std::abs(m_Transform.scale.x);
+    }
 }
