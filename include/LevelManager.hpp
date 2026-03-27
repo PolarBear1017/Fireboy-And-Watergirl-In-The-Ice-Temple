@@ -32,8 +32,8 @@ public:
     explicit LevelManager(std::shared_ptr<SpriteAtlas> atlas);
     
     // Loads the level and populates the given root node with tiles
-    void LoadLevel(const std::vector<std::string>& mapData, const std::shared_ptr<Util::GameObject>& root);
-    void LoadLevel(const LevelDefinition& level,
+    bool LoadLevel(const std::vector<std::string>& mapData, const std::shared_ptr<Util::GameObject>& root);
+    bool LoadLevel(const LevelDefinition& level,
                    const std::shared_ptr<Util::GameObject>& root);
 
     [[nodiscard]] const LevelParseResult& GetLevelData() const { return m_LevelData; }

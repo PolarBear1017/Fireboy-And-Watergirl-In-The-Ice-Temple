@@ -30,9 +30,13 @@ bool LevelManager::IsSolidTile(const int row, const int col) const {
         return false;
     }
 
-    return m_LevelDefinition.ground[static_cast<size_t>(row)]
-                                  [static_cast<size_t>(col)] ==
-           TerrainType::Solid;
+    const TerrainType terrain =
+        m_LevelDefinition.ground[static_cast<size_t>(row)]
+                               [static_cast<size_t>(col)];
+
+    // 冰面與雪地目前先視為可站立的實體地形，之後再補移動特性。
+    return terrain == TerrainType::Solid || terrain == TerrainType::Ice ||
+           terrain == TerrainType::Snow;
 }
 
 bool LevelManager::IsLavaTile(const int row, const int col) const {
@@ -193,6 +197,11 @@ void LevelManager::RegisterTerrain(const TerrainType terrain, const int row,
         case TerrainType::Solid:
             m_LevelData.solidTiles.push_back(coord);
             break;
+        case TerrainType::Ice:
+        case TerrainType::Snow:
+            // 冰與雪目前先共用 solidTiles，讓碰撞與站立邏輯先正常運作。
+            m_LevelData.solidTiles.push_back(coord);
+            break;
         case TerrainType::Lava:
             m_LevelData.lavaTiles.push_back(coord);
             break;
@@ -282,6 +291,17 @@ std::string LevelManager::ResolveGroundFrameName(const LevelDefinition& level,
                 return "WaterBoxRight0000";
             }
             return "WaterBox0000";
+        case TerrainType::Ice:
+            if (!hasLeft && hasRight) {
+                return "IceBoxLeft0000";
+            }
+            if (hasLeft && !hasRight) {
+                return "IceBoxRight0000";
+            }
+            return "IceBox0000";
+        case TerrainType::Snow:
+            // 雪地目前先使用平面貼圖，之後若加入斜坡再擴充。
+            return "SnowFlat0000";
         case TerrainType::Empty:
         default:
             return "";  // 如果這格是空地，就不要畫圖。
@@ -294,6 +314,8 @@ float LevelManager::ResolveGroundZIndex(const TerrainType terrain) const {
         case TerrainType::Water:
         case TerrainType::Lava:
             return -2.0F;
+        case TerrainType::Ice:
+        case TerrainType::Snow:
         case TerrainType::Solid:
         case TerrainType::Empty:
         default:
@@ -326,23 +348,23 @@ float LevelManager::ResolveObjectZIndex(const LevelObjectType type) const {
     }
 }
 
-void LevelManager::LoadLevel(const std::vector<std::string>& mapData,
+bool LevelManager::LoadLevel(const std::vector<std::string>& mapData,
                              const std::shared_ptr<Util::GameObject>& root) {
     if (!ValidateLevel(mapData)) {
-        return;
+        return false;
     }
 
     // 舊版字元地圖先轉成新的標準關卡格式。
     const LevelDefinition level = BuildLevelDefinitionFromChars(mapData);
 
     // 後續統一交給新版 LoadLevel 處理，避免兩套載入邏輯分開維護。
-    LoadLevel(level, root);
+    return LoadLevel(level, root);
 }
 
-void LevelManager::LoadLevel(const LevelDefinition& level,
+bool LevelManager::LoadLevel(const LevelDefinition& level,
                              const std::shared_ptr<Util::GameObject>& root) {
     if (!ValidateLevelDefinition(level)) {
-        return;
+        return false;
     }
 
     // 保存新格式的關卡資料，後續邏輯直接以 LevelDefinition 為主。
@@ -425,4 +447,6 @@ void LevelManager::LoadLevel(const LevelDefinition& level,
         tileObj->m_Transform.scale *= 0.75F;
         root->AddChild(tileObj);
     }
+
+    return true;
 }

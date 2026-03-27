@@ -11,6 +11,10 @@ TerrainType CharToTerrainType(const char tileChar) {
             return TerrainType::Lava;
         case 'W':
             return TerrainType::Water;
+        case 'I':
+            return TerrainType::Ice;
+        case 'S':
+            return TerrainType::Snow;
         case '.':
         case 'F':
         case 'G':
