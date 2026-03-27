@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <cmath>
-#include <vector>
+#include <exception>
 #include <string>
+#include <vector>
 
 #include "config.hpp"
 
+#include "LevelLoader.hpp"
 #include "Levels.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
@@ -34,6 +36,10 @@ std::string BuildSpritePath(const std::string &fileName) {
 
 std::string BuildImagePath(const std::string &fileName) {
     return BuildReferencePath() + "/images/" + fileName;
+}
+
+std::string BuildLevelPath(const std::string &fileName) {
+    return std::string(RESOURCE_DIR) + "/levels/" + fileName;
 }
 
 float ComputeContainScale(const glm::vec2 &size, const float maxWidth,
@@ -187,7 +193,20 @@ void App::BuildGameScene() {
     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
     m_SceneRoot->AddChild(backgroundObject);
 
-    m_LevelManager->LoadLevel(Levels::kLevel1, m_SceneRoot);
+    try {
+        // 優先從 JSON 檔載入關卡，這是新版關卡格式的主要入口。
+        const LevelDefinition level =
+            LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
+        if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
+            throw std::runtime_error("Level validation failed after JSON load.");
+        }
+    } catch (const std::exception &e) {
+        // 若 JSON 載入失敗，先退回舊版字元地圖，避免目前流程完全中斷。
+        LOG_ERROR(std::string("Failed to load JSON level: ") + e.what());
+        if (!m_LevelManager->LoadLevel(Levels::kLevel1, m_SceneRoot)) {
+            LOG_ERROR("Failed to load fallback character level.");
+        }
+    }
 
     const auto &levelData = m_LevelManager->GetLevelData();
     if (levelData.hasFireSpawn && levelData.hasWaterSpawn) {

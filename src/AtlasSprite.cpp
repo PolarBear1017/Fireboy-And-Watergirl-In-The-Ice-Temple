@@ -84,10 +84,13 @@ void AtlasSprite::RebuildVertexArray(const AtlasFrame &frame) {
     const auto textureSize = m_Atlas->GetTextureSize();
     const float texW = static_cast<float>(textureSize.x);
     const float texH = static_cast<float>(textureSize.y);
-    const float u0 = static_cast<float>(frame.x) / texW;
-    const float v0 = static_cast<float>(frame.y) / texH;
-    const float u1 = static_cast<float>(frame.x + frame.w) / texW;
-    const float v1 = static_cast<float>(frame.y + frame.h) / texH;
+    // 將 UV 往內縮半個像素，避免取樣時吃到 atlas 中相鄰 frame 的顏色。
+    const float halfPixelU = 0.5F / texW;
+    const float halfPixelV = 0.5F / texH;
+    const float u0 = static_cast<float>(frame.x) / texW + halfPixelU;
+    const float v0 = static_cast<float>(frame.y) / texH + halfPixelV;
+    const float u1 = static_cast<float>(frame.x + frame.w) / texW - halfPixelU;
+    const float v1 = static_cast<float>(frame.y + frame.h) / texH - halfPixelV;
 
     m_VertexArray->AddVertexBuffer(std::make_unique<Core::VertexBuffer>(
         std::vector<float>{

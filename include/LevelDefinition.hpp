@@ -8,7 +8,9 @@ enum class TerrainType {
     Empty,
     Solid,
     Lava,
-    Water
+    Water,
+    Ice,
+    Snow
 };
 
 struct GridCoord {
