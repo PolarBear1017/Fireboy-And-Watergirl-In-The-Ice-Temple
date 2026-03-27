@@ -199,8 +199,7 @@ void App::BuildGameScene() {
     }
 
     // Build the Fireboy character
-    auto fireboySprite = std::make_shared<AtlasSprite>(m_GameAtlas, "fire_head_idle0000");
-    m_FireBoy = std::make_shared<Character>(fireboySprite, Element::FIRE);
+    m_FireBoy = std::make_shared<Character>(m_GameAtlas, Element::FIRE);
     if (levelData.hasFireSpawn) {
         m_FireBoy->m_Transform.translation =
             m_LevelManager->TileToWorldPosition(levelData.fireSpawn.row,
