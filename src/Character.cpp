@@ -109,7 +109,6 @@ void Character::UpdateAnimation() {
             headAction = "head_idle";
             headMaxFrames = (m_Element == Element::FIRE) ? 19 : 30;
         }
-        m_HeadObject->m_Transform.rotation = 0.0f;
     }
 
     // if (m_Velocity.x != 0 && m_Velocity.y != 0) {
@@ -125,6 +124,8 @@ void Character::UpdateAnimation() {
     //     }
     //     // 把算出來的角度套用到頭的 GameObject 上
     //     m_HeadObject->m_Transform.rotation = tiltAngle;
+    // } else {
+    //     m_HeadObject->m_Transform.rotation = 0.0f;
     // }
 
     m_AnimationTimer += 0.016f;

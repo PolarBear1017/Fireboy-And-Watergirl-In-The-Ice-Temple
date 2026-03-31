@@ -4,6 +4,7 @@
 #include "LevelParser.hpp"
 #include "Util/Logger.hpp"
 #include "config.hpp" // For WINDOW_WIDTH / WINDOW_HEIGHT
+// #include <cmath>
 
 LevelManager::LevelManager(std::shared_ptr<SpriteAtlas> atlas)
     : m_Atlas(std::move(atlas)) {}
@@ -384,13 +385,20 @@ void LevelManager::LoadLevel(const LevelDefinition& level,
                 startY - static_cast<float>(y) * m_TileSize,
             };
 
-            const auto actualSize = sprite->GetSize();
-            if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
-                tileObj->m_Transform.scale = {
-                    m_TileSize / actualSize.x,
-                    m_TileSize / actualSize.y,
-                };
-            }
+            // const auto actualSize = sprite->GetSize();
+            // if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
+            //     tileObj->m_Transform.scale = {
+            //         m_TileSize / actualSize.x,
+            //         m_TileSize / actualSize.y,
+            //     };
+            // }
+
+            const float logicalCoreSize = 32.0F;
+
+            tileObj->m_Transform.scale = {
+                m_TileSize / logicalCoreSize,
+                m_TileSize / logicalCoreSize,
+            };
 
             root->AddChild(tileObj);
         }
@@ -413,13 +421,20 @@ void LevelManager::LoadLevel(const LevelDefinition& level,
         };
 
         // 把圖片縮放到剛好符合一格 tile 的大小。
-        const auto actualSize = sprite->GetSize();
-        if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
-            tileObj->m_Transform.scale = {
-                m_TileSize / actualSize.x,
-                m_TileSize / actualSize.y,
-            };
-        }
+        // const auto actualSize = sprite->GetSize();
+        // if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
+        //     tileObj->m_Transform.scale = {
+        //         m_TileSize / actualSize.x,
+        //         m_TileSize / actualSize.y,
+        //     };
+        // }
+
+        const float logicalCoreSize = 32.0F;
+
+        tileObj->m_Transform.scale = {
+            m_TileSize / logicalCoreSize,
+            m_TileSize / logicalCoreSize,
+        };
 
         // 出生點與門目前仍用縮小圖示作為暫時標記，之後可再換成真正物件。
         tileObj->m_Transform.scale *= 0.75F;
