@@ -4,7 +4,7 @@
 #include "LevelParser.hpp"
 #include "Util/Logger.hpp"
 #include "config.hpp" // For WINDOW_WIDTH / WINDOW_HEIGHT
-// #include <cmath>
+#include <cmath>
 
 LevelManager::LevelManager(std::shared_ptr<SpriteAtlas> atlas)
     : m_Atlas(std::move(atlas)) {}
@@ -403,8 +403,8 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
                 std::make_shared<Util::GameObject>(sprite, ResolveGroundZIndex(terrain));
 
             tileObj->m_Transform.translation = {
-                startX + static_cast<float>(x) * m_TileSize,
-                startY - static_cast<float>(y) * m_TileSize,
+                std::round(startX + static_cast<float>(x) * m_TileSize),
+                std::round(startY - static_cast<float>(y) * m_TileSize),
             };
 
             // const auto actualSize = sprite->GetSize();
@@ -418,8 +418,8 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
             const float logicalCoreSize = 32.0F;
 
             tileObj->m_Transform.scale = {
-                m_TileSize / logicalCoreSize,
-                m_TileSize / logicalCoreSize,
+                (m_TileSize / logicalCoreSize + 0.033F),
+                (m_TileSize / logicalCoreSize + 0.033F),
             };
 
             root->AddChild(tileObj);
