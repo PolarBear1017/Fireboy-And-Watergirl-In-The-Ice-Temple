@@ -9,13 +9,14 @@
 Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element element)
     : m_Element(element) {
 
-    SetZIndex(10);
+    const float zIndex = (element == Element::FIRE) ? 10.0F : 12.0F;
+    SetZIndex(zIndex);
 
     m_HeadObject = std::make_shared<Util::GameObject>();
     m_LegsObject = std::make_shared<Util::GameObject>();
 
-    m_LegsObject->SetZIndex(10);
-    m_HeadObject->SetZIndex(11);
+    m_LegsObject->SetZIndex(zIndex);
+    m_HeadObject->SetZIndex(zIndex + 1);
 
     std::string prefix = (element == Element::FIRE) ? "fire" : "water";
     m_HeadSprite = std::make_shared<AtlasSprite>(atlas, prefix + "_head_idle0000");
