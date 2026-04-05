@@ -23,17 +23,12 @@ void CollisionSystem::ResolveCharacterHazards(
     const TileCoord footTile =
         WorldToTile({position.x, position.y - size.y * 0.5F}, tileSize);
 
-    const bool inLava = levelManager.IsLavaTile(footTile.row, footTile.col);
-    const bool inWater = levelManager.IsWaterTile(footTile.row, footTile.col);
-
-    bool shouldRespawn = false;
     const auto& levelData = levelManager.GetLevelData();
-
-    if (character.GetElement() == Element::FIRE && inWater) {
-        shouldRespawn = levelData.hasFireSpawn;
-    } else if (character.GetElement() == Element::WATER && inLava) {
-        shouldRespawn = levelData.hasWaterSpawn;
-    }
+    const bool shouldRespawn =
+        levelManager.IsHazardousFor(character.GetElement(), footTile.row,
+                                    footTile.col) &&
+        ((character.GetElement() == Element::FIRE && levelData.hasFireSpawn) ||
+         (character.GetElement() == Element::WATER && levelData.hasWaterSpawn));
 
     if (!shouldRespawn) {
         return;

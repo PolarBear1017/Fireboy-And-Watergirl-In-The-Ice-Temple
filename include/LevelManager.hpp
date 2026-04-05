@@ -1,6 +1,7 @@
 #ifndef LEVEL_MANAGER_HPP
 #define LEVEL_MANAGER_HPP
 
+#include "Element.hpp"
 #include "LevelDefinition.hpp"
 #include "SpriteAtlas.hpp"
 #include "Util/GameObject.hpp"
@@ -15,8 +16,6 @@ struct TileCoord {
 
 struct LevelParseResult {
     std::vector<TileCoord> solidTiles;
-    std::vector<TileCoord> lavaTiles;
-    std::vector<TileCoord> waterTiles;
     TileCoord fireSpawn;
     TileCoord waterSpawn;
     TileCoord fireDoor;
@@ -38,8 +37,8 @@ public:
 
     [[nodiscard]] const LevelParseResult& GetLevelData() const { return m_LevelData; }
     [[nodiscard]] bool IsSolidTile(int row, int col) const;
-    [[nodiscard]] bool IsLavaTile(int row, int col) const;
-    [[nodiscard]] bool IsWaterTile(int row, int col) const;
+    [[nodiscard]] const LevelPool* GetPoolAt(int row, int col) const;
+    [[nodiscard]] bool IsHazardousFor(Element element, int row, int col) const;
     [[nodiscard]] glm::vec2 TileToWorldPosition(int row, int col) const;
     [[nodiscard]] float GetTileSize() const { return m_TileSize; }
 
@@ -49,11 +48,16 @@ private:
     void RegisterTerrain(TerrainType terrain, int row, int col);
     void RegisterObject(const LevelObject& object);
     [[nodiscard]] bool IsValidGroundCoord(int row, int col) const;
+    [[nodiscard]] bool IsTileInPool(const LevelPool& pool, int row, int col) const;
     [[nodiscard]] bool HasSameTerrain(const LevelDefinition& level, int row, int col,
                                       TerrainType terrain) const;
+    [[nodiscard]] bool HasSamePoolVisual(int row, int col, PoolKind kind,
+                                         PoolState state) const;
     [[nodiscard]] std::string ResolveGroundFrameName(const LevelDefinition& level, int row,
                                                      int col, TerrainType terrain) const;
+    [[nodiscard]] std::string ResolvePoolFrameName(int row, int col, const LevelPool& pool) const;
     [[nodiscard]] float ResolveGroundZIndex(TerrainType terrain) const;
+    [[nodiscard]] float ResolvePoolZIndex(PoolState state) const;
     [[nodiscard]] std::string ResolveObjectFrameName(LevelObjectType type) const;
     [[nodiscard]] float ResolveObjectZIndex(LevelObjectType type) const;
 

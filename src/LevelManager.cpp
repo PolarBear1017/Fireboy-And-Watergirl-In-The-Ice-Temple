@@ -3,7 +3,7 @@
 #include "AtlasSprite.hpp"
 #include "LevelParser.hpp"
 #include "Util/Logger.hpp"
-#include "config.hpp" // For WINDOW_WIDTH / WINDOW_HEIGHT
+#include "config.hpp"
 #include <cmath>
 
 LevelManager::LevelManager(std::shared_ptr<SpriteAtlas> atlas)
@@ -18,46 +18,71 @@ bool LevelManager::IsValidGroundCoord(const int row, const int col) const {
         return false;
     }
 
-    if (col >= static_cast<int>(m_LevelDefinition.ground[static_cast<size_t>(row)].size())) {
+    if (col >= static_cast<int>(
+                   m_LevelDefinition.ground[static_cast<size_t>(row)].size())) {
         return false;
     }
 
     return true;
 }
 
+bool LevelManager::IsTileInPool(const LevelPool& pool, const int row,
+                                const int col) const {
+    for (const auto& tile : pool.tiles) {
+        if (tile.row == row && tile.col == col) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool LevelManager::IsSolidTile(const int row, const int col) const {
-    // 碰撞查詢優先使用新的地形資料，而不是舊版字元地圖。
     if (!IsValidGroundCoord(row, col)) {
         return false;
     }
 
     const TerrainType terrain =
-        m_LevelDefinition.ground[static_cast<size_t>(row)]
-                               [static_cast<size_t>(col)];
+        m_LevelDefinition.ground[static_cast<size_t>(row)][static_cast<size_t>(col)];
+    if (terrain == TerrainType::Solid || terrain == TerrainType::Ice ||
+        terrain == TerrainType::Snow) {
+        return true;
+    }
 
-    // 冰面與雪地目前先視為可站立的實體地形，之後再補移動特性。
-    return terrain == TerrainType::Solid || terrain == TerrainType::Ice ||
-           terrain == TerrainType::Snow;
+    const LevelPool* pool = GetPoolAt(row, col);
+    return pool != nullptr && pool->state == PoolState::Frozen;
 }
 
-bool LevelManager::IsLavaTile(const int row, const int col) const {
+const LevelPool* LevelManager::GetPoolAt(const int row, const int col) const {
     if (!IsValidGroundCoord(row, col)) {
+        return nullptr;
+    }
+
+    for (const auto& pool : m_LevelDefinition.pools) {
+        if (IsTileInPool(pool, row, col)) {
+            return &pool;
+        }
+    }
+
+    return nullptr;
+}
+
+bool LevelManager::IsHazardousFor(const Element element, const int row,
+                                  const int col) const {
+    const LevelPool* pool = GetPoolAt(row, col);
+    if (pool == nullptr || pool->state == PoolState::Frozen) {
         return false;
     }
 
-    return m_LevelDefinition.ground[static_cast<size_t>(row)]
-                                  [static_cast<size_t>(col)] ==
-           TerrainType::Lava;
-}
-
-bool LevelManager::IsWaterTile(const int row, const int col) const {
-    if (!IsValidGroundCoord(row, col)) {
-        return false;
+    if (pool->kind == PoolKind::Fire) {
+        return element == Element::WATER;
     }
 
-    return m_LevelDefinition.ground[static_cast<size_t>(row)]
-                                  [static_cast<size_t>(col)] ==
-           TerrainType::Water;
+    if (pool->kind == PoolKind::Water) {
+        return element == Element::FIRE;
+    }
+
+    return false;
 }
 
 glm::vec2 LevelManager::TileToWorldPosition(const int row, const int col) const {
@@ -104,6 +129,8 @@ bool LevelManager::ValidateLevel(const std::vector<std::string>& mapData) const 
                 case 'G':
                 case 'L':
                 case 'W':
+                case 'I':
+                case 'S':
                 case 'R':
                 case 'B':
                     break;
@@ -153,7 +180,6 @@ bool LevelManager::ValidateLevelDefinition(const LevelDefinition& level) const {
     int fireDoorCount = 0;
     int waterDoorCount = 0;
 
-    // 檢查 ground 圖層尺寸是否完整，避免後續以 row/col 存取時越界。
     for (int row = 0; row < level.height; ++row) {
         if (static_cast<int>(level.ground[static_cast<size_t>(row)].size()) !=
             level.width) {
@@ -162,7 +188,35 @@ bool LevelManager::ValidateLevelDefinition(const LevelDefinition& level) const {
         }
     }
 
-    // 檢查 objects 圖層中的關鍵物件數量與座標是否合法。
+    std::vector<std::vector<bool>> occupiedPoolTiles(
+        static_cast<size_t>(level.height),
+        std::vector<bool>(static_cast<size_t>(level.width), false));
+
+    for (const auto& pool : level.pools) {
+        if (pool.tiles.empty()) {
+            LOG_ERROR("LevelManager: pool must contain at least one tile.");
+            return false;
+        }
+
+        for (const auto& tile : pool.tiles) {
+            if (tile.row < 0 || tile.col < 0 || tile.row >= level.height ||
+                tile.col >= level.width) {
+                LOG_ERROR("LevelManager: pool tile coordinate is out of range.");
+                return false;
+            }
+
+            auto occupied =
+                occupiedPoolTiles[static_cast<size_t>(tile.row)][static_cast<size_t>(tile.col)];
+            if (occupied) {
+                LOG_ERROR("LevelManager: pool tiles cannot overlap.");
+                return false;
+            }
+
+            occupiedPoolTiles[static_cast<size_t>(tile.row)][static_cast<size_t>(tile.col)] =
+                true;
+        }
+    }
+
     for (const auto& object : level.objects) {
         if (object.coord.row < 0 || object.coord.col < 0 ||
             object.coord.row >= level.height || object.coord.col >= level.width) {
@@ -177,12 +231,14 @@ bool LevelManager::ValidateLevelDefinition(const LevelDefinition& level) const {
     }
 
     if (fireSpawnCount != 1 || waterSpawnCount != 1) {
-        LOG_ERROR("LevelManager: level must contain exactly one fire spawn and one water spawn.");
+        LOG_ERROR(
+            "LevelManager: level must contain exactly one fire spawn and one water spawn.");
         return false;
     }
 
     if (fireDoorCount > 1 || waterDoorCount > 1) {
-        LOG_ERROR("LevelManager: level can contain at most one fire door and one water door.");
+        LOG_ERROR(
+            "LevelManager: level can contain at most one fire door and one water door.");
         return false;
     }
 
@@ -191,34 +247,16 @@ bool LevelManager::ValidateLevelDefinition(const LevelDefinition& level) const {
 
 void LevelManager::RegisterTerrain(const TerrainType terrain, const int row,
                                    const int col) {
-    const TileCoord coord{row, col};
-
-    // 地形註冊直接依照新格式中的 TerrainType 進行。
-    switch (terrain) {
-        case TerrainType::Solid:
-            m_LevelData.solidTiles.push_back(coord);
-            break;
-        case TerrainType::Ice:
-        case TerrainType::Snow:
-            // 冰與雪目前先共用 solidTiles，讓碰撞與站立邏輯先正常運作。
-            m_LevelData.solidTiles.push_back(coord);
-            break;
-        case TerrainType::Lava:
-            m_LevelData.lavaTiles.push_back(coord);
-            break;
-        case TerrainType::Water:
-            m_LevelData.waterTiles.push_back(coord);
-            break;
-        case TerrainType::Empty:
-        default:
-            break;
+    if (terrain == TerrainType::Empty) {
+        return;
     }
+
+    m_LevelData.solidTiles.push_back(TileCoord{row, col});
 }
 
 void LevelManager::RegisterObject(const LevelObject& object) {
     const TileCoord coord{object.coord.row, object.coord.col};
 
-    // 角色出生點與門改成直接從新格式的 objects 圖層註冊。
     switch (object.type) {
         case LevelObjectType::FireSpawn:
             m_LevelData.fireSpawn = coord;
@@ -241,7 +279,6 @@ void LevelManager::RegisterObject(const LevelObject& object) {
     }
 }
 
-// 判斷某格周圍是不是同種類型的地形
 bool LevelManager::HasSameTerrain(const LevelDefinition& level, const int row,
                                   const int col,
                                   const TerrainType terrain) const {
@@ -261,6 +298,21 @@ bool LevelManager::HasSameTerrain(const LevelDefinition& level, const int row,
            terrain;
 }
 
+bool LevelManager::HasSamePoolVisual(const int row, const int col,
+                                     const PoolKind kind,
+                                     const PoolState state) const {
+    const LevelPool* pool = GetPoolAt(row, col);
+    if (pool == nullptr) {
+        return false;
+    }
+
+    if (state == PoolState::Frozen) {
+        return pool->state == PoolState::Frozen;
+    }
+
+    return pool->kind == kind && pool->state == state;
+}
+
 std::string LevelManager::ResolveGroundFrameName(const LevelDefinition& level,
                                                  const int row, const int col,
                                                  const TerrainType terrain) const {
@@ -276,22 +328,6 @@ std::string LevelManager::ResolveGroundFrameName(const LevelDefinition& level,
                 return "BlackBoxRight0000";
             }
             return "BlackBox0000";
-        case TerrainType::Lava:
-            if (!hasLeft && hasRight) {
-                return "FireBoxLeft0000";
-            }
-            if (hasLeft && !hasRight) {
-                return "FireBoxRight0000";
-            }
-            return "FireBox0000";
-        case TerrainType::Water:
-            if (!hasLeft && hasRight) {
-                return "WaterBoxLeft0000";
-            }
-            if (hasLeft && !hasRight) {
-                return "WaterBoxRight0000";
-            }
-            return "WaterBox0000";
         case TerrainType::Ice:
             if (!hasLeft && hasRight) {
                 return "IceBoxLeft0000";
@@ -301,20 +337,51 @@ std::string LevelManager::ResolveGroundFrameName(const LevelDefinition& level,
             }
             return "IceBox0000";
         case TerrainType::Snow:
-            // 雪地目前先使用平面貼圖，之後若加入斜坡再擴充。
             return "SnowFlat0000";
         case TerrainType::Empty:
         default:
-            return "";  // 如果這格是空地，就不要畫圖。
+            return "";
     }
 }
 
-// 不同地形畫出來時，要放在前面還是後面。
+std::string LevelManager::ResolvePoolFrameName(const int row, const int col,
+                                               const LevelPool& pool) const {
+    const bool hasLeft =
+        HasSamePoolVisual(row, col - 1, pool.kind, pool.state);
+    const bool hasRight =
+        HasSamePoolVisual(row, col + 1, pool.kind, pool.state);
+
+    if (pool.state == PoolState::Frozen) {
+        if (!hasLeft && hasRight) {
+            return "IceBoxLeft0000";
+        }
+        if (hasLeft && !hasRight) {
+            return "IceBoxRight0000";
+        }
+        return "IceBox0000";
+    }
+
+    if (pool.kind == PoolKind::Fire) {
+        if (!hasLeft && hasRight) {
+            return "FireBoxLeft0000";
+        }
+        if (hasLeft && !hasRight) {
+            return "FireBoxRight0000";
+        }
+        return "FireBox0000";
+    }
+
+    if (!hasLeft && hasRight) {
+        return "WaterBoxLeft0000";
+    }
+    if (hasLeft && !hasRight) {
+        return "WaterBoxRight0000";
+    }
+    return "WaterBox0000";
+}
+
 float LevelManager::ResolveGroundZIndex(const TerrainType terrain) const {
     switch (terrain) {
-        case TerrainType::Water:
-        case TerrainType::Lava:
-            return -2.0F;
         case TerrainType::Ice:
         case TerrainType::Snow:
         case TerrainType::Solid:
@@ -322,6 +389,10 @@ float LevelManager::ResolveGroundZIndex(const TerrainType terrain) const {
         default:
             return -1.0F;
     }
+}
+
+float LevelManager::ResolvePoolZIndex(const PoolState state) const {
+    return state == PoolState::Frozen ? -1.0F : -2.0F;
 }
 
 std::string LevelManager::ResolveObjectFrameName(const LevelObjectType type) const {
@@ -355,10 +426,7 @@ bool LevelManager::LoadLevel(const std::vector<std::string>& mapData,
         return false;
     }
 
-    // 舊版字元地圖先轉成新的標準關卡格式。
     const LevelDefinition level = BuildLevelDefinitionFromChars(mapData);
-
-    // 後續統一交給新版 LoadLevel 處理，避免兩套載入邏輯分開維護。
     return LoadLevel(level, root);
 }
 
@@ -368,12 +436,10 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
         return false;
     }
 
-    // 保存新格式的關卡資料，後續邏輯直接以 LevelDefinition 為主。
     m_LevelData = {};
     m_LevelDefinition = level;
     m_TileSize = static_cast<float>(level.tileSize);
 
-    // 先根據新格式中的 objects 圖層註冊出生點與門。
     for (const auto& object : level.objects) {
         RegisterObject(object);
     }
@@ -384,8 +450,8 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
         -(static_cast<float>(WINDOW_WIDTH) / 2.0F) + (m_TileSize / 2.0F);
     const float startY =
         (static_cast<float>(WINDOW_HEIGHT) / 2.0F) - (m_TileSize / 2.0F);
+    const float logicalCoreSize = 32.0F;
 
-    // 逐格建立牆壁、岩漿、水等地形，直接讀取新格式中的 ground 圖層。
     for (int y = 0; y < rows; ++y) {
         for (int x = 0; x < cols; ++x) {
             const TerrainType terrain =
@@ -399,24 +465,13 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
             }
 
             auto sprite = std::make_shared<AtlasSprite>(m_Atlas, frameName);
-            auto tileObj =
-                std::make_shared<Util::GameObject>(sprite, ResolveGroundZIndex(terrain));
+            auto tileObj = std::make_shared<Util::GameObject>(
+                sprite, ResolveGroundZIndex(terrain));
 
             tileObj->m_Transform.translation = {
                 std::round(startX + static_cast<float>(x) * m_TileSize),
                 std::round(startY - static_cast<float>(y) * m_TileSize),
             };
-
-            // const auto actualSize = sprite->GetSize();
-            // if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
-            //     tileObj->m_Transform.scale = {
-            //         m_TileSize / actualSize.x,
-            //         m_TileSize / actualSize.y,
-            //     };
-            // }
-
-            const float logicalCoreSize = 32.0F;
-
             tileObj->m_Transform.scale = {
                 (m_TileSize / logicalCoreSize + 0.033F),
                 (m_TileSize / logicalCoreSize + 0.033F),
@@ -426,7 +481,31 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
         }
     }
 
-    // 物件圖層直接根據 object type 決定提示圖示，不再依賴整張舊字元地圖。
+    for (const auto& pool : level.pools) {
+        for (const auto& tile : pool.tiles) {
+            const std::string frameName =
+                ResolvePoolFrameName(tile.row, tile.col, pool);
+            if (frameName.empty() || !m_Atlas->HasFrame(frameName)) {
+                continue;
+            }
+
+            auto sprite = std::make_shared<AtlasSprite>(m_Atlas, frameName);
+            auto tileObj = std::make_shared<Util::GameObject>(
+                sprite, ResolvePoolZIndex(pool.state));
+
+            tileObj->m_Transform.translation = {
+                std::round(startX + static_cast<float>(tile.col) * m_TileSize),
+                std::round(startY - static_cast<float>(tile.row) * m_TileSize),
+            };
+            tileObj->m_Transform.scale = {
+                (m_TileSize / logicalCoreSize + 0.033F),
+                (m_TileSize / logicalCoreSize + 0.033F),
+            };
+
+            root->AddChild(tileObj);
+        }
+    }
+
     for (const auto& object : level.objects) {
         const std::string frameName = ResolveObjectFrameName(object.type);
         if (frameName.empty() || !m_Atlas->HasFrame(frameName)) {
@@ -435,30 +514,17 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
 
         auto sprite = std::make_shared<AtlasSprite>(m_Atlas, frameName);
         auto tileObj =
-            std::make_shared<Util::GameObject>(sprite, ResolveObjectZIndex(object.type));
+            std::make_shared<Util::GameObject>(sprite,
+                                               ResolveObjectZIndex(object.type));
 
         tileObj->m_Transform.translation = {
             startX + static_cast<float>(object.coord.col) * m_TileSize,
             startY - static_cast<float>(object.coord.row) * m_TileSize,
         };
-
-        // 把圖片縮放到剛好符合一格 tile 的大小。
-        // const auto actualSize = sprite->GetSize();
-        // if (actualSize.x > 0.0F && actualSize.y > 0.0F) {
-        //     tileObj->m_Transform.scale = {
-        //         m_TileSize / actualSize.x,
-        //         m_TileSize / actualSize.y,
-        //     };
-        // }
-
-        const float logicalCoreSize = 32.0F;
-
         tileObj->m_Transform.scale = {
             m_TileSize / logicalCoreSize,
             m_TileSize / logicalCoreSize,
         };
-
-        // 出生點與門目前仍用縮小圖示作為暫時標記，之後可再換成真正物件。
         tileObj->m_Transform.scale *= 0.75F;
         root->AddChild(tileObj);
     }
