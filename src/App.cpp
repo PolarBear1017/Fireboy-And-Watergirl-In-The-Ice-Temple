@@ -239,6 +239,24 @@ void App::BuildGameScene() {
     }
     m_SceneRoot->AddChild(m_WaterGirl);
 
+    // 假設你的地圖高度是透過 level 檔案讀取的（例如第 20 行是地板）
+    // 我們把門放在地圖底部偏中間的位置測試
+    const int groundRow = 14; // 這是地板的那一列索引
+    const int fireCol = 9;
+    const int waterCol = 28;
+
+    // 使用 LevelManager 幫我們算座標，保證門會乖乖站在格子點上
+    glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(groundRow, fireCol);
+    glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(groundRow, waterCol);
+
+    // 🌟 建立門的同時直接把算好的座標丟進去
+    m_FireDoor = std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
+    m_WaterDoor = std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
+
+    // 最後別忘了加進場景樹
+    m_SceneRoot->AddChild(m_FireDoor);
+    m_SceneRoot->AddChild(m_WaterDoor);
+
     LOG_INFO("Entered Level 1.");
 }
 
@@ -277,5 +295,14 @@ void App::UpdateGameScene() {
     if (m_WaterGirl != nullptr) {
         m_WaterGirl->Update();
         m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
+    }
+
+    // 🌟 呼叫大門的邏輯：把玩家目前的精確座標餵給大門！
+    // (注意：如果你們 Character 沒有 GetPosition() 函數，請直接用 m_Transform.translation)
+    if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
+        m_FireDoor->Update(m_FireBoy->m_Transform.translation);
+    }
+    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
+        m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
     }
 }

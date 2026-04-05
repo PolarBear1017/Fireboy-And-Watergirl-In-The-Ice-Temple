@@ -473,8 +473,8 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
                 std::round(startY - static_cast<float>(y) * m_TileSize),
             };
             tileObj->m_Transform.scale = {
-                (m_TileSize / logicalCoreSize + 0.033F),
-                (m_TileSize / logicalCoreSize + 0.033F),
+                (m_TileSize / logicalCoreSize + 0.035F),
+                (m_TileSize / logicalCoreSize + 0.035F),
             };
 
             root->AddChild(tileObj);
