@@ -7,10 +7,6 @@ TerrainType CharToTerrainType(const char tileChar) {
     switch (tileChar) {
         case 'X':
             return TerrainType::Solid;
-        case 'L':
-            return TerrainType::Lava;
-        case 'W':
-            return TerrainType::Water;
         case 'I':
             return TerrainType::Ice;
         case 'S':
@@ -22,6 +18,27 @@ TerrainType CharToTerrainType(const char tileChar) {
         case 'B':
         default:
             return TerrainType::Empty;
+    }
+}
+
+bool IsPoolChar(const char tileChar) {
+    switch (tileChar) {
+        case 'L':
+        case 'W':
+            return true;
+        default:
+            return false;
+    }
+}
+
+PoolKind CharToPoolKind(const char tileChar) {
+    switch (tileChar) {
+        case 'L':
+            return PoolKind::Fire;
+        case 'W':
+            return PoolKind::Water;
+        default:
+            return PoolKind::Water;
     }
 }
 
@@ -80,6 +97,14 @@ LevelDefinition BuildLevelDefinitionFromChars(
         for (int col = 0; col < level.width; ++col) {
             const char tileChar = mapData[row][col];
             level.ground[row][col] = CharToTerrainType(tileChar);
+
+            if (IsPoolChar(tileChar)) {
+                level.pools.push_back(LevelPool{
+                    CharToPoolKind(tileChar),
+                    PoolState::Liquid,
+                    {GridCoord{row, col}}
+                });
+            }
 
             if (IsObjectChar(tileChar)) {
                 level.objects.push_back(LevelObject{

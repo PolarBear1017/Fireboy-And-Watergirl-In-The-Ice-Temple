@@ -7,8 +7,6 @@
 enum class TerrainType {
     Empty,
     Solid,
-    Lava,
-    Water,
     Ice,
     Snow
 };
@@ -16,6 +14,22 @@ enum class TerrainType {
 struct GridCoord {
     int row = 0;
     int col = 0;
+};
+
+enum class PoolKind {
+    Fire,
+    Water
+};
+
+enum class PoolState {
+    Liquid,
+    Frozen
+};
+
+struct LevelPool {
+    PoolKind kind;
+    PoolState state = PoolState::Liquid;
+    std::vector<GridCoord> tiles;
 };
 
 enum class LevelObjectType {
@@ -35,6 +49,7 @@ struct LevelDefinition {
     int height = 0;
     int tileSize = 32;
     std::vector<std::vector<TerrainType>> ground;
+    std::vector<LevelPool> pools;
     std::vector<LevelObject> objects;
 };
 

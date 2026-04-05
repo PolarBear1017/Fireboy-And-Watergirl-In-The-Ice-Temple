@@ -201,10 +201,10 @@ void App::BuildGameScene() {
             throw std::runtime_error("Level validation failed after JSON load.");
         }
     } catch (const std::exception &e) {
-        // 若 JSON 載入失敗，先退回舊版字元地圖，避免目前流程完全中斷。
+        // 若 JSON 載入失敗，退回程式內建的新版關卡資料，避免流程完全中斷。
         LOG_ERROR(std::string("Failed to load JSON level: ") + e.what());
-        if (!m_LevelManager->LoadLevel(Levels::kLevel1, m_SceneRoot)) {
-            LOG_ERROR("Failed to load fallback character level.");
+        if (!m_LevelManager->LoadLevel(Levels::BuildLevel1Definition(), m_SceneRoot)) {
+            LOG_ERROR("Failed to load fallback built-in level definition.");
         }
     }
 

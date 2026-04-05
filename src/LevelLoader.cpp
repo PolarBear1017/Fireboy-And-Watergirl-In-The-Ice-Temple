@@ -12,10 +12,6 @@ TerrainType ParseTerrain(const int value) {
             return TerrainType::Empty;
         case 1:
             return TerrainType::Solid;
-        case 2:
-            return TerrainType::Lava;
-        case 3:
-            return TerrainType::Water;
         case 4:
             return TerrainType::Ice;
         case 5:
@@ -23,6 +19,28 @@ TerrainType ParseTerrain(const int value) {
         default:
             throw std::runtime_error("LevelLoader: unsupported terrain value.");
     }
+}
+
+PoolKind ParsePoolKind(const std::string& value) {
+    if (value == "fire") {
+        return PoolKind::Fire;
+    }
+    if (value == "water") {
+        return PoolKind::Water;
+    }
+
+    throw std::runtime_error("LevelLoader: unsupported pool kind.");
+}
+
+PoolState ParsePoolState(const std::string& value) {
+    if (value == "liquid") {
+        return PoolState::Liquid;
+    }
+    if (value == "frozen") {
+        return PoolState::Frozen;
+    }
+
+    throw std::runtime_error("LevelLoader: unsupported pool state.");
 }
 
 LevelObjectType ParseObjectType(const std::string& value) {
@@ -71,8 +89,34 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
 
         for (int col = 0; col < level.width; ++col) {
             const int terrainValue = rowJson.at(static_cast<size_t>(col)).get<int>();
-            level.ground[static_cast<size_t>(row)].push_back(
-                ParseTerrain(terrainValue));
+            if (terrainValue == 2 || terrainValue == 3) {
+                level.ground[static_cast<size_t>(row)].push_back(TerrainType::Empty);
+                level.pools.push_back(LevelPool{
+                    terrainValue == 2 ? PoolKind::Fire : PoolKind::Water,
+                    PoolState::Liquid,
+                    {GridCoord{row, col}}
+                });
+                continue;
+            }
+
+            level.ground[static_cast<size_t>(row)].push_back(ParseTerrain(terrainValue));
+        }
+    }
+
+    if (root.contains("pools")) {
+        for (const auto& poolJson : root.at("pools")) {
+            LevelPool pool;
+            pool.kind = ParsePoolKind(poolJson.at("kind").get<std::string>());
+            pool.state = ParsePoolState(poolJson.value("state", "liquid"));
+
+            for (const auto& tileJson : poolJson.at("tiles")) {
+                pool.tiles.push_back(GridCoord{
+                    tileJson.at("row").get<int>(),
+                    tileJson.at("col").get<int>()
+                });
+            }
+
+            level.pools.push_back(pool);
         }
     }
 
