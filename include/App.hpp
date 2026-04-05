@@ -12,6 +12,7 @@
 #include "CollisionSystem.hpp"
 #include "LevelManager.hpp"
 #include "Character.hpp"
+#include "Door.hpp"
 
 class App {
 public:
@@ -63,6 +64,9 @@ private:
 
     std::shared_ptr<Character> m_FireBoy;
     std::shared_ptr<Character> m_WaterGirl;
+
+    std::shared_ptr<Door> m_FireDoor;
+    std::shared_ptr<Door> m_WaterDoor;
 };
 
 #endif

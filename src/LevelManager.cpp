@@ -418,8 +418,8 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
             const float logicalCoreSize = 32.0F;
 
             tileObj->m_Transform.scale = {
-                (m_TileSize / logicalCoreSize + 0.033F),
-                (m_TileSize / logicalCoreSize + 0.033F),
+                (m_TileSize / logicalCoreSize + 0.035F),
+                (m_TileSize / logicalCoreSize + 0.035F),
             };
 
             root->AddChild(tileObj);

@@ -38,7 +38,6 @@ private:
     void UpdateAnimation();
 
 public:
-    // Character(const std::shared_ptr<AtlasSprite>& sprite, Element element);
     Character(const std::shared_ptr<SpriteAtlas>& atlas, Element element);
 
     void Update();
