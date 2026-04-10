@@ -1,4 +1,5 @@
 #include "CollisionSystem.hpp"
+#include "Mechanics/Elevator.hpp"
 
 #include <cmath>
 
@@ -135,7 +136,59 @@ void CollisionSystem::ResolveCharacterTerrain(
         }
     }
 
-    character.SetPosition(position);
     character.SetVelocity(velocity);
     ResolveCharacterHazards(character, levelManager);
+}
+
+void CollisionSystem::ResolveCharacterMechanics(
+    Character& character,
+    const std::vector<std::shared_ptr<BaseMechanism>>& mechanisms) const {
+    
+    glm::vec2 pos = character.GetPosition();
+    glm::vec2 vel = character.GetVelocity();
+    glm::vec2 halfChar = character.GetCollisionSize() * 0.5f;
+
+    for (const auto& mech : mechanisms) {
+        auto colliderOpt = mech->GetCollider();
+        if (!colliderOpt) continue;
+
+        Collider collider = *colliderOpt;
+        glm::vec2 halfColl = collider.size * 0.5f;
+
+        // Check AABB overlap
+        if (std::abs(pos.x - collider.center.x) < (halfChar.x + halfColl.x) &&
+            std::abs(pos.y - collider.center.y) < (halfChar.y + halfColl.y)) {
+            
+            // Calculate overlap on both axes
+            float overlapX = (halfChar.x + halfColl.x) - std::abs(pos.x - collider.center.x);
+            float overlapY = (halfChar.y + halfColl.y) - std::abs(pos.y - collider.center.y);
+
+            // Resolve on the axis with smaller overlap (simplistic AABB resolution)
+            if (overlapX < overlapY) {
+                if (pos.x > collider.center.x) pos.x += overlapX;
+                else pos.x -= overlapX;
+                vel.x = 0;
+            } else {
+                if (pos.y > collider.center.y) {
+                    // Standing on top
+                    pos.y += overlapY;
+                    vel.y = 0;
+                    character.SetGroundState(GroundState::GROUND);
+                    
+                    // If it's an elevator, inherit delta movement
+                    auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
+                    if (elevator) {
+                        pos += elevator->GetDeltaPosition();
+                    }
+                } else {
+                    // Hitting head
+                    pos.y -= overlapY;
+                    vel.y = 0;
+                }
+            }
+        }
+    }
+
+    character.SetPosition(pos);
+    character.SetVelocity(vel);
 }

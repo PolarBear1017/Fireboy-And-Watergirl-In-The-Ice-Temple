@@ -1,0 +1,31 @@
+#include "Mechanics/Elevator.hpp"
+#include "Util/Time.hpp"
+
+
+Elevator::Elevator(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& startPos, const glm::vec2& endPos, const glm::vec2& size, int groupId)
+    : Receiver(groupId), m_StartPos(startPos), m_EndPos(endPos), m_Size(size) {
+    m_Sprite = std::make_shared<AtlasSprite>(atlas, "moving_platform_light_on0000"); 
+    SetDrawable(m_Sprite);
+    SetZIndex(0.0F); 
+    m_Transform.translation = startPos;
+    m_LastPosition = startPos;
+}
+
+void Elevator::SetActivated(bool active) {
+    m_IsOn = active;
+}
+
+void Elevator::Update() {
+    float dt = static_cast<float>(Util::Time::GetDeltaTimeMs()) / 1000.0f;
+    if (m_IsOn && m_Progress < 1.0f) {
+        m_Progress += dt / m_Speed;
+        if (m_Progress > 1.0f) m_Progress = 1.0f;
+    } else if (!m_IsOn && m_Progress > 0.0f) {
+        m_Progress -= dt / m_Speed;
+        if (m_Progress < 0.0f) m_Progress = 0.0f;
+    }
+    
+    // Smoothstep or linear interpolation
+    m_LastPosition = m_Transform.translation;
+    m_Transform.translation = m_StartPos + (m_EndPos - m_StartPos) * m_Progress;
+}

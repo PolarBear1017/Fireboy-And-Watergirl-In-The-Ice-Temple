@@ -56,6 +56,15 @@ LevelObjectType ParseObjectType(const std::string& value) {
     if (value == "water_door") {
         return LevelObjectType::WaterDoor;
     }
+    if (value == "button") {
+        return LevelObjectType::Button;
+    }
+    if (value == "lever") {
+        return LevelObjectType::Lever;
+    }
+    if (value == "elevator") {
+        return LevelObjectType::Elevator;
+    }
 
     throw std::runtime_error("LevelLoader: unsupported object type.");
 }
@@ -121,12 +130,31 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
     }
 
     // 解析 objects 圖層，建立出生點與門等重要物件。
-    for (const auto& objectJson : root.at("objects")) {
-        LevelObject object;
-        object.type = ParseObjectType(objectJson.at("type").get<std::string>());
-        object.coord.row = objectJson.at("row").get<int>();
-        object.coord.col = objectJson.at("col").get<int>();
-        level.objects.push_back(object);
+    if (root.contains("objects")) {
+        for (const auto& objectJson : root.at("objects")) {
+            LevelObject object;
+            object.type = ParseObjectType(objectJson.at("type").get<std::string>());
+            object.coord.row = objectJson.at("row").get<int>();
+            object.coord.col = objectJson.at("col").get<int>();
+            
+            if (objectJson.contains("group_id")) {
+                object.group_id = objectJson.at("group_id").get<int>();
+            }
+            if (objectJson.contains("length")) {
+                object.length = objectJson.at("length").get<int>();
+            }
+            if (objectJson.contains("is_horizontal")) {
+                object.is_horizontal = objectJson.at("is_horizontal").get<bool>();
+            }
+            if (objectJson.contains("target_row")) {
+                object.target_row = objectJson.at("target_row").get<int>();
+            }
+            if (objectJson.contains("target_col")) {
+                object.target_col = objectJson.at("target_col").get<int>();
+            }
+
+            level.objects.push_back(object);
+        }
     }
 
     return level;

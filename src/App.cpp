@@ -15,6 +15,11 @@
 #include "Util/Logger.hpp"
 #include "Util/Time.hpp"
 
+#include "Mechanics/Button.hpp"
+#include "Mechanics/Lever.hpp"
+#include "Mechanics/Elevator.hpp"
+#include <unordered_map>
+
 
 namespace {
 constexpr float kBackgroundZ = -10.0F;
@@ -28,10 +33,6 @@ std::string BuildReferencePath() {
 
 std::string BuildAtlasPath(const std::string &fileName) {
     return BuildReferencePath() + "/atlasses/" + fileName;
-}
-
-std::string BuildSpritePath(const std::string &fileName) {
-    return std::string(RESOURCE_DIR) + "/sprites/" + fileName;
 }
 
 std::string BuildImagePath(const std::string &fileName) {
@@ -82,6 +83,11 @@ void App::Start() {
     m_GameAtlas = std::make_shared<SpriteAtlas>(
         BuildAtlasPath("CharAssets.png"),
         BuildAtlasPath("CharAssets.json")
+    );
+
+    m_MechAtlas = std::make_shared<SpriteAtlas>(
+        BuildAtlasPath("MechAssets.png"),
+        BuildAtlasPath("MechAssets.json")
     );
 
     m_GroundAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("GroundAssets.png"),
@@ -204,12 +210,41 @@ void App::BuildGameScene() {
         }
     }
 
+    m_Activators.clear();
+    m_Receivers.clear();
+
     try {
         // 優先從 JSON 檔載入關卡，這是新版關卡格式的主要入口。
         const LevelDefinition level =
             LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
         if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
             throw std::runtime_error("Level validation failed after JSON load.");
+        }
+
+        // Initialize mechanics
+        for (const auto& obj : level.objects) {
+            glm::vec2 pos = m_LevelManager->TileToWorldPosition(obj.coord.row, obj.coord.col);
+            if (obj.type == LevelObjectType::Button) {
+                auto button = std::make_shared<Button>(m_MechAtlas, pos, obj.group_id);
+                m_Activators.push_back(button);
+                m_SceneRoot->AddChild(button);
+            } else if (obj.type == LevelObjectType::Lever) {
+                auto lever = std::make_shared<Lever>(m_MechAtlas, pos, obj.group_id);
+                m_Activators.push_back(lever);
+                m_SceneRoot->AddChild(lever);
+            } else if (obj.type == LevelObjectType::Elevator) {
+                glm::vec2 targetPos = m_LevelManager->TileToWorldPosition(obj.target_row, obj.target_col);
+                
+                // Calculate size based on tiles
+                float tileSize = static_cast<float>(level.tileSize);
+                glm::vec2 size = obj.is_horizontal 
+                    ? glm::vec2(tileSize * obj.length, tileSize * 0.5f)
+                    : glm::vec2(tileSize, tileSize * obj.length);
+
+                auto elevator = std::make_shared<Elevator>(m_MechAtlas, pos, targetPos, size, obj.group_id);
+                m_Receivers.push_back(elevator);
+                m_SceneRoot->AddChild(elevator);
+            }
         }
     } catch (const std::exception &e) {
         // 若 JSON 載入失敗，退回程式內建的新版關卡資料，避免流程完全中斷。
@@ -315,4 +350,30 @@ void App::UpdateGameScene() {
     if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
         m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
     }
+
+    // 呼叫機關邏輯 (Polymorphic Update)
+    glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
+    glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
+
+    std::unordered_map<int, bool> groupStates;
+    for (auto& activator : m_Activators) {
+        activator->Update(fPos, wPos);
+        if (activator->IsActivated()) {
+            groupStates[activator->GetGroupId()] = true;
+        }
+    }
+
+    for (auto& receiver : m_Receivers) {
+        bool isOn = groupStates[receiver->GetGroupId()];
+        receiver->SetActivated(isOn);
+        receiver->Update();
+    }
+
+    // 第二階段：處理機關碰撞 (動態平台)
+    std::vector<std::shared_ptr<BaseMechanism>> allMechs;
+    for (auto& a : m_Activators) allMechs.push_back(a);
+    for (auto& r : m_Receivers) allMechs.push_back(r);
+
+    if (m_FireBoy) m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
+    if (m_WaterGirl) m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
 }

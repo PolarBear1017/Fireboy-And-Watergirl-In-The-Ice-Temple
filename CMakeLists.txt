@@ -19,8 +19,6 @@ FetchContent_Declare(
     # Or alternatively if you want to use a specific git commit instead of a release:
     # GIT_REPOSITORY  https://github.com/ntut-open-source-club/practical-tools-for-simple-design.git
     # GIT_TAG         <git_tag>
-
-    SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/PTSD
 )
 
 FetchContent_MakeAvailable(ptsd)
@@ -39,16 +37,17 @@ set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 list(TRANSFORM SRC_FILES PREPEND ${SRC_DIR}/)
 list(TRANSFORM INCLUDE_FILES PREPEND ${INCLUDE_DIR}/)
 
-# 自動抓取 src 資料夾下所有的 .cpp 檔案
-file(GLOB ALL_SOURCES "src/*.cpp")
+# 自動抓取 src 資料夾下所有的 .cpp 檔案 (排除 main.cpp 以免重複)
+file(GLOB_RECURSE ALL_SOURCES "src/*.cpp")
+list(REMOVE_ITEM ALL_SOURCES "${CMAKE_SOURCE_DIR}/src/main.cpp")
+
 # 自動抓取 include 資料夾下所有的 .hpp 檔案
-file(GLOB ALL_HEADERS "include/*.hpp")
+file(GLOB_RECURSE ALL_HEADERS "include/*.hpp")
 
 add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp
     ${ALL_SOURCES}
     ${ALL_HEADERS}
-    ${SRC_FILES}    # 保留原本可能存在的其他變數
 )
 
 if(MSVC)
@@ -65,7 +64,7 @@ else()
 endif()
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${DEPENDENCY_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PTSD/include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${ptsd_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME}

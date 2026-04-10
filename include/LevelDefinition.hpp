@@ -36,12 +36,20 @@ enum class LevelObjectType {
     FireSpawn,
     WaterSpawn,
     FireDoor,
-    WaterDoor
+    WaterDoor,
+    Button,
+    Lever,
+    Elevator
 };
 
 struct LevelObject {
     LevelObjectType type;
     GridCoord coord;
+    int group_id = -1;
+    int length = 1;
+    bool is_horizontal = true;
+    int target_row = -1;
+    int target_col = -1;
 };
 
 struct LevelDefinition {

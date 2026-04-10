@@ -13,6 +13,8 @@
 #include "LevelManager.hpp"
 #include "Character.hpp"
 #include "Door.hpp"
+#include "Mechanics/Activator.hpp"
+#include "Mechanics/Receiver.hpp"
 
 class App {
 public:
@@ -67,6 +69,12 @@ private:
 
     std::shared_ptr<Door> m_FireDoor;
     std::shared_ptr<Door> m_WaterDoor;
+
+    std::shared_ptr<SpriteAtlas> m_MechAtlas;
+
+    // Mechanics
+    std::vector<std::shared_ptr<Activator>> m_Activators;
+    std::vector<std::shared_ptr<Receiver>> m_Receivers;
 };
 
 #endif
