@@ -507,6 +507,13 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
     }
 
     for (const auto& object : level.objects) {
+        if (object.type == LevelObjectType::FireSpawn ||
+            object.type == LevelObjectType::WaterSpawn ||
+            object.type == LevelObjectType::FireDoor ||
+            object.type == LevelObjectType::WaterDoor) {
+            continue;
+        }
+
         const std::string frameName = ResolveObjectFrameName(object.type);
         if (frameName.empty() || !m_Atlas->HasFrame(frameName)) {
             continue;

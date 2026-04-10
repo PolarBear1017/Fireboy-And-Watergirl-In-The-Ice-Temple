@@ -183,15 +183,26 @@ void App::BuildCoverScene() {
 void App::BuildGameScene() {
     ResetSceneRoot();
 
-    const auto background =
-        std::make_shared<Util::Image>(BuildImagePath("TempleHallIce.jpg"));
-    const auto backgroundScale = ComputeCoverScale(background->GetSize(),
-                                                   static_cast<float>(WINDOW_WIDTH),
-                                                   static_cast<float>(WINDOW_HEIGHT));
-    auto backgroundObject =
-        std::make_shared<Util::GameObject>(background, kBackgroundZ);
-    backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
-    m_SceneRoot->AddChild(backgroundObject);
+    const float bgTileSize = 512.0F;
+    const int cols = (WINDOW_WIDTH / static_cast<int>(bgTileSize)) + 2;
+    const int rows = (WINDOW_HEIGHT / static_cast<int>(bgTileSize)) + 2;
+
+    for (int i = 0; i < cols; ++i) {
+        for (int j = 0; j < rows; ++j) {
+            auto bgSprite =
+                std::make_shared<AtlasSprite>(m_TempleAtlas, "BackGround0000");
+            auto bgObject =
+                std::make_shared<Util::GameObject>(bgSprite, kBackgroundZ);
+
+            float x = -static_cast<float>(WINDOW_WIDTH) / 2.0F + (bgTileSize / 2.0F) +
+                      static_cast<float>(i) * bgTileSize;
+            float y = static_cast<float>(WINDOW_HEIGHT) / 2.0F - (bgTileSize / 2.0F) -
+                      static_cast<float>(j) * bgTileSize;
+
+            bgObject->m_Transform.translation = {x, y};
+            m_SceneRoot->AddChild(bgObject);
+        }
+    }
 
     try {
         // 優先從 JSON 檔載入關卡，這是新版關卡格式的主要入口。
@@ -230,32 +241,31 @@ void App::BuildGameScene() {
 
     // Build the Watergirl character
     m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
-    if (levelData.hasFireSpawn) {
+    if (levelData.hasWaterSpawn) {
         m_WaterGirl->m_Transform.translation =
             m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row,
-                                                levelData.waterSpawn.col);
+                                                 levelData.waterSpawn.col);
     } else {
         m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
     }
     m_SceneRoot->AddChild(m_WaterGirl);
 
-    // 假設你的地圖高度是透過 level 檔案讀取的（例如第 20 行是地板）
-    // 我們把門放在地圖底部偏中間的位置測試
-    const int groundRow = 14; // 這是地板的那一列索引
-    const int fireCol = 9;
-    const int waterCol = 28;
+    // 使用 LevelManager 的資料動態建立大門
+    if (levelData.hasFireDoor) {
+        glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(
+            levelData.fireDoor.row, levelData.fireDoor.col);
+        m_FireDoor =
+            std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
+        m_SceneRoot->AddChild(m_FireDoor);
+    }
 
-    // 使用 LevelManager 幫我們算座標，保證門會乖乖站在格子點上
-    glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(groundRow, fireCol);
-    glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(groundRow, waterCol);
-
-    // 🌟 建立門的同時直接把算好的座標丟進去
-    m_FireDoor = std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
-    m_WaterDoor = std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
-
-    // 最後別忘了加進場景樹
-    m_SceneRoot->AddChild(m_FireDoor);
-    m_SceneRoot->AddChild(m_WaterDoor);
+    if (levelData.hasWaterDoor) {
+        glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(
+            levelData.waterDoor.row, levelData.waterDoor.col);
+        m_WaterDoor =
+            std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
+        m_SceneRoot->AddChild(m_WaterDoor);
+    }
 
     LOG_INFO("Entered Level 1.");
 }
