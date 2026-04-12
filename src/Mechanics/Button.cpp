@@ -3,11 +3,20 @@
 
 Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId)
     : Activator(groupId), m_Position(pos) {
-    m_Sprite = std::make_shared<AtlasSprite>(atlas, "lightpusher_light_off0000"); 
-    SetDrawable(m_Sprite);
+    m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "pusher_block0000");
+    m_Sprite = std::make_shared<AtlasSprite>(atlas, "pusher_block_light0000"); 
+    
+    SetDrawable(m_BaseSprite);
+    
+    auto lightObj = std::make_shared<Util::GameObject>(m_Sprite, 0.1f);
+    lightObj->m_Transform.translation.y = 10.0f; // Start a bit higher
+    AddChild(lightObj);
+
     SetZIndex(1.0F); 
+    // Adjust button height so it sits on the ground (32px tile, pusher_block is 86px tall)
     m_Transform.translation = pos;
-    m_Transform.scale = {0.75f, 0.75f};
+    m_Transform.translation.y += 24.0f; // Lift it up so it sits on the tile bottom
+    m_Transform.scale = {0.6f, 0.6f}; // Scale down to fit 32px grid better
 }
 
 void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
@@ -19,6 +28,9 @@ void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) 
     
     if (currentlyPressed != m_IsPressed) {
         m_IsPressed = currentlyPressed;
-        m_Sprite->SetFrame(m_IsPressed ? "lightpusher_light_on0000" : "lightpusher_light_off0000");
+        // Sinking effect - deeper to show the base hollow state
+        for (auto& child : GetChildren()) {
+            child->m_Transform.translation.y = m_IsPressed ? 2.0f : 10.0f;
+        }
     }
 }

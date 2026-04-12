@@ -4,11 +4,18 @@
 
 Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId)
     : Activator(groupId), m_Position(pos) {
-    m_Sprite = std::make_shared<AtlasSprite>(atlas, "lever_stick_light_off0000"); 
-    SetDrawable(m_Sprite);
+    m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "lever_base0000");
+    m_Sprite = std::make_shared<AtlasSprite>(atlas, "lever_stick0000"); 
+    
+    SetDrawable(m_BaseSprite);
+    
+    auto stickObj = std::make_shared<Util::GameObject>(m_Sprite, 0.1f);
+    stickObj->m_Transform.translation.y -= 22.0f; // Offset to sit within the base
+    AddChild(stickObj);
+
     SetZIndex(1.0F); 
     m_Transform.translation = pos;
-    m_Transform.scale = {0.75f, 0.75f};
+    m_Transform.scale = {0.8f, 0.8f};
 }
 
 void Lever::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
@@ -22,7 +29,10 @@ void Lever::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
     
     if (fbDist < 40.0f || wgDist < 40.0f) {
         m_IsOn = !m_IsOn;
-        m_Sprite->SetFrame(m_IsOn ? "lever_stick_light_on0000" : "lever_stick_light_off0000");
+        // Flip the stick visually
+        for (auto& child : GetChildren()) {
+            child->m_Transform.scale.x = m_IsOn ? -1.0f : 1.0f;
+        }
         m_Cooldown = 0.5f; 
     }
 }

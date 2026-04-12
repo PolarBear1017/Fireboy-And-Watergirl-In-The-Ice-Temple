@@ -16,6 +16,7 @@ public:
 
 private:
     std::shared_ptr<AtlasSprite> m_Sprite;
+    std::shared_ptr<AtlasSprite> m_BaseSprite;
     glm::vec2 m_Position;
     bool m_IsPressed = false;
 };
