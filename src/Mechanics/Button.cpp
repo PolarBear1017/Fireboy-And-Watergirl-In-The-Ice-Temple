@@ -9,7 +9,9 @@ Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, 
     SetDrawable(m_BaseSprite);
     
     auto lightObj = std::make_shared<Util::GameObject>(m_Sprite, 0.1f);
-    lightObj->m_Transform.translation.y = 10.0f; // Start a bit higher
+    lightObj->m_Transform.translation = pos;
+    lightObj->m_Transform.translation.y += 24.0f + 2.0f; // Lowered to sit on top of base
+    lightObj->m_Transform.scale = {0.6f, 0.6f};
     AddChild(lightObj);
 
     SetZIndex(1.0F); 
@@ -30,7 +32,8 @@ void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) 
         m_IsPressed = currentlyPressed;
         // Sinking effect - deeper to show the base hollow state
         for (auto& child : GetChildren()) {
-            child->m_Transform.translation.y = m_IsPressed ? 2.0f : 10.0f;
+            // Apply absolute position logic here too
+            child->m_Transform.translation.y = m_Position.y + 24.0f + (m_IsPressed ? -2.0f : 2.0f);
         }
     }
 }

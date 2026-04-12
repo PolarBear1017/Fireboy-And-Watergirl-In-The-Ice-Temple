@@ -10,7 +10,9 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     SetDrawable(m_BaseSprite);
     
     auto stickObj = std::make_shared<Util::GameObject>(m_Sprite, 0.1f);
-    stickObj->m_Transform.translation.y -= 22.0f; // Offset to sit within the base
+    stickObj->m_Transform.translation = pos; // Manually apply parent position
+    stickObj->m_Transform.translation.y -= 10.0f; 
+    stickObj->m_Transform.scale = {0.6f, 0.6f}; // Manually apply parent scale
     AddChild(stickObj);
 
     SetZIndex(1.0F); 
