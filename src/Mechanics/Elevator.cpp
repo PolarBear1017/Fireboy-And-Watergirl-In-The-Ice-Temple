@@ -4,7 +4,7 @@
 
 Elevator::Elevator(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& startPos, const glm::vec2& endPos, const glm::vec2& size, int groupId)
     : Receiver(groupId), m_StartPos(startPos), m_EndPos(endPos), m_Size(size) {
-    m_Sprite = std::make_shared<AtlasSprite>(atlas, "moving_platform_light_on0000"); 
+    m_Sprite = std::make_shared<AtlasSprite>(atlas, "moving_platform_light_off0000"); 
     SetDrawable(m_Sprite);
     SetZIndex(0.0F); 
     m_Transform.translation = startPos;
@@ -23,6 +23,13 @@ void Elevator::Update() {
     } else if (!m_IsOn && m_Progress > 0.0f) {
         m_Progress -= dt / m_Speed;
         if (m_Progress < 0.0f) m_Progress = 0.0f;
+    }
+    
+    // Update light state
+    if (m_Progress > 0.0f || m_IsOn) {
+        m_Sprite->SetFrame("moving_platform_light_on0000");
+    } else {
+        m_Sprite->SetFrame("moving_platform_light_off0000");
     }
     
     // Smoothstep or linear interpolation
