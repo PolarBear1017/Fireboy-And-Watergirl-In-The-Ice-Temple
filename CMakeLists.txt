@@ -39,16 +39,14 @@ set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 list(TRANSFORM SRC_FILES PREPEND ${SRC_DIR}/)
 list(TRANSFORM INCLUDE_FILES PREPEND ${INCLUDE_DIR}/)
 
-# 自動抓取 src 資料夾下所有的 .cpp 檔案
-file(GLOB ALL_SOURCES "src/*.cpp")
-# 自動抓取 include 資料夾下所有的 .hpp 檔案
-file(GLOB ALL_HEADERS "include/*.hpp")
+# 1. 保留自動抓取 (這很方便，刪除檔案後只要 Reload CMake 就好)
+file(GLOB_RECURSE ALL_SOURCES "src/*.cpp")
+file(GLOB_RECURSE ALL_HEADERS "include/*.hpp")
 
-add_executable(${PROJECT_NAME} 
-    ${SRC_DIR}/main.cpp
-    ${ALL_SOURCES}
-    ${ALL_HEADERS}
-    ${SRC_FILES}    # 保留原本可能存在的其他變數
+# 2. 修改 add_executable，拿掉 SRC_FILES 和 INCLUDE_FILES
+add_executable(${PROJECT_NAME}
+        ${ALL_SOURCES}
+        ${ALL_HEADERS}
 )
 
 if(MSVC)

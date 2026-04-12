@@ -1,4 +1,4 @@
-#include "LevelLoader.hpp"
+#include "../include/Level/LevelLoader.hpp"
 
 #include <fstream>
 #include <stdexcept>
@@ -21,12 +21,12 @@ TerrainType ParseTerrain(const int value) {
     }
 }
 
-PoolKind ParsePoolKind(const std::string& value) {
+Element ParsePoolKind(const std::string& value) {
     if (value == "fire") {
-        return PoolKind::Fire;
+        return Element::FIRE;
     }
     if (value == "water") {
-        return PoolKind::Water;
+        return Element::WATER;
     }
 
     throw std::runtime_error("LevelLoader: unsupported pool kind.");
@@ -44,21 +44,26 @@ PoolState ParsePoolState(const std::string& value) {
 }
 
 LevelObjectType ParseObjectType(const std::string& value) {
-    if (value == "fire_spawn") {
-        return LevelObjectType::FireSpawn;
+    if (value == "fire_spawn" || value == "water_spawn") {
+        return LevelObjectType::Spawn;
     }
-    if (value == "water_spawn") {
-        return LevelObjectType::WaterSpawn;
+    if (value == "fire_door" || value == "water_door") {
+        return LevelObjectType::Door;
     }
-    if (value == "fire_door") {
-        return LevelObjectType::FireDoor;
+    throw std::runtime_error("LevelLoader: unsupported object type: " + value);
+}
+
+Element ParseElement(const std::string& value) {
+    if (value.find("fire") != std::string::npos) {
+        return Element::FIRE;
     }
-    if (value == "water_door") {
-        return LevelObjectType::WaterDoor;
+    if (value.find("water") != std::string::npos) {
+        return Element::WATER;
     }
 
-    throw std::runtime_error("LevelLoader: unsupported object type.");
+    return Element::NEUTRAL; // 或者根據你的定義給預設值
 }
+
 } // namespace
 
 LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
@@ -82,7 +87,7 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
     const auto& groundJson = root.at("ground");
     level.ground.resize(static_cast<size_t>(level.height));
 
-    // 逐列解析地形資料，將數字代碼轉成程式內部使用的 TerrainType。
+    // 逐列解析地形資料，將數字代碼轉成程式內使用的 TerrainType。
     for (int row = 0; row < level.height; ++row) {
         const auto& rowJson = groundJson.at(static_cast<size_t>(row));
         level.ground[static_cast<size_t>(row)].reserve(static_cast<size_t>(level.width));
@@ -92,7 +97,7 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
             if (terrainValue == 2 || terrainValue == 3) {
                 level.ground[static_cast<size_t>(row)].push_back(TerrainType::Empty);
                 level.pools.push_back(LevelPool{
-                    terrainValue == 2 ? PoolKind::Fire : PoolKind::Water,
+                    terrainValue == 2 ? Element::FIRE : Element::WATER,
                     PoolState::Liquid,
                     {GridCoord{row, col}}
                 });
@@ -106,7 +111,7 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
     if (root.contains("pools")) {
         for (const auto& poolJson : root.at("pools")) {
             LevelPool pool;
-            pool.kind = ParsePoolKind(poolJson.at("kind").get<std::string>());
+            pool.element = ParsePoolKind(poolJson.at("kind").get<std::string>());
             pool.state = ParsePoolState(poolJson.value("state", "liquid"));
 
             for (const auto& tileJson : poolJson.at("tiles")) {
@@ -123,7 +128,9 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
     // 解析 objects 圖層，建立出生點與門等重要物件。
     for (const auto& objectJson : root.at("objects")) {
         LevelObject object;
-        object.type = ParseObjectType(objectJson.at("type").get<std::string>());
+        std::string typeStr = objectJson.at("type").get<std::string>();
+        object.type = ParseObjectType(typeStr);
+        object.element = ParseElement(typeStr);
         object.coord.row = objectJson.at("row").get<int>();
         object.coord.col = objectJson.at("col").get<int>();
         level.objects.push_back(object);

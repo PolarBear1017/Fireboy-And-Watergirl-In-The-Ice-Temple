@@ -3,7 +3,6 @@ set(SRC_FILES
     SpriteAtlas.cpp
     AtlasSprite.cpp
     LevelLoader.cpp
-    LevelParser.cpp
     LevelManager.cpp
 )
 
@@ -13,7 +12,6 @@ set(INCLUDE_FILES
     AtlasSprite.hpp
     LevelDefinition.hpp
     LevelLoader.hpp
-    LevelParser.hpp
     LevelManager.hpp
 )
 

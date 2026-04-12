@@ -72,22 +72,22 @@ inline LevelDefinition BuildLevel1Definition() {
 
     level.pools = {
         LevelPool{
-            PoolKind::Fire,
+            Element::FIRE,
             PoolState::Liquid,
             {{14, 15}, {14, 16}, {14, 17}},
         },
         LevelPool{
-            PoolKind::Water,
+            Element::WATER,
             PoolState::Liquid,
             {{14, 21}, {14, 22}, {14, 23}},
         },
     };
 
     level.objects = {
-        LevelObject{LevelObjectType::FireSpawn, {14, 3}},
-        LevelObject{LevelObjectType::FireDoor, {14, 30}},
-        LevelObject{LevelObjectType::WaterSpawn, {14, 35}},
-        LevelObject{LevelObjectType::WaterDoor, {15, 34}},
+        LevelObject{LevelObjectType::Spawn, Element::FIRE, {14, 3}},
+        LevelObject{LevelObjectType::Door, Element::FIRE, {14, 30}},
+        LevelObject{LevelObjectType::Spawn, Element::WATER, {14, 35}},
+        LevelObject{LevelObjectType::Door, Element::WATER, {15, 34}},
     };
 
     return level;

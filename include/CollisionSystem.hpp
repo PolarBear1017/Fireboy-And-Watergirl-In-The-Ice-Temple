@@ -2,7 +2,7 @@
 #define COLLISION_SYSTEM_HPP
 
 #include "Character.hpp"
-#include "LevelManager.hpp"
+#include "Level/LevelManager.hpp"
 
 class CollisionSystem {
 public:

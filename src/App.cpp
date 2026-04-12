@@ -8,8 +8,8 @@
 
 #include "config.hpp"
 
-#include "LevelLoader.hpp"
-#include "Levels.hpp"
+#include "../include/Level/LevelLoader.hpp"
+// #include "../include/Level/Levels.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
@@ -180,82 +180,133 @@ void App::BuildCoverScene() {
     LOG_INFO("Cover scene loaded. Press ENTER or SPACE to continue.");
 }
 
+// void App::BuildGameScene() {
+//     ResetSceneRoot();
+//
+//     const auto background =
+//         std::make_shared<Util::Image>(BuildImagePath("TempleHallIce.jpg"));
+//     const auto backgroundScale = ComputeCoverScale(background->GetSize(),
+//                                                    static_cast<float>(WINDOW_WIDTH),
+//                                                    static_cast<float>(WINDOW_HEIGHT));
+//     auto backgroundObject =
+//         std::make_shared<Util::GameObject>(background, kBackgroundZ);
+//     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
+//     m_SceneRoot->AddChild(backgroundObject);
+//
+//     try {
+//         // 優先從 JSON 檔載入關卡，這是新版關卡格式的主要入口。
+//         const LevelDefinition level =
+//             LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
+//         if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
+//             throw std::runtime_error("Level validation failed after JSON load.");
+//         }
+//     } catch (const std::exception &e) {
+//         // 若 JSON 載入失敗，退回程式內建的新版關卡資料，避免流程完全中斷。
+//         LOG_ERROR(std::string("Failed to load JSON level: ") + e.what());
+//         if (!m_LevelManager->LoadLevel(Levels::BuildLevel1Definition(), m_SceneRoot)) {
+//             LOG_ERROR("Failed to load fallback built-in level definition.");
+//         }
+//     }
+//
+//     const auto &levelData = m_LevelManager->GetLevelData();
+//     if (levelData.hasFireSpawn && levelData.hasWaterSpawn) {
+//         LOG_INFO("Level parsed. Fire spawn=(" +
+//                  std::to_string(levelData.fireSpawn.row) + "," +
+//                  std::to_string(levelData.fireSpawn.col) + "), Water spawn=(" +
+//                  std::to_string(levelData.waterSpawn.row) + "," +
+//                  std::to_string(levelData.waterSpawn.col) + ")");
+//     }
+//
+//     // Build the Fireboy character
+//     m_FireBoy = std::make_shared<Character>(m_GameAtlas, Element::FIRE);
+//     if (levelData.hasFireSpawn) {
+//         m_FireBoy->m_Transform.translation =
+//             m_LevelManager->TileToWorldPosition(levelData.fireSpawn.row,
+//                                                 levelData.fireSpawn.col);
+//     } else {
+//         m_FireBoy->m_Transform.translation = {0.0F, 0.0F};
+//     }
+//     m_SceneRoot->AddChild(m_FireBoy);
+//
+//     // Build the Watergirl character
+//     m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
+//     if (levelData.hasFireSpawn) {
+//         m_WaterGirl->m_Transform.translation =
+//             m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row,
+//                                                 levelData.waterSpawn.col);
+//     } else {
+//         m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
+//     }
+//     m_SceneRoot->AddChild(m_WaterGirl);
+//
+//     // 假設你的地圖高度是透過 level 檔案讀取的（例如第 20 行是地板）
+//     // 我們把門放在地圖底部偏中間的位置測試
+//     const int groundRow = 14; // 這是地板的那一列索引
+//     const int fireCol = 9;
+//     const int waterCol = 28;
+//
+//     // 使用 LevelManager 幫我們算座標，保證門會乖乖站在格子點上
+//     glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(groundRow, fireCol);
+//     glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(groundRow, waterCol);
+//
+//     // 🌟 建立門的同時直接把算好的座標丟進去
+//     m_FireDoor = std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
+//     m_WaterDoor = std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
+//
+//     // 最後別忘了加進場景樹
+//     m_SceneRoot->AddChild(m_FireDoor);
+//     m_SceneRoot->AddChild(m_WaterDoor);
+//
+//     LOG_INFO("Entered Level 1.");
+// }
+
 void App::BuildGameScene() {
     ResetSceneRoot();
 
-    const auto background =
-        std::make_shared<Util::Image>(BuildImagePath("TempleHallIce.jpg"));
+    // 1. 建立背景
+    const auto background = std::make_shared<Util::Image>(BuildImagePath("TempleHallIce.jpg"));
     const auto backgroundScale = ComputeCoverScale(background->GetSize(),
                                                    static_cast<float>(WINDOW_WIDTH),
                                                    static_cast<float>(WINDOW_HEIGHT));
-    auto backgroundObject =
-        std::make_shared<Util::GameObject>(background, kBackgroundZ);
+    auto backgroundObject = std::make_shared<Util::GameObject>(background, kBackgroundZ);
     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
     m_SceneRoot->AddChild(backgroundObject);
 
-    try {
-        // 優先從 JSON 檔載入關卡，這是新版關卡格式的主要入口。
-        const LevelDefinition level =
-            LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
-        if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
-            throw std::runtime_error("Level validation failed after JSON load.");
-        }
-    } catch (const std::exception &e) {
-        // 若 JSON 載入失敗，退回程式內建的新版關卡資料，避免流程完全中斷。
-        LOG_ERROR(std::string("Failed to load JSON level: ") + e.what());
-        if (!m_LevelManager->LoadLevel(Levels::BuildLevel1Definition(), m_SceneRoot)) {
-            LOG_ERROR("Failed to load fallback built-in level definition.");
-        }
+    // 2. 載入 JSON 關卡 (移除 try-catch，強制依賴 JSON)
+    // 這樣如果沒讀到，程式就會明確報錯，方便你除錯
+    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json")); // 記得換成你真正的檔名
+    if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
+        LOG_ERROR("Level validation failed after JSON load.");
+        return; // 直接中斷，不要硬跑
     }
 
     const auto &levelData = m_LevelManager->GetLevelData();
-    if (levelData.hasFireSpawn && levelData.hasWaterSpawn) {
-        LOG_INFO("Level parsed. Fire spawn=(" +
-                 std::to_string(levelData.fireSpawn.row) + "," +
-                 std::to_string(levelData.fireSpawn.col) + "), Water spawn=(" +
-                 std::to_string(levelData.waterSpawn.row) + "," +
-                 std::to_string(levelData.waterSpawn.col) + ")");
-    }
 
-    // Build the Fireboy character
+    // 3. 建立火娃與水娃 (動態讀取 JSON 算好的座標)
     m_FireBoy = std::make_shared<Character>(m_GameAtlas, Element::FIRE);
     if (levelData.hasFireSpawn) {
-        m_FireBoy->m_Transform.translation =
-            m_LevelManager->TileToWorldPosition(levelData.fireSpawn.row,
-                                                levelData.fireSpawn.col);
-    } else {
-        m_FireBoy->m_Transform.translation = {0.0F, 0.0F};
+        m_FireBoy->m_Transform.translation = m_LevelManager->TileToWorldPosition(levelData.fireSpawn.row, levelData.fireSpawn.col);
     }
     m_SceneRoot->AddChild(m_FireBoy);
 
-    // Build the Watergirl character
     m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
-    if (levelData.hasFireSpawn) {
-        m_WaterGirl->m_Transform.translation =
-            m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row,
-                                                levelData.waterSpawn.col);
-    } else {
-        m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
+    if (levelData.hasWaterSpawn) {
+        m_WaterGirl->m_Transform.translation = m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row, levelData.waterSpawn.col);
     }
     m_SceneRoot->AddChild(m_WaterGirl);
 
-    // 假設你的地圖高度是透過 level 檔案讀取的（例如第 20 行是地板）
-    // 我們把門放在地圖底部偏中間的位置測試
-    const int groundRow = 14; // 這是地板的那一列索引
-    const int fireCol = 9;
-    const int waterCol = 28;
+    // 4. 建立過關的門 (動態讀取 JSON 算好的座標，不再寫死 row = 14)
+    if (levelData.hasFireDoor) {
+        glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(levelData.fireDoor.row, levelData.fireDoor.col);
+        m_FireDoor = std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
+        m_SceneRoot->AddChild(m_FireDoor);
+    }
 
-    // 使用 LevelManager 幫我們算座標，保證門會乖乖站在格子點上
-    glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(groundRow, fireCol);
-    glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(groundRow, waterCol);
-
-    // 🌟 建立門的同時直接把算好的座標丟進去
-    m_FireDoor = std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
-    m_WaterDoor = std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
-
-    // 最後別忘了加進場景樹
-    m_SceneRoot->AddChild(m_FireDoor);
-    m_SceneRoot->AddChild(m_WaterDoor);
+    if (levelData.hasWaterDoor) {
+        glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(levelData.waterDoor.row, levelData.waterDoor.col);
+        m_WaterDoor = std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
+        m_SceneRoot->AddChild(m_WaterDoor);
+    }
 
     LOG_INFO("Entered Level 1.");
 }
