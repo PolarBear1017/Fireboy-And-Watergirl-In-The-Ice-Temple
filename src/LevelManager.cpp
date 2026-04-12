@@ -521,6 +521,17 @@ bool LevelManager::LoadLevel(const LevelDefinition& level,
     for (const auto& object : level.objects) {
         const std::string frameName = ResolveObjectFrameName(object.element);
         if (frameName.empty() || !m_Atlas->HasFrame(frameName)) continue;
+        if (object.type == LevelObjectType::FireSpawn ||
+            object.type == LevelObjectType::WaterSpawn ||
+            object.type == LevelObjectType::FireDoor ||
+            object.type == LevelObjectType::WaterDoor) {
+            continue;
+        }
+
+        const std::string frameName = ResolveObjectFrameName(object.type);
+        if (frameName.empty() || !m_Atlas->HasFrame(frameName)) {
+            continue;
+        }
 
         auto sprite = std::make_shared<AtlasSprite>(m_Atlas, frameName);
         auto tileObj = std::make_shared<Util::GameObject>(sprite, ResolveObjectZIndex(object.type));

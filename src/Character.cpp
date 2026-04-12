@@ -39,12 +39,6 @@ void Character::Update() {
 
     m_Transform.translation += m_Velocity;
 
-    if (m_Transform.translation.y <= -200.0f) {
-        m_Transform.translation.y = -200.0f;
-        m_Velocity.y = 0.0f;
-        m_GroundState = GroundState::GROUND;
-    }
-
     UpdateAnimation();
 
     m_HeadObject->m_Transform.scale = m_Transform.scale;

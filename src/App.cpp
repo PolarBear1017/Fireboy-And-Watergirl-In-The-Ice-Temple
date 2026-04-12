@@ -15,6 +15,11 @@
 #include "Util/Logger.hpp"
 #include "Util/Time.hpp"
 
+#include "Mechanics/Button.hpp"
+#include "Mechanics/Lever.hpp"
+#include "Mechanics/Elevator.hpp"
+#include <unordered_map>
+
 
 namespace {
 constexpr float kBackgroundZ = -10.0F;
@@ -28,10 +33,6 @@ std::string BuildReferencePath() {
 
 std::string BuildAtlasPath(const std::string &fileName) {
     return BuildReferencePath() + "/atlasses/" + fileName;
-}
-
-std::string BuildSpritePath(const std::string &fileName) {
-    return std::string(RESOURCE_DIR) + "/sprites/" + fileName;
 }
 
 std::string BuildImagePath(const std::string &fileName) {
@@ -82,6 +83,11 @@ void App::Start() {
     m_GameAtlas = std::make_shared<SpriteAtlas>(
         BuildAtlasPath("CharAssets.png"),
         BuildAtlasPath("CharAssets.json")
+    );
+
+    m_MechAtlas = std::make_shared<SpriteAtlas>(
+        BuildAtlasPath("MechAssets.png"),
+        BuildAtlasPath("MechAssets.json")
     );
 
     m_GroundAtlas = std::make_shared<SpriteAtlas>(BuildAtlasPath("GroundAssets.png"),
@@ -271,6 +277,29 @@ void App::BuildGameScene() {
     auto backgroundObject = std::make_shared<Util::GameObject>(background, kBackgroundZ);
     backgroundObject->m_Transform.scale = {backgroundScale, backgroundScale};
     m_SceneRoot->AddChild(backgroundObject);
+    const float bgTileSize = 512.0F;
+    const int cols = (WINDOW_WIDTH / static_cast<int>(bgTileSize)) + 2;
+    const int rows = (WINDOW_HEIGHT / static_cast<int>(bgTileSize)) + 2;
+
+    for (int i = 0; i < cols; ++i) {
+        for (int j = 0; j < rows; ++j) {
+            auto bgSprite =
+                std::make_shared<AtlasSprite>(m_TempleAtlas, "BackGround0000");
+            auto bgObject =
+                std::make_shared<Util::GameObject>(bgSprite, kBackgroundZ);
+
+            float x = -static_cast<float>(WINDOW_WIDTH) / 2.0F + (bgTileSize / 2.0F) +
+                      static_cast<float>(i) * bgTileSize;
+            float y = static_cast<float>(WINDOW_HEIGHT) / 2.0F - (bgTileSize / 2.0F) -
+                      static_cast<float>(j) * bgTileSize;
+
+            bgObject->m_Transform.translation = {x, y};
+            m_SceneRoot->AddChild(bgObject);
+        }
+    }
+
+    m_Activators.clear();
+    m_Receivers.clear();
 
     // 2. 載入 JSON 關卡 (移除 try-catch，強制依賴 JSON)
     // 這樣如果沒讀到，程式就會明確報錯，方便你除錯
@@ -289,9 +318,16 @@ void App::BuildGameScene() {
     }
     m_SceneRoot->AddChild(m_FireBoy);
 
+    // Build the Watergirl character
     m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
     if (levelData.hasWaterSpawn) {
         m_WaterGirl->m_Transform.translation = m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row, levelData.waterSpawn.col);
+    if (levelData.hasWaterSpawn) {
+        m_WaterGirl->m_Transform.translation =
+            m_LevelManager->TileToWorldPosition(levelData.waterSpawn.row,
+                                                 levelData.waterSpawn.col);
+    } else {
+        m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
     }
     m_SceneRoot->AddChild(m_WaterGirl);
 
@@ -305,6 +341,22 @@ void App::BuildGameScene() {
     if (levelData.hasWaterDoor) {
         glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(levelData.waterDoor.row, levelData.waterDoor.col);
         m_WaterDoor = std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
+        m_SceneRoot->AddChild(m_WaterDoor);
+    }
+    // 使用 LevelManager 的資料動態建立大門
+    if (levelData.hasFireDoor) {
+        glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(
+            levelData.fireDoor.row, levelData.fireDoor.col);
+        m_FireDoor =
+            std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
+        m_SceneRoot->AddChild(m_FireDoor);
+    }
+
+    if (levelData.hasWaterDoor) {
+        glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(
+            levelData.waterDoor.row, levelData.waterDoor.col);
+        m_WaterDoor =
+            std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
         m_SceneRoot->AddChild(m_WaterDoor);
     }
 
@@ -356,4 +408,30 @@ void App::UpdateGameScene() {
     if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
         m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
     }
+
+    // 呼叫機關邏輯 (Polymorphic Update)
+    glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
+    glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
+
+    std::unordered_map<int, bool> groupStates;
+    for (auto& activator : m_Activators) {
+        activator->Update(fPos, wPos);
+        if (activator->IsActivated()) {
+            groupStates[activator->GetGroupId()] = true;
+        }
+    }
+
+    for (auto& receiver : m_Receivers) {
+        bool isOn = groupStates[receiver->GetGroupId()];
+        receiver->SetActivated(isOn);
+        receiver->Update();
+    }
+
+    // 第二階段：處理機關碰撞 (動態平台)
+    std::vector<std::shared_ptr<BaseMechanism>> allMechs;
+    for (auto& a : m_Activators) allMechs.push_back(a);
+    for (auto& r : m_Receivers) allMechs.push_back(r);
+
+    if (m_FireBoy) m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
+    if (m_WaterGirl) m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
 }

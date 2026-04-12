@@ -60,10 +60,18 @@ Element ParseElement(const std::string& value) {
     if (value.find("water") != std::string::npos) {
         return Element::WATER;
     }
+    if (value == "button") {
+        return LevelObjectType::Button;
+    }
+    if (value == "lever") {
+        return LevelObjectType::Lever;
+    }
+    if (value == "elevator") {
+        return LevelObjectType::Elevator;
+    }
 
-    return Element::NEUTRAL; // 或者根據你的定義給預設值
+    throw std::runtime_error("LevelLoader: unsupported object type.");
 }
-
 } // namespace
 
 LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
@@ -87,7 +95,7 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
     const auto& groundJson = root.at("ground");
     level.ground.resize(static_cast<size_t>(level.height));
 
-    // 逐列解析地形資料，將數字代碼轉成程式內使用的 TerrainType。
+    // 逐列解析地形資料，將數字代碼轉成程式內部使用的 TerrainType。
     for (int row = 0; row < level.height; ++row) {
         const auto& rowJson = groundJson.at(static_cast<size_t>(row));
         level.ground[static_cast<size_t>(row)].reserve(static_cast<size_t>(level.width));
@@ -134,6 +142,31 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
         object.coord.row = objectJson.at("row").get<int>();
         object.coord.col = objectJson.at("col").get<int>();
         level.objects.push_back(object);
+    if (root.contains("objects")) {
+        for (const auto& objectJson : root.at("objects")) {
+            LevelObject object;
+            object.type = ParseObjectType(objectJson.at("type").get<std::string>());
+            object.coord.row = objectJson.at("row").get<int>();
+            object.coord.col = objectJson.at("col").get<int>();
+
+            if (objectJson.contains("group_id")) {
+                object.group_id = objectJson.at("group_id").get<int>();
+            }
+            if (objectJson.contains("length")) {
+                object.length = objectJson.at("length").get<int>();
+            }
+            if (objectJson.contains("is_horizontal")) {
+                object.is_horizontal = objectJson.at("is_horizontal").get<bool>();
+            }
+            if (objectJson.contains("target_row")) {
+                object.target_row = objectJson.at("target_row").get<int>();
+            }
+            if (objectJson.contains("target_col")) {
+                object.target_col = objectJson.at("target_col").get<int>();
+            }
+
+            level.objects.push_back(object);
+        }
     }
 
     return level;
