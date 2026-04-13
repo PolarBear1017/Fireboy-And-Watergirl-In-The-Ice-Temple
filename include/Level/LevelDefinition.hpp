@@ -31,11 +31,6 @@ struct LevelPool {
 enum class LevelObjectType {
     Spawn,
     Door,
-    Mechanics
-    FireSpawn,
-    WaterSpawn,
-    FireDoor,
-    WaterDoor,
     Button,
     Lever,
     Elevator

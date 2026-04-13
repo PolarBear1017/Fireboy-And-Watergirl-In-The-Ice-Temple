@@ -3,7 +3,6 @@
 
 #include "Character.hpp"
 #include "Level/LevelManager.hpp"
-#include "LevelManager.hpp"
 #include "Mechanics/BaseMechanism.hpp"
 
 class CollisionSystem {
