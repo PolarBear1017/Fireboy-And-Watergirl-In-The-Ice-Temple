@@ -10,14 +10,19 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     SetDrawable(m_BaseSprite);
     
     m_StickObject = std::make_shared<Util::GameObject>(m_Sprite, 0.5f);
-    m_StickObject->m_Transform.translation = pos; 
+    
+    SetZIndex(1.0F); 
+    m_Transform.translation = pos;
+    // Lever base is 110x110. At 0.8 scale it's 88x88.
+    // Center to bottom is 44. Tile center to floor is 16.
+    // Offset = 44 - 16 = 28.
+    m_Transform.translation.y += 28.0f;
+    m_Transform.scale = {0.8f, 0.8f};
+
+    m_StickObject->m_Transform.translation = m_Transform.translation; 
     m_StickObject->m_Transform.translation.y -= 5.0f; // Offset to pivot properly on base
     m_StickObject->m_Transform.scale = {0.8f, 0.8f};
     AddChild(m_StickObject);
-
-    SetZIndex(1.0F); 
-    m_Transform.translation = pos;
-    m_Transform.scale = {0.8f, 0.8f};
 
     // Initial state setup
     m_CurrentRotation = m_TargetRotation = -0.7f; // Approx -40 degrees (Left)
