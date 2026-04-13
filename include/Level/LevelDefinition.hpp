@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "../Element.hpp"
 
 enum class TerrainType {
     Empty,
@@ -16,27 +17,20 @@ struct GridCoord {
     int col = 0;
 };
 
-enum class PoolKind {
-    Fire,
-    Water
-};
-
 enum class PoolState {
     Liquid,
     Frozen
 };
 
 struct LevelPool {
-    PoolKind kind;
+    Element element;
     PoolState state = PoolState::Liquid;
     std::vector<GridCoord> tiles;
 };
 
 enum class LevelObjectType {
-    FireSpawn,
-    WaterSpawn,
-    FireDoor,
-    WaterDoor,
+    Spawn,
+    Door,
     Button,
     Lever,
     Elevator
@@ -44,6 +38,7 @@ enum class LevelObjectType {
 
 struct LevelObject {
     LevelObjectType type;
+    Element element;
     GridCoord coord;
     int group_id = -1;
     int length = 1;

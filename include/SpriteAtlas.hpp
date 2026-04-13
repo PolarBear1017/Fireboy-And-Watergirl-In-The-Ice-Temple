@@ -4,7 +4,6 @@
 #include "pch.hpp" // IWYU pragma: export
 
 #include <nlohmann/json.hpp>
-
 #include "Core/Texture.hpp"
 
 struct AtlasFrame {

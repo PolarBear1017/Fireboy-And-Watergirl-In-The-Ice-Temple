@@ -10,7 +10,7 @@
 #include "Util/Image.hpp"
 #include "Util/Renderer.hpp"
 #include "CollisionSystem.hpp"
-#include "LevelManager.hpp"
+#include "Level/LevelManager.hpp"
 #include "Character.hpp"
 #include "Door.hpp"
 #include "Mechanics/Activator.hpp"

@@ -1,9 +1,9 @@
 #ifndef LEVEL_MANAGER_HPP
 #define LEVEL_MANAGER_HPP
 
-#include "Element.hpp"
+#include "../Element.hpp"
 #include "LevelDefinition.hpp"
-#include "SpriteAtlas.hpp"
+#include "../SpriteAtlas.hpp"
 #include "Util/GameObject.hpp"
 #include <memory>
 #include <string>
@@ -43,7 +43,6 @@ public:
     [[nodiscard]] float GetTileSize() const { return m_TileSize; }
 
 private:
-    bool ValidateLevel(const std::vector<std::string>& mapData) const;
     bool ValidateLevelDefinition(const LevelDefinition& level) const;
     void RegisterTerrain(TerrainType terrain, int row, int col);
     void RegisterObject(const LevelObject& object);
@@ -51,14 +50,14 @@ private:
     [[nodiscard]] bool IsTileInPool(const LevelPool& pool, int row, int col) const;
     [[nodiscard]] bool HasSameTerrain(const LevelDefinition& level, int row, int col,
                                       TerrainType terrain) const;
-    [[nodiscard]] bool HasSamePoolVisual(int row, int col, PoolKind kind,
+    [[nodiscard]] bool HasSamePoolVisual(int row, int col, Element element,
                                          PoolState state) const;
     [[nodiscard]] std::string ResolveGroundFrameName(const LevelDefinition& level, int row,
                                                      int col, TerrainType terrain) const;
     [[nodiscard]] std::string ResolvePoolFrameName(int row, int col, const LevelPool& pool) const;
     [[nodiscard]] float ResolveGroundZIndex(TerrainType terrain) const;
     [[nodiscard]] float ResolvePoolZIndex(PoolState state) const;
-    [[nodiscard]] std::string ResolveObjectFrameName(LevelObjectType type) const;
+    [[nodiscard]] std::string ResolveObjectFrameName(Element e) const;
     [[nodiscard]] float ResolveObjectZIndex(LevelObjectType type) const;
 
     std::shared_ptr<SpriteAtlas> m_Atlas;
