@@ -348,6 +348,12 @@ void App::UpdateGameScene() {
     for (auto& a : m_Activators) allMechs.push_back(a);
     for (auto& r : m_Receivers) allMechs.push_back(r);
 
-    if (m_FireBoy) m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
-    if (m_WaterGirl) m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
+    if (m_FireBoy) {
+        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
+        m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
+    }
+    if (m_WaterGirl) {
+        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
+        m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
+    }
 }
