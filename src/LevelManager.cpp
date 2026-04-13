@@ -36,6 +36,11 @@ bool LevelManager::IsTileInPool(const LevelPool& pool, const int row, const int 
 
 bool LevelManager::IsSolidTile(const int row, const int col) const {
     if (!IsValidGroundCoord(row, col)) {
+        // Horizontal boundaries and top boundary are solid
+        if (col < 0 || col >= static_cast<int>(m_LevelDefinition.width) || row < 0) {
+            return true;
+        }
+        // Bottom boundary is not solid (it's a pit)
         return false;
     }
 
