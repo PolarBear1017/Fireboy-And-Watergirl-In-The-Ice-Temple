@@ -26,29 +26,29 @@
       "kind": "fire",
       "state": "liquid",
       "tiles": [
-        { "row": 14, "col": 15 },
-        { "row": 14, "col": 16 },
-        { "row": 14, "col": 17 }
+        { "row": 15, "col": 15 },
+        { "row": 15, "col": 16 },
+        { "row": 15, "col": 17 }
       ]
     },
     {
       "kind": "water",
       "state": "liquid",
       "tiles": [
-        { "row": 14, "col": 21 },
-        { "row": 14, "col": 22 },
-        { "row": 14, "col": 23 }
+        { "row": 15, "col": 21 },
+        { "row": 15, "col": 22 },
+        { "row": 15, "col": 23 }
       ]
     }
   ],
   "objects": [
-    { "type": "fire_spawn", "row": 14, "col": 3 },
-    { "type": "water_spawn", "row": 14, "col": 35 },
-    { "type": "fire_door", "row": 14, "col": 30 },
-    { "type": "water_door", "row": 14, "col": 34 },
-    { "type": "button", "row": 14, "col": 10, "group_id": 1 },
-    { "type": "elevator", "row": 14, "col": 12, "target_row": 10, "target_col": 12, "group_id": 1 },
-    { "type": "lever", "row": 14, "col": 26, "group_id": 2 },
-    { "type": "elevator", "row": 14, "col": 28, "target_row": 10, "target_col": 28, "group_id": 2 }
+    { "type": "fire_spawn", "row": 15, "col": 3 },
+    { "type": "water_spawn", "row": 15, "col": 35 },
+    { "type": "fire_door", "row": 15, "col": 30 },
+    { "type": "water_door", "row": 15, "col": 34 },
+    { "type": "button", "row": 15, "col": 10, "group_id": 1 },
+    { "type": "elevator", "row": 15, "col": 12, "target_row": 10, "target_col": 12, "group_id": 1 },
+    { "type": "lever", "row": 15, "col": 26, "group_id": 2 },
+    { "type": "elevator", "row": 15, "col": 28, "target_row": 10, "target_col": 28, "group_id": 2 }
   ]
 }

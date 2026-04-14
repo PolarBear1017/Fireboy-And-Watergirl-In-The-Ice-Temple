@@ -134,6 +134,7 @@ void CollisionSystem::ResolveCharacterTerrain(
         }
     }
 
+    character.SetPosition(position);
     character.SetVelocity(velocity);
     ResolveCharacterHazards(character, levelManager);
 }

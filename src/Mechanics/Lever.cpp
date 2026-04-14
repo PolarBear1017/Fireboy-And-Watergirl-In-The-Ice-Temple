@@ -9,32 +9,60 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     
     SetDrawable(m_BaseSprite);
     
-    auto stickObj = std::make_shared<Util::GameObject>(m_Sprite, 0.1f);
-    stickObj->m_Transform.translation = pos; // Manually apply parent position
-    stickObj->m_Transform.translation.y -= 10.0f; 
-    stickObj->m_Transform.scale = {0.6f, 0.6f}; // Manually apply parent scale
-    AddChild(stickObj);
-
+    m_StickObject = std::make_shared<Util::GameObject>(m_Sprite, 0.5f);
+    
     SetZIndex(1.0F); 
     m_Transform.translation = pos;
+    // Lever base is 110x110. At 0.8 scale it's 88x88.
+    // Center to bottom is 44. Tile center to floor is 16.
+    // Offset = 44 - 16 = 28.
+    m_Transform.translation.y += 28.0f;
     m_Transform.scale = {0.8f, 0.8f};
+
+    m_StickObject->m_Transform.translation = m_Transform.translation; 
+    m_StickObject->m_Transform.translation.y -= 5.0f; // Offset to pivot properly on base
+    m_StickObject->m_Transform.scale = {0.8f, 0.8f};
+    AddChild(m_StickObject);
+
+    // Initial state setup
+    m_CurrentRotation = m_TargetRotation = -0.7f; // Approx -40 degrees (Left)
 }
 
 void Lever::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
+    float dt = static_cast<float>(Util::Time::GetDeltaTimeMs()) / 1000.0f;
+
     if (m_Cooldown > 0.0f) {
-        m_Cooldown -= static_cast<float>(Util::Time::GetDeltaTimeMs()) / 1000.0f;
-        return;
+        m_Cooldown -= dt;
     }
 
-    float fbDist = glm::length(m_Position - fireboyPos);
-    float wgDist = glm::length(m_Position - watergirlPos);
-    
-    if (fbDist < 40.0f || wgDist < 40.0f) {
-        m_IsOn = !m_IsOn;
-        // Flip the stick visually
-        for (auto& child : GetChildren()) {
-            child->m_Transform.scale.x = m_IsOn ? -1.0f : 1.0f;
+    // Smooth rotation animation
+    m_TargetRotation = m_IsOn ? 0.7f : -0.7f;
+    float lerpSpeed = 15.0f; 
+    m_CurrentRotation += (m_TargetRotation - m_CurrentRotation) * lerpSpeed * dt;
+    m_StickObject->m_Transform.rotation = m_CurrentRotation;
+
+    if (m_Cooldown > 0.0f) return;
+
+    auto checkPush = [&](const glm::vec2& playerPos) {
+        float distX = std::abs(m_Position.x - playerPos.x);
+        float distY = std::abs(m_Position.y - playerPos.y);
+        
+        // Interaction box: +/- 35px horizontally, +/- 40px vertically
+        if (distX < 35.0f && distY < 40.0f) {
+            // Directional switch:
+            // If lever points Left (off) and player is on the Left, push to Right
+            if (!m_IsOn && playerPos.x < m_Position.x - 5.0f) {
+                m_IsOn = true;
+                m_Cooldown = 0.5f;
+            }
+            // If lever points Right (on) and player is on the Right, push to Left
+            else if (m_IsOn && playerPos.x > m_Position.x + 5.0f) {
+                m_IsOn = false;
+                m_Cooldown = 0.5f;
+            }
         }
-        m_Cooldown = 0.5f; 
-    }
+    };
+
+    checkPush(fireboyPos);
+    checkPush(watergirlPos);
 }
