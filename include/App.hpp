@@ -60,6 +60,7 @@ private:
 
     std::shared_ptr<SpriteAtlas> m_GameAtlas;
     std::shared_ptr<SpriteAtlas> m_GroundAtlas;
+    std::shared_ptr<SpriteAtlas> m_OverlayAtlas;
     std::shared_ptr<SpriteAtlas> m_TempleAtlas;
     std::shared_ptr<LevelManager> m_LevelManager;
     CollisionSystem m_CollisionSystem;
