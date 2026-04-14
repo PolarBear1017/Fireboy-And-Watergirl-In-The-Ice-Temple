@@ -25,11 +25,11 @@ Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, 
     // Button height is 86 * 0.6 = 51.6. Center to bottom is 25.8.
     // We want the button's bottom to be at the tile's bottom.
     // So current center should be at tileCenter.y - 16 + 25.8 = tileCenter.y + 9.8
-    m_Transform.translation.y += 9.8f;
+    m_Transform.translation.y += 0.0f;
 
     // Absolute position for pusher (unpressed)
     m_PusherObject->m_Transform.translation = m_Transform.translation;
-    m_PusherObject->m_Transform.translation.y += 12.0f;
+    m_PusherObject->m_Transform.translation.y += 0.0f;
 
     SetZIndex(1.0F);
 }
@@ -71,6 +71,6 @@ void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) 
         // Sinking animation: move the pusher object
         // m_Transform.translation.y + 12.0f is unpressed. 
         m_PusherObject->m_Transform.translation = m_Transform.translation;
-        m_PusherObject->m_Transform.translation.y += m_IsPressed ? 2.0f : 12.0f;
+        m_PusherObject->m_Transform.translation.y += m_IsPressed ? -10.0f : 0.0f;
     }
 }
