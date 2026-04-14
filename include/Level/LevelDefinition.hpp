@@ -6,26 +6,21 @@
 #include "../Element.hpp"
 
 enum class TerrainType {
-    Empty,
-    Solid,
-    Ice,
-    Snow
+    Empty = 0,
+    Block = 1,
+    SlopeBL = 10,
+    SlopeBR = 11,
+    SlopeTL = 12,
+    SlopeTR = 13
 };
 
-struct GridCoord {
-    int row = 0;
-    int col = 0;
-};
-
-enum class PoolState {
-    Liquid,
-    Frozen
-};
-
-struct LevelPool {
-    Element element;
-    PoolState state = PoolState::Liquid;
-    std::vector<GridCoord> tiles;
+enum class OverlayType {
+    None = 0,
+    Water = 1,
+    Fire = 2,
+    Toxic = 3,
+    Ice = 10,
+    Snow = 11
 };
 
 enum class LevelObjectType {
@@ -34,6 +29,17 @@ enum class LevelObjectType {
     Button,
     Lever,
     Elevator
+};
+
+struct GridCoord {
+    int row = 0;
+    int col = 0;
+};
+
+struct LevelOverlay {
+    Element element;
+    OverlayType type;
+    std::vector<GridCoord> tiles;
 };
 
 struct LevelObject {
@@ -51,8 +57,9 @@ struct LevelDefinition {
     int width = 0;
     int height = 0;
     int tileSize = 32;
-    std::vector<std::vector<TerrainType>> ground;
-    std::vector<LevelPool> pools;
+    std::vector<std::vector<TerrainType>> groundLayer;
+    std::vector<std::vector<OverlayType>> overlayLayer;
+    std::vector<LevelOverlay> overlays;
     std::vector<LevelObject> objects;
 };
 

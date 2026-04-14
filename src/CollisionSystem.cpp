@@ -6,7 +6,7 @@
 #include "config.hpp"
 
 namespace {
-TileCoord WorldToTile(const glm::vec2& world, const float tileSize) {
+GridCoord WorldToTile(const glm::vec2& world, const float tileSize) {
     return {
         static_cast<int>(std::floor(
             (static_cast<float>(WINDOW_HEIGHT) * 0.5F - world.y) / tileSize)),
@@ -21,7 +21,7 @@ void CollisionSystem::ResolveCharacterHazards(
     const glm::vec2 position = character.GetPosition();
     const glm::vec2 size = character.GetCollisionSize();
     const float tileSize = levelManager.GetTileSize();
-    const TileCoord footTile =
+    const GridCoord footTile =
         WorldToTile({position.x, position.y - size.y * 0.5F}, tileSize);
 
     const auto& levelData = levelManager.GetLevelData();
@@ -35,7 +35,7 @@ void CollisionSystem::ResolveCharacterHazards(
         return;
     }
 
-    const TileCoord spawn =
+    const GridCoord spawn =
         character.GetElement() == Element::FIRE ? levelData.fireSpawn
                                                 : levelData.waterSpawn;
     character.SetPosition(levelManager.TileToWorldPosition(spawn.row, spawn.col));
@@ -53,36 +53,34 @@ void CollisionSystem::ResolveCharacterTerrain(
     const float halfHeight = size.y * 0.5F;
 
     if (velocity.x > 0.0F) {
-        const TileCoord topRight =
+        const GridCoord topRight =
             WorldToTile({position.x + halfWidth, position.y + halfHeight - 1.0F},
                         tileSize);
-        const TileCoord bottomRight =
+        const GridCoord bottomRight =
             WorldToTile({position.x + halfWidth, position.y - halfHeight + 1.0F},
                         tileSize);
 
-        if (levelManager.IsSolidTile(topRight.row, topRight.col) ||
-            levelManager.IsSolidTile(bottomRight.row, bottomRight.col)) {
-            const TileCoord hitTile =
-                levelManager.IsSolidTile(topRight.row, topRight.col)
-                    ? topRight
-                    : bottomRight;
-            const glm::vec2 tileCenter =
-                levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+        if (levelManager.IsWalkable(topRight.row, topRight.col) ||
+            levelManager.IsWalkable(bottomRight.row, bottomRight.col)) {
+            const GridCoord hitTile =
+                levelManager.IsWalkable(topRight.row, topRight.col)
+                    ? topRight : bottomRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
             position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
             velocity.x = 0.0F;
         }
     } else if (velocity.x < 0.0F) {
-        const TileCoord topLeft =
+        const GridCoord topLeft =
             WorldToTile({position.x - halfWidth, position.y + halfHeight - 1.0F},
                         tileSize);
-        const TileCoord bottomLeft =
+        const GridCoord bottomLeft =
             WorldToTile({position.x - halfWidth, position.y - halfHeight + 1.0F},
                         tileSize);
 
-        if (levelManager.IsSolidTile(topLeft.row, topLeft.col) ||
-            levelManager.IsSolidTile(bottomLeft.row, bottomLeft.col)) {
-            const TileCoord hitTile =
-                levelManager.IsSolidTile(topLeft.row, topLeft.col)
+        if (levelManager.IsWalkable(topLeft.row, topLeft.col) ||
+            levelManager.IsWalkable(bottomLeft.row, bottomLeft.col)) {
+            const GridCoord hitTile =
+                levelManager.IsWalkable(topLeft.row, topLeft.col)
                     ? topLeft
                     : bottomLeft;
             const glm::vec2 tileCenter =
@@ -93,17 +91,17 @@ void CollisionSystem::ResolveCharacterTerrain(
     }
 
     if (velocity.y > 0.0F) {
-        const TileCoord topLeft =
+        const GridCoord topLeft =
             WorldToTile({position.x - halfWidth + 1.0F, position.y + halfHeight},
                         tileSize);
-        const TileCoord topRight =
+        const GridCoord topRight =
             WorldToTile({position.x + halfWidth - 1.0F, position.y + halfHeight},
                         tileSize);
 
-        if (levelManager.IsSolidTile(topLeft.row, topLeft.col) ||
-            levelManager.IsSolidTile(topRight.row, topRight.col)) {
-            const TileCoord hitTile =
-                levelManager.IsSolidTile(topLeft.row, topLeft.col)
+        if (levelManager.IsWalkable(topLeft.row, topLeft.col) ||
+            levelManager.IsWalkable(topRight.row, topRight.col)) {
+            const GridCoord hitTile =
+                levelManager.IsWalkable(topLeft.row, topLeft.col)
                     ? topLeft
                     : topRight;
             const glm::vec2 tileCenter =
@@ -115,17 +113,17 @@ void CollisionSystem::ResolveCharacterTerrain(
 
     character.SetGroundState(GroundState::AIR);
     if (velocity.y <= 0.0F) {
-        const TileCoord bottomLeft =
+        const GridCoord bottomLeft =
             WorldToTile({position.x - halfWidth + 1.0F, position.y - halfHeight},
                         tileSize);
-        const TileCoord bottomRight =
+        const GridCoord bottomRight =
             WorldToTile({position.x + halfWidth - 1.0F, position.y - halfHeight},
                         tileSize);
 
-        if (levelManager.IsSolidTile(bottomLeft.row, bottomLeft.col) ||
-            levelManager.IsSolidTile(bottomRight.row, bottomRight.col)) {
-            const TileCoord hitTile =
-                levelManager.IsSolidTile(bottomLeft.row, bottomLeft.col)
+        if (levelManager.IsWalkable(bottomLeft.row, bottomLeft.col) ||
+            levelManager.IsWalkable(bottomRight.row, bottomRight.col)) {
+            const GridCoord hitTile =
+                levelManager.IsWalkable(bottomLeft.row, bottomLeft.col)
                     ? bottomLeft
                     : bottomRight;
             const glm::vec2 tileCenter =
