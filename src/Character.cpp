@@ -43,8 +43,13 @@ void Character::Update() {
 
     UpdateAnimation();
 
-    m_HeadObject->m_Transform.scale = m_Transform.scale;
-    m_LegsObject->m_Transform.scale = m_Transform.scale;
+    if (!m_Visible) {
+        m_HeadObject->m_Transform.scale = {0.0f, 0.0f};
+        m_LegsObject->m_Transform.scale = {0.0f, 0.0f};
+    } else {
+        m_HeadObject->m_Transform.scale = m_Transform.scale;
+        m_LegsObject->m_Transform.scale = m_Transform.scale;
+    }
 
     glm::vec2 visualPos = m_Transform.translation + m_VisualOffset;
     m_LegsObject->m_Transform.translation = visualPos;
@@ -53,6 +58,8 @@ void Character::Update() {
 
 void Character::ProcessInput() {
     m_Velocity.x = 0.0f;
+    if (!m_InputEnabled) return;
+
     if (m_Element == Element::FIRE) {
         if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {m_Velocity.x -= m_Speed;}
         if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) {m_Velocity.x += m_Speed;}

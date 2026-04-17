@@ -88,6 +88,10 @@ private:
     // Mechanics
     std::vector<std::shared_ptr<Activator>> m_Activators;
     std::vector<std::shared_ptr<Receiver>> m_Receivers;
+    
+    // Level State
+    bool m_LevelFinished = false;
+    float m_LevelFinishTimer = 0.0f;
 };
 
 #endif
