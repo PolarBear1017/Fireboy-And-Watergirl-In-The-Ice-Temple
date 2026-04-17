@@ -21,6 +21,9 @@ private:
     GroundState m_GroundState = GroundState::AIR;
     Element m_Element;
 
+    bool m_InputEnabled = true;
+    bool m_Visible = true;
+
     std::shared_ptr<Util::GameObject> m_HeadObject;
     std::shared_ptr<Util::GameObject> m_LegsObject;
 
@@ -61,6 +64,10 @@ public:
     void SetPosition(const glm::vec2& position) { m_Transform.translation = position; }
     void SetVelocity(const glm::vec2& velocity) { m_Velocity = velocity; }
     void SetGroundState(const GroundState groundState) { m_GroundState = groundState; }
+
+    void SetInputEnabled(bool enabled) { m_InputEnabled = enabled; }
+    void SetVisible(bool visible) { m_Visible = visible; }
+    [[nodiscard]] bool IsVisible() const { return m_Visible; }
 
 };
 

@@ -353,6 +353,9 @@ void App::BuildGameScene() {
     m_SceneRoot->AddChild(m_WaterDoor);
   }
 
+  m_LevelFinished = false;
+  m_LevelFinishTimer = 0.0f;
+
   LOG_INFO("Entered Level 1.");
 }
 
@@ -406,6 +409,27 @@ void App::UpdateCoverScene() {
 }
 
 void App::UpdateGameScene() {
+  const auto elapsedSeconds = Util::Time::GetDeltaTime();
+
+  if (m_LevelFinished) {
+    m_LevelFinishTimer += elapsedSeconds;
+
+    if (m_FireBoy) {
+      m_FireBoy->SetInputEnabled(false);
+      m_FireBoy->SetVisible(false); // Simulate entering the door
+    }
+    if (m_WaterGirl) {
+      m_WaterGirl->SetInputEnabled(false);
+      m_WaterGirl->SetVisible(false); // Simulate entering the door
+    }
+
+    if (m_LevelFinishTimer >= 2.0f) {
+      LOG_INFO("Level Complete! Returning to Menu.");
+      SwitchScene(Scene::Cover);
+    }
+    // Still need to update doors and other things to let animations finish
+  }
+
   if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
     SwitchScene(Scene::Cover);
   }
@@ -462,5 +486,13 @@ void App::UpdateGameScene() {
   }
   if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
     m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
+  }
+
+  // Check for victory
+  if (!m_LevelFinished && m_FireDoor && m_WaterDoor) {
+    if (m_FireDoor->IsFullyOpen() && m_WaterDoor->IsFullyOpen()) {
+      LOG_INFO("Both players reached the doors!");
+      m_LevelFinished = true;
+    }
   }
 }
