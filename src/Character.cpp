@@ -12,6 +12,8 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
     const float zIndex = (element == Element::FIRE) ? 10.0F : 12.0F;
     SetZIndex(zIndex);
 
+    m_Transform.scale = {0.8f, 0.8f};
+
     m_HeadObject = std::make_shared<Util::GameObject>();
     m_LegsObject = std::make_shared<Util::GameObject>();
 
@@ -46,7 +48,7 @@ void Character::Update() {
 
     glm::vec2 visualPos = m_Transform.translation + m_VisualOffset;
     m_LegsObject->m_Transform.translation = visualPos;
-    m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 5.0f};
+    m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 4.0f};
 }
 
 void Character::ProcessInput() {

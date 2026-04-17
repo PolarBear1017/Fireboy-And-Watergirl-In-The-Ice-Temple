@@ -13,7 +13,7 @@
 class Character : public Util::GameObject{
 private:
     glm::vec2 m_Velocity = {0.0f, 0.0f};
-    glm::vec2 m_CollisionSize = {32.0f, 50.0f};
+    glm::vec2 m_CollisionSize = {25.6f, 40.0f};
 
     float m_Gravity = 0.5f;
     float m_JumpForce = 12.5f;
@@ -29,7 +29,7 @@ private:
 
     int m_AnimationFrame = 0;
     float m_AnimationTimer = 0.0f;
-    glm::vec2 m_VisualOffset = {0.0f, 5.0f};
+    glm::vec2 m_VisualOffset = {0.0f, 4.0f};
 
     // std::shared_ptr<AtlasSprite> m_Sprite;
 
