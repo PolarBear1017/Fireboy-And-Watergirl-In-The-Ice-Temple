@@ -13,6 +13,8 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
     const float zIndex = (element == Element::FIRE) ? 10.0F : 12.0F;
     SetZIndex(zIndex);
 
+    m_Transform.scale = {0.8f, 0.8f};
+
     m_HeadObject = std::make_shared<Util::GameObject>();
     m_LegsObject = std::make_shared<Util::GameObject>();
 
@@ -50,8 +52,13 @@ void Character::Update() {
 
     UpdateAnimation();
 
-    m_HeadObject->m_Transform.scale = m_Transform.scale;
-    m_LegsObject->m_Transform.scale = m_Transform.scale;
+    if (!m_Visible) {
+        m_HeadObject->m_Transform.scale = {0.0f, 0.0f};
+        m_LegsObject->m_Transform.scale = {0.0f, 0.0f};
+    } else {
+        m_HeadObject->m_Transform.scale = m_Transform.scale;
+        m_LegsObject->m_Transform.scale = m_Transform.scale;
+    }
 
     glm::vec2 visualPos = m_Transform.translation + m_VisualOffset;
     m_LegsObject->m_Transform.translation = visualPos;
@@ -66,6 +73,8 @@ void Character::Update() {
 
 void Character::ProcessInput() {
     m_Velocity.x = 0.0f;
+    if (!m_InputEnabled) return;
+
     if (m_Element == Element::FIRE) {
         if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {m_Velocity.x -= m_Speed;}
         if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) {m_Velocity.x += m_Speed;}

@@ -53,10 +53,22 @@ private:
 
     std::shared_ptr<SpriteAtlas> m_MenuAtlas;
     std::shared_ptr<SpriteAtlas> m_MenuBackgroundAtlas;
+    std::shared_ptr<SpriteAtlas> m_FontAtlas;
+    struct BeamData {
+        float speed;
+        float offset;
+        float baseScale;
+    };
     std::shared_ptr<AtlasSprite> m_StartButtonSprite;
     std::shared_ptr<Util::GameObject> m_StartButtonObject;
+    std::vector<std::shared_ptr<Util::GameObject>> m_Beams;
+    std::vector<BeamData> m_BeamDatas;
     std::shared_ptr<AtlasSprite> m_GamePlaceholderSprite;
     float m_StartButtonBaseScale = 1.0F;
+    float m_PlayTextBaseScale = 1.0F;
+    std::vector<std::shared_ptr<Util::GameObject>> m_PlayTextObjects;
+    std::vector<std::shared_ptr<Util::GameObject>> m_MoreGamesTextObjects;
+    std::vector<std::shared_ptr<Util::GameObject>> m_WalkthroughTextObjects;
 
     std::shared_ptr<SpriteAtlas> m_GameAtlas;
     std::shared_ptr<SpriteAtlas> m_GroundAtlas;
@@ -76,6 +88,10 @@ private:
     // Mechanics
     std::vector<std::shared_ptr<Activator>> m_Activators;
     std::vector<std::shared_ptr<Receiver>> m_Receivers;
+    
+    // Level State
+    bool m_LevelFinished = false;
+    float m_LevelFinishTimer = 0.0f;
 };
 
 #endif
