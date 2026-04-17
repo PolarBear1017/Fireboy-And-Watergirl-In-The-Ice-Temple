@@ -308,26 +308,7 @@ void App::UpdateGameScene() {
         SwitchScene(Scene::Cover);
     }
 
-    // --- 呼叫火娃的邏輯 ---
-    if (m_FireBoy != nullptr) {
-        m_FireBoy->Update();
-        m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
-    }
-    if (m_WaterGirl != nullptr) {
-        m_WaterGirl->Update();
-        m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
-    }
-
-    // 🌟 呼叫大門的邏輯：把玩家目前的精確座標餵給大門！
-    // (注意：如果你們 Character 沒有 GetPosition() 函數，請直接用 m_Transform.translation)
-    if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
-        m_FireDoor->Update(m_FireBoy->m_Transform.translation);
-    }
-    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
-        m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
-    }
-
-    // 呼叫機關邏輯 (Polymorphic Update)
+    // 1. 呼叫機關邏輯 (Polymorphic Update)
     glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
     glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
@@ -351,11 +332,30 @@ void App::UpdateGameScene() {
     for (auto& r : m_Receivers) allMechs.push_back(r);
 
     if (m_FireBoy) {
-        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
+        m_FireBoy->SetGroundState(GroundState::AIR);
         m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
     }
     if (m_WaterGirl) {
-        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
+        m_WaterGirl->SetGroundState(GroundState::AIR);
         m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
+    }
+
+    // --- 呼叫角色更新 ---
+    if (m_FireBoy != nullptr) {
+        m_FireBoy->Update();
+    }
+    if (m_WaterGirl != nullptr) {
+        m_WaterGirl->Update();
+    }
+
+    // 🌟 呼叫大門的邏輯：把玩家目前的精確座標餵給大門！
+    // (注意：如果你們 Character 沒有 GetPosition() 函數，請直接用 m_Transform.translation)
+    if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
+        m_FireDoor->Update(m_FireBoy->m_Transform.translation);
+    }
+    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
+        m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
     }
 }

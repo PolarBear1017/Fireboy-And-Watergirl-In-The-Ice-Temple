@@ -94,10 +94,10 @@ void Character::UpdateAnimation() {
         legsAction = "legs_idle";
         legsMaxFrames = 1;
 
-        if (m_Velocity.y > 0) {
+        if (m_Velocity.y > 0.1f && !IsGrounded()) {
             headAction = "head_rising";
             headMaxFrames = (m_Element == Element::FIRE) ? 5 : 11;
-        } else if (m_Velocity.y < 0) {
+        } else if (m_Velocity.y < -0.1f && !IsGrounded()) {
             headAction = "head_falling";
             headMaxFrames = (m_Element == Element::FIRE) ? 5 : 11;
         } else {

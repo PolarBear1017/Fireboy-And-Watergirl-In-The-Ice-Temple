@@ -154,34 +154,40 @@ void CollisionSystem::ResolveCharacterMechanics(
         Collider collider = *colliderOpt;
         glm::vec2 halfColl = collider.size * 0.5f;
 
-        // Check AABB overlap
+        // Check AABB overlap with a small downward tolerance (e.g., 5.0f) to catch platforms moving away
+        float downTolerance = 5.0f;
         if (std::abs(pos.x - collider.center.x) < (halfChar.x + halfColl.x) &&
-            std::abs(pos.y - collider.center.y) < (halfChar.y + halfColl.y)) {
+            (pos.y - collider.center.y) < (halfChar.y + halfColl.y + downTolerance) && // Top check with tolerance
+            (collider.center.y - pos.y) < (halfChar.y + halfColl.y)) { // Bottom check (head hit)
             
             // Calculate overlap on both axes
             float overlapX = (halfChar.x + halfColl.x) - std::abs(pos.x - collider.center.x);
-            float overlapY = (halfChar.y + halfColl.y) - std::abs(pos.y - collider.center.y);
+            // Real physical overlap (no tolerance) used for standard resolution logic if needed,
+            // but for "standing on top" we are more lenient.
+            float overlapY = (halfChar.y + halfColl.y) - (pos.y - collider.center.y);
 
-            // Resolve on the axis with smaller overlap (simplistic AABB resolution)
-            if (overlapX < overlapY) {
+            // Resolve on the axis with smaller overlap
+            if (overlapX < std::abs(overlapY)) {
                 if (pos.x > collider.center.x) pos.x += overlapX;
                 else pos.x -= overlapX;
                 vel.x = 0;
             } else {
-                if (pos.y > collider.center.y) {
-                    // Standing on top
-                    pos.y += overlapY;
+                if (pos.y > (collider.center.y - halfColl.y)) {
+                    // Standing on top (including the tolerance zone)
+                    pos.y = collider.center.y + halfColl.y + halfChar.y;
                     vel.y = 0;
-                    character.SetGroundState(GroundState::GROUND);
-                    
-                    // If it's an elevator, inherit delta movement
+
+                    // If it's an elevator, inherit delta movement and keep grounded on moving platform
                     auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
                     if (elevator) {
                         pos += elevator->GetDeltaPosition();
+                        character.SetGroundState(GroundState::MOVING_PLATFORM);
+                    } else {
+                        character.SetGroundState(GroundState::GROUND);
                     }
                 } else {
                     // Hitting head
-                    pos.y -= overlapY;
+                    pos.y = collider.center.y - halfColl.y - halfChar.y;
                     vel.y = 0;
                 }
             }
