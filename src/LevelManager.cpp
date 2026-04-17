@@ -20,6 +20,12 @@ bool LevelManager::IsValidCoord(const int row, const int col) const {
     return true;
 }
 
+// 在 LevelManager.cpp 中新增：
+TerrainType LevelManager::GetTerrain(const int row, const int col) const {
+    if (!IsValidCoord(row, col)) return TerrainType::Empty;
+    return m_LevelDefinition.terrainLayer[row][col];
+}
+
 bool LevelManager::IsWalkable(const int row, const int col) const {
     if (!IsValidCoord(row, col)) {return false;}
     return (m_LevelDefinition.terrainLayer[row][col] != TerrainType::Empty);
@@ -274,30 +280,31 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
         root->AddChild(tileObj);
     }
 
+    // 以下仍由 app.cpp 處理 可刪
     // --- 3. 處理物件 (出生點、門) ---
-    for (const auto& object : level.objects) {
-        if (object.type == LevelObjectType::Spawn ||
-            object.type == LevelObjectType::Door) {
-            continue;
-            }
-
-        // 2. 處理其他的機關 (如 Button, Lever, Elevator)
-        // 🚨 注意：目前 DetermineObjectFrameName 只吃 Element(火/水)
-        // 如果是電梯 (Element::NEUTRAL)，目前會回傳空字串並跳過，這在現階段是安全的防呆機制。
-        const std::string frameName = DetermineObjectFrameName(object.element);
-
-        if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) {
-            continue;
-        }
-
-        auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
-        auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineObjectZIndex(object.type));
-
-        // 確保座標對齊
-        glm::vec2 pos = TileToWorldPosition(object.coord.row, object.coord.col);
-        tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
-        tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize * 0.75F);
-        root->AddChild(tileObj);
-    }
+    // for (const auto& object : level.objects) {
+    //     if (object.type == LevelObjectType::Spawn ||
+    //         object.type == LevelObjectType::Door) {
+    //         continue;
+    //         }
+    //
+    //     // 2. 處理其他的機關 (如 Button, Lever, Elevator)
+    //     // 🚨 注意：目前 DetermineObjectFrameName 只吃 Element(火/水)
+    //     // 如果是電梯 (Element::NEUTRAL)，目前會回傳空字串並跳過，這在現階段是安全的防呆機制。
+    //     const std::string frameName = DetermineObjectFrameName(object.element);
+    //
+    //     if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) {
+    //         continue;
+    //     }
+    //
+    //     auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
+    //     auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineObjectZIndex(object.type));
+    //
+    //     // 確保座標對齊
+    //     glm::vec2 pos = TileToWorldPosition(object.coord.row, object.coord.col);
+    //     tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
+    //     tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize * 0.75F);
+    //     root->AddChild(tileObj);
+    // }
     return true;
 }

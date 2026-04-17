@@ -36,6 +36,7 @@ public:
     [[nodiscard]] const LevelParseResult& GetLevelData() const { return m_LevelData; }
     [[nodiscard]] float GetTileSize() const { return m_TileSize; }
 
+    TerrainType GetTerrain(const int row, const int col) const;
     [[nodiscard]] bool IsWalkable(const int row, const int col) const;
     [[nodiscard]] bool IsHazardousFor(Element element, int row, int col) const;
     [[nodiscard]] glm::vec2 TileToWorldPosition(int row, int col) const;

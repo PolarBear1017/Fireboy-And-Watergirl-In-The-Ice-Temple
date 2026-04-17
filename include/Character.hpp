@@ -29,7 +29,9 @@ private:
 
     int m_AnimationFrame = 0;
     float m_AnimationTimer = 0.0f;
-    glm::vec2 m_VisualOffset = {0.0f, 5.0f};
+    glm::vec2 m_VisualOffset = {0.0f, 40.0f};
+
+    // std::shared_ptr<Util::GameObject> m_DebugBox;
 
     // std::shared_ptr<AtlasSprite> m_Sprite;
 
