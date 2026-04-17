@@ -11,47 +11,29 @@ bool LevelManager::IsValidCoord(const int row, const int col) const {
     if (row < 0 || col < 0) {
         return false;
     }
-    // 只要檢查 groundLayer 的邊界，因為 overlayLayer 跟它一樣大
-    if (row >= static_cast<int>(m_LevelDefinition.groundLayer.size())) {
+    if (row >= static_cast<int>(m_LevelDefinition.terrainLayer.size())) {
         return false;
     }
-    if (col >= static_cast<int>(m_LevelDefinition.groundLayer[static_cast<size_t>(row)].size())) {
+    if (col >= static_cast<int>(m_LevelDefinition.terrainLayer[static_cast<size_t>(row)].size())) {
         return false;
     }
     return true;
 }
 
 bool LevelManager::IsWalkable(const int row, const int col) const {
-    if (!IsValidCoord(row, col)) {
-        return false; // 掉出地圖外不能走
-    }
-
-    // 1. 查地磚層：是實體方塊或斜坡就可以走
-    const TerrainType terrain = m_LevelDefinition.groundLayer[row][col];
-    if (terrain != TerrainType::Empty) {
-        return true;
-    }
-
-    // 2. 查疊加層：如果地磚是空的，但疊加層是「冰」，也可以走！
-    const OverlayType overlay = m_LevelDefinition.overlayLayer[row][col];
-    if (overlay == OverlayType::Ice) {
-        return true;
-    }
-
-    return false;
+    if (!IsValidCoord(row, col)) {return false;}
+    return (m_LevelDefinition.terrainLayer[row][col] != TerrainType::Empty);
 }
 
 bool LevelManager::IsHazardousFor(const Element element, const int row, const int col) const {
-    if (!IsValidCoord(row, col)) {return false;}
+    if (!IsValidCoord(row, col)) return false;
 
-    const OverlayType overlay = m_LevelDefinition.overlayLayer[row][col];
-
-    switch (overlay) {
-        case OverlayType::Toxic:
+    switch (m_LevelDefinition.terrainLayer[row][col]) {
+        case TerrainType::Toxic:
             return true;
-        case OverlayType::Fire:
+        case TerrainType::Fire:
             return element == Element::WATER;
-        case OverlayType::Water:
+        case TerrainType::Water:
             return element == Element::FIRE;
         default:
             return false;
@@ -78,12 +60,8 @@ bool LevelManager::ValidateLevelDefinition(const LevelDefinition& level) const {
         LOG_ERROR("LevelManager: tileSize must be positive.");
         return false;
     }
-    if (static_cast<int>(level.groundLayer.size()) != level.height) {
+    if (static_cast<int>(level.terrainLayer.size()) != level.height) {
         LOG_ERROR("LevelManager: ground row count does not match level height.");
-        return false;
-    }
-    if (static_cast<int>(level.overlayLayer.size()) != level.height) {
-        LOG_ERROR("LevelManager: overlay row count does not match level height.");
         return false;
     }
 
@@ -91,7 +69,7 @@ bool LevelManager::ValidateLevelDefinition(const LevelDefinition& level) const {
     int fireDoorCount = 0; int waterDoorCount = 0;
 
     for (int row = 0; row < level.height; ++row) {
-        if (static_cast<int>(level.groundLayer[static_cast<size_t>(row)].size()) !=
+        if (static_cast<int>(level.terrainLayer[static_cast<size_t>(row)].size()) !=
             level.width) {
             LOG_ERROR("LevelManager: ground column count does not match level width.");
             return false;
@@ -160,94 +138,74 @@ void LevelManager::RegisterObject(const LevelObject& object) {
     }
 }
 
-bool LevelManager::HasSameTerrain(const LevelDefinition& level, const int row, const int col, const TerrainType terrain) const {
+bool LevelManager::HasSameTerrain(const int row, const int col, const TerrainType terrain) const {
     if (!IsValidCoord(row, col)) { return false; }
-    return level.groundLayer[row][col] == terrain;
+    return m_LevelDefinition.terrainLayer[row][col] == terrain;
 }
 
-bool LevelManager::HasSameOverlay(const int row, const int col, const OverlayType type) const {
-    if (!IsValidCoord(row, col)) { return false; }
-    return m_LevelDefinition.overlayLayer[row][col] == type;
-}
 
-std::string LevelManager::DetermineGroundFrameName(
-    const LevelDefinition& level,
-    const int row,
-    const int col,
-    const TerrainType terrain) const {
+std::string LevelManager::DetermineGroundFrameName(const int row, const int col, const TerrainType terrain) const {
 
-    const bool hasLeft = HasSameTerrain(level, row, col - 1, terrain);
-    const bool hasRight = HasSameTerrain(level, row, col + 1, terrain);
+    const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
+    const bool hasRight = HasSameTerrain(row, col + 1, terrain);
 
     switch (terrain) {
         case TerrainType::Block:
-            if (!hasLeft && hasRight) return "SlopeBlockTR";
-            if (hasLeft && !hasRight) return "SlopeBlockTL";
+            // 遇到下面的覆蓋物時 應該用 HasSameTerrain() 判斷是否為覆蓋物邊緣（terrain 先轉成數字可能會比較好）
+        case TerrainType::Ice:
+        case TerrainType::Water:
+        case TerrainType::Fire:
+        case TerrainType::Toxic:
             return "GroundBlock";
 
-            // 🚧 未來你可以把斜坡 (SlopeBL, SlopeBR) 的圖塊名稱寫在這裡
-
-        case TerrainType::Empty:
-        default:
-            return "";
+        case TerrainType::SlopeBL: return "SlopeBlockBL";
+        case TerrainType::SlopeBR: return "SlopeBlockBR";
+        case TerrainType::SlopeTL: return "SlopeBlockTL";
+        case TerrainType::SlopeTR: return "SlopeBlockTR";
+        default: return "";
     }
 }
 
-std::string LevelManager::DetermineOverlayFrameName(const int row, const int col, const OverlayType type) const {
-    // 快速查表，看看左右兩邊是不是也是一樣的疊加物
-    const bool hasLeft = HasSameOverlay(row, col - 1, type);
-    const bool hasRight = HasSameOverlay(row, col + 1, type);
+std::string LevelManager::DetermineOverlayFrameName(const int row, const int col, const TerrainType terrain) const {
+    const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
+    const bool hasRight = HasSameTerrain(row, col + 1, terrain);
 
-    switch (type) {
-        case OverlayType::Ice:
+    switch (terrain) {
+        case TerrainType::Ice:
             if (!hasLeft && hasRight) return "IceBoxLeft0000";
             if (hasLeft && !hasRight) return "IceBoxRight0000";
             return "IceBox0000";
 
-        case OverlayType::Fire:
+        case TerrainType::Fire:
             if (!hasLeft && hasRight) return "FireBoxLeft0000";
             if (hasLeft && !hasRight) return "FireBoxRight0000";
             return "FireBox0000";
 
-        case OverlayType::Water:
+        case TerrainType::Water:
             if (!hasLeft && hasRight) return "WaterBoxLeft0000";
             if (hasLeft && !hasRight) return "WaterBoxRight0000";
             return "WaterBox0000";
 
-        case OverlayType::Toxic:
-            // 假設你有毒液圖塊，名稱請依據你的 Atlas 修改
-            if (!hasLeft && hasRight) return "ToxicBoxLeft0000";
-            if (hasLeft && !hasRight) return "ToxicBoxRight0000";
-            return "ToxicBox0000";
+        case TerrainType::Toxic:
+            if (!hasLeft && hasRight) return "GreenBoxLeft0000";
+            if (hasLeft && !hasRight) return "GreenBoxRight0000";
+            return "GreenBox0000";
 
-        case OverlayType::Snow:
-            return "SnowFlat0000"; // 雪地直接回傳單張鋪平的圖
-
-        case OverlayType::None:
         default:
             return "";
     }
 }
 
-float LevelManager::DetermineOverlayZIndex(const OverlayType type) const {
-    switch (type) {
-        case OverlayType::Ice:
-        case OverlayType::Snow:
-            return 1.0F;
-        default:
-            return 15.0F;
+float LevelManager::DetermineOverlayZIndex(const TerrainType type) const {
+    int terrainNum = static_cast<int>(type);
+    if (terrainNum >= 20 && terrainNum <= 30) {
+        return 1.0F;
     }
+    return 15.0F;
 }
 
 std::string LevelManager::DetermineObjectFrameName(const Element e) const {
-    switch (e) {
-        case Element::FIRE:
-            return "FireBox0000";
-        case Element::WATER:
-            return "WaterBox0000";
-        default:
-            return "";
-    }
+    return "";
 }
 
 float LevelManager::DetermineObjectZIndex(const LevelObjectType type) const {
@@ -278,10 +236,10 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
     // --- 1. 處理地形 ---
     for (int y = 0; y < level.height; ++y) {
         for (int x = 0; x < level.width; ++x) {
-            const TerrainType terrain = level.groundLayer[y][x];
+            const TerrainType terrain = level.terrainLayer[y][x];
             RegisterTerrain(terrain, y, x);
 
-            const std::string frameName = DetermineGroundFrameName(level, y, x, terrain);
+            const std::string frameName = DetermineGroundFrameName(y, x, terrain);
             if (frameName.empty() || !m_GroundAtlas->HasFrame(frameName)) continue;
 
             auto sprite = std::make_shared<AtlasSprite>(m_GroundAtlas, frameName);
@@ -296,41 +254,24 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
         }
     }
 
-    // --- 2. 處理水池 ---
-    // for (const auto& pool : level.pools) {
-    //     for (const auto& tile : pool.tiles) {
-    //         const std::string frameName = ResolvePoolFrameName(tile.row, tile.col, pool);
-    //         if (frameName.empty() || !m_Atlas->HasFrame(frameName)) continue;
-    //
-    //         auto sprite = std::make_shared<AtlasSprite>(m_Atlas, frameName);
-    //         auto tileObj = std::make_shared<Util::GameObject>(sprite, ResolvePoolZIndex(pool.state));
-    //
-    //         // 🌟 使用統一函式
-    //         glm::vec2 pos = TileToWorldPosition(tile.row, tile.col);
-    //         tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
-    //
-    //         tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.033F);
-    //         root->AddChild(tileObj);
-    //     }
-    // }
-
+    // --- 2. 處理水池/冰塊 (新版極簡寫法) ---
     for (const auto& overlayObj : level.overlays) {
-        for (const auto& tile : overlayObj.tiles) {
-            // 呼叫我們剛剛寫好的新函式！
-            const std::string frameName = DetermineOverlayFrameName(tile.row, tile.col, overlayObj.type);
+        const int r = overlayObj.coord.row;
+        const int c = overlayObj.coord.col;
 
-            if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) continue;
+        const TerrainType terrain = level.terrainLayer[r][c];
+        const std::string frameName = DetermineOverlayFrameName(r, c, terrain);
 
-            auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
-            auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineOverlayZIndex(overlayObj.type));
+        if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) continue;
 
-            glm::vec2 pos = TileToWorldPosition(tile.row, tile.col);
-            tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
+        auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
+        auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineOverlayZIndex(terrain));
 
-            // 這個 0.033F 是你原本微調接縫用的，我們保留
-            tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.033F);
-            root->AddChild(tileObj);
-        }
+        glm::vec2 pos = TileToWorldPosition(r, c);
+        tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
+
+        tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.033F);
+        root->AddChild(tileObj);
     }
 
     // --- 3. 處理物件 (出生點、門) ---
