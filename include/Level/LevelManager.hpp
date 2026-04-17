@@ -49,30 +49,16 @@ private:
     void RegisterObject(const LevelObject& object);
 
     // 判斷座標是否合理、左右是否為同圖
-    [[nodiscard]] bool IsValidCoord(const int row, const int col) const;
-    [[nodiscard]] bool HasSameTerrain(const LevelDefinition& level, int row, int col, TerrainType terrain) const;
-    [[nodiscard]] bool HasSameOverlay(const int row, const int col, const OverlayType type) const;
+    [[nodiscard]] bool IsValidCoord(int row, int col) const;
+    [[nodiscard]] bool HasSameTerrain(int row, int col, TerrainType terrain) const;
 
     // 取得各種 FrameName 與 ZIndex
-    [[nodiscard]] std::string DetermineGroundFrameName(const LevelDefinition& level, int row, int col, TerrainType terrain) const;
-    [[nodiscard]] std::string DetermineOverlayFrameName(const int row, const int col, const OverlayType type) const;
-    float DetermineOverlayZIndex(const OverlayType type) const;
+    [[nodiscard]] std::string DetermineGroundFrameName(int row, int col, TerrainType terrain) const;
+    [[nodiscard]] std::string DetermineOverlayFrameName(int row, int col, TerrainType terrain) const;
+    float DetermineOverlayZIndex(TerrainType type) const;
     [[nodiscard]] std::string DetermineObjectFrameName(Element e) const;
     [[nodiscard]] float DetermineObjectZIndex(LevelObjectType type) const;
 
-
-    // 直接丟掉
-    // bool LoadLevel(const std::vector<std::string>& mapData, const std::shared_ptr<Util::GameObject>& root);
-    // [[nodiscard]] const LevelPool* GetPoolAt(int row, int col) const;
-    // [[nodiscard]] bool IsTileInPool(const LevelPool& pool, int row, int col) const;
-    // [[nodiscard]] float ResolveGroundZIndex(TerrainType terrain) const;
-
-    // 替換
-    // [[nodiscard]] bool IsSolidTile(int row, int col) const;
-    // [[nodiscard]] bool IsValidGroundCoord(int row, int col) const;
-    // [[nodiscard]] bool HasSamePoolVisual(int row, int col, Element element, PoolState state) const;
-    // [[nodiscard]] std::string ResolvePoolFrameName(int row, int col, const LevelOverlay& overlay) const;
-    // [[nodiscard]] float ResolvePoolZIndex(PoolState state) const;
 };
 
 #endif

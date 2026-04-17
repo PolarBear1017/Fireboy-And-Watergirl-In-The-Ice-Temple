@@ -11,16 +11,14 @@ enum class TerrainType {
     SlopeBL = 10,
     SlopeBR = 11,
     SlopeTL = 12,
-    SlopeTR = 13
-};
-
-enum class OverlayType {
-    None = 0,
-    Water = 1,
-    Fire = 2,
-    Toxic = 3,
-    Ice = 10,
-    Snow = 11
+    SlopeTR = 13,
+    SnowSlopeBL = 20,
+    SnowSlopeBR = 21,
+    SnowBlock = 22,
+    Ice = 30,
+    Water = 31,
+    Fire = 32,
+    Toxic = 33,
 };
 
 enum class LevelObjectType {
@@ -38,8 +36,7 @@ struct GridCoord {
 
 struct LevelOverlay {
     Element element;
-    OverlayType type;
-    std::vector<GridCoord> tiles;
+    GridCoord coord;
 };
 
 struct LevelObject {
@@ -57,8 +54,7 @@ struct LevelDefinition {
     int width = 0;
     int height = 0;
     int tileSize = 32;
-    std::vector<std::vector<TerrainType>> groundLayer;
-    std::vector<std::vector<OverlayType>> overlayLayer;
+    std::vector<std::vector<TerrainType>> terrainLayer;
     std::vector<LevelOverlay> overlays;
     std::vector<LevelObject> objects;
 };
