@@ -51,7 +51,7 @@ void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) 
     // The button base top is at m_Transform.translation.y + something
     
     auto checkPressed = [&](const glm::vec2& charPos) {
-        float charBottom = charPos.y - 25.0f;
+        float charBottom = charPos.y;
         float charLeft = charPos.x - 16.0f;
         float charRight = charPos.x + 16.0f;
         

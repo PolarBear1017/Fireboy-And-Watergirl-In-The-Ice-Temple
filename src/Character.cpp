@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iomanip>
 #include <sstream>
+#include "config.hpp"
 // #include "Util/Logger.hpp"
 
 Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element element)
@@ -28,6 +29,14 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
 
     AddChild(m_HeadObject);
     AddChild(m_LegsObject);
+
+    // std::string debugPath = std::string(RESOURCE_DIR) + "/reference/fireboy_and_watergirl_3/images/debug_red.png";
+    // auto debugShape = std::make_shared<Util::Image>(debugPath);
+    // m_DebugBox = std::make_shared<Util::GameObject>(debugShape, 9.0F);
+    //
+    // glm::vec2 collSize = this->GetCollisionSize();
+    // m_DebugBox->m_Transform.scale = { collSize.x / 10.0F, collSize.y / 10.0F };
+    // this->AddChild(m_DebugBox); // 留一個 AddChild 就好
 }
 
 void Character::AddChildrenTo(const std::shared_ptr<Util::GameObject>& root) {
@@ -53,7 +62,13 @@ void Character::Update() {
 
     glm::vec2 visualPos = m_Transform.translation + m_VisualOffset;
     m_LegsObject->m_Transform.translation = visualPos;
-    m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 4.0f};
+    m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 5.0f};
+
+    // if (m_DebugBox) {
+    //     glm::vec2 pos = this->GetPosition();
+    //     glm::vec2 collSize = this->GetCollisionSize();
+    //     m_DebugBox->m_Transform.translation = {pos.x, pos.y + (collSize.y / 2.0F) + 20.0F};
+    // }
 }
 
 void Character::ProcessInput() {
