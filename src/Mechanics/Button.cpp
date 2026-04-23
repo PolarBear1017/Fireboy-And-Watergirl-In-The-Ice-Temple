@@ -1,76 +1,87 @@
 #include "Mechanics/Button.hpp"
+#include "Util/Time.hpp"
 
 
 Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId)
-    : Activator(groupId), m_Position(pos) {
+    : Activator(groupId) {
     
-    // Base: pusher_block0000 (110x86)
+    // 1. Base Structure
     m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "pusher_block0000");
     SetDrawable(m_BaseSprite);
     
-    // Pusher: pusher_block_light0000 (64x62)
+    // 2. Glow Overlay
     m_Sprite = std::make_shared<AtlasSprite>(atlas, "pusher_block_light0000");
-    m_PusherObject = std::make_shared<Util::GameObject>(m_Sprite, 0.1f);
-    
-    // Add pusher as child
+    m_PusherObject = std::make_shared<Util::GameObject>(m_Sprite, 1.1f); 
     AddChild(m_PusherObject);
+    m_PusherObject->SetVisible(false);
     
-    // Adjust scale and position
-    // Original game's buttons are roughly 2 tiles wide (64px)
-    // 110 * 0.6 = 66 px
+    // 3. Layout and Scale
     m_Transform.scale = {0.6f, 0.6f}; 
-    m_Transform.translation = pos;
-    // Align bottom of button with bottom of tile
-    // Tile size is 32, so center to bottom is 16.
-    // Button height is 86 * 0.6 = 51.6. Center to bottom is 25.8.
-    // We want the button's bottom to be at the tile's bottom.
-    // So current center should be at tileCenter.y - 16 + 25.8 = tileCenter.y + 9.8
-    m_Transform.translation.y += 0.0f;
-
-    // Absolute position for pusher (unpressed)
+    
+    // 修正漂浮問題：
+    // 根據您第二次的截圖，偏移 5.0f 時仍然有大約半格（約 16 像素）的懸空。
+    // 這表示 Sprite 圖片（pusher_block0000）的下半部其實包含了大量的透明空白。
+    // 為了將「視覺上的底邊」貼齊地面，我們需要將整個物件大幅度向下移。
+    m_InitialPosition = pos + glm::vec2(0.0f, 20.0f); 
+    m_Transform.translation = m_InitialPosition;
+    m_CurrentYOffset = 0.0f;
+    
     m_PusherObject->m_Transform.translation = m_Transform.translation;
-    m_PusherObject->m_Transform.translation.y += 0.0f;
-
-    SetZIndex(1.0F);
+    m_PusherObject->m_Transform.scale = m_Transform.scale;
+    
+    SetZIndex(1.0f); 
 }
 
 std::optional<Collider> Button::GetCollider() const {
-    // The button base acts as a solid platform
-    // Width: 110 * 0.6 = 66
-    // Height: Let's make the collision box roughly 20px high so it's a thin platform
+    glm::vec2 collPos = m_Transform.translation;
+    collPos.y += 10.0f; 
+    
     return Collider{
-        m_Transform.translation,
-        glm::vec2(66.0f, 20.0f)
+        collPos,
+        glm::vec2(66.0f, 15.0f)
     };
 }
 
 void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
-    // AABB trigger logic:
-    // Fireboy/Watergirl collision size is 32x50 (half is 16x25)
-    // Their feet are at pos.y - 25.
-    // The button base top is at m_Transform.translation.y + something
-    
+    // 1. Detection Logic
     auto checkPressed = [&](const glm::vec2& charPos) {
+        // charPos.y 已經是角色腳底的座標 (由 CollisionSystem 賦值)
         float charBottom = charPos.y;
         float charLeft = charPos.x - 16.0f;
         float charRight = charPos.x + 16.0f;
         
-        float btnTop = m_Transform.translation.y + 10.0f; // Roughly top of base
-        float btnLeft = m_Transform.translation.x - 33.0f;
-        float btnRight = m_Transform.translation.x + 33.0f;
+        float btnTop = m_InitialPosition.y + 15.0f; 
+        float btnLeft = m_InitialPosition.x - 33.0f;
+        float btnRight = m_InitialPosition.x + 33.0f;
         
-        // Trigger if feet are on top and within width
-        return (charBottom >= btnTop - 5.0f && charBottom <= btnTop + 15.0f) &&
+        // 增加向下容錯空間到 -40.0f，確保按鈕下沉時不會脫離判定
+        return (charBottom >= btnTop - 40.0f && charBottom <= btnTop + 10.0f) &&
                (charRight > btnLeft && charLeft < btnRight);
     };
 
-    bool currentlyPressed = checkPressed(fireboyPos) || checkPressed(watergirlPos);
+    m_IsPressed = checkPressed(fireboyPos) || checkPressed(watergirlPos);
+
+    // 2. Animation Logic (Sinking)
+    // 將下沉深度從 -24.0f 改為 -20.0f。
+    // 如果下沉過深（例如 -24），角色的腳底會低於周圍地磚的表面（形成一個坑），
+    // 導致左右移動時踢到旁邊地磚的側面牆壁（AABB 水平碰撞），從而卡住。
+    // -20.0f 可以確保按鈕被壓下時，其物理表面剛好切齊或微高於地面，讓角色能順利走出去。
+    float targetOffset = m_IsPressed ? -20.0f : 0.0f;
+    float lerpSpeed = 5.0f; // 降低下沉速度，避免按鈕下沉比重力快導致角色懸空抖動
+    float dt = Util::Time::GetDeltaTimeMs() / 1000.0f;
     
-    if (currentlyPressed != m_IsPressed) {
-        m_IsPressed = currentlyPressed;
-        // Sinking animation: move the pusher object
-        // m_Transform.translation.y + 12.0f is unpressed. 
-        m_PusherObject->m_Transform.translation = m_Transform.translation;
-        m_PusherObject->m_Transform.translation.y += m_IsPressed ? -10.0f : 0.0f;
+    m_CurrentYOffset += (targetOffset - m_CurrentYOffset) * std::min(1.0f, lerpSpeed * dt);
+    m_Transform.translation.y = m_InitialPosition.y + m_CurrentYOffset;
+
+    // 3. Visual Feedback
+    m_PusherObject->SetVisible(m_IsPressed);
+    m_PusherObject->m_Transform.translation = m_Transform.translation;
+    
+    if (m_CurrentYOffset < -5.0f) {
+        SetZIndex(-0.1f);
+        m_PusherObject->SetZIndex(-0.05f);
+    } else {
+        SetZIndex(1.0f);
+        m_PusherObject->SetZIndex(1.1f);
     }
 }

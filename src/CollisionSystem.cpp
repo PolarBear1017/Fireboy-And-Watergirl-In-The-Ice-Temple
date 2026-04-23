@@ -247,7 +247,11 @@ void CollisionSystem::ResolveCharacterMechanics(
             float overlapY = (halfChar.y + halfColl.y) - std::abs(charCenter.y - collider.center.y);
 
             // 判斷要推擠 X 軸還是 Y 軸 (取重疊比較小的那一邊)
-            if (overlapX < overlapY) {
+            // 🌟 修正邊緣卡住問題：如果角色的腳底 (pos.y) 非常接近平台頂部 (容錯 4.0f 像素)，
+            // 代表他其實是站在上面，這時就算走到邊緣 (overlapX 變得很小)，也必須強制做 Y 軸推擠，避免被橫向推開而卡住。
+            bool isStandingOnTop = (pos.y >= collider.center.y + halfColl.y - 4.0f);
+
+            if (!isStandingOnTop && overlapX < overlapY) {
                 // 水平推擠 (側面撞擊)
                 if (charCenter.x > collider.center.x) pos.x += overlapX;
                 else pos.x -= overlapX;

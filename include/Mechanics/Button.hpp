@@ -20,8 +20,9 @@ private:
     std::shared_ptr<Util::GameObject> m_PusherObject;
     std::shared_ptr<AtlasSprite> m_Sprite;
     std::shared_ptr<AtlasSprite> m_BaseSprite;
-    glm::vec2 m_Position;
     bool m_IsPressed = false;
+    float m_CurrentYOffset = 0.0f;
+    glm::vec2 m_InitialPosition;
 };
 
 #endif
