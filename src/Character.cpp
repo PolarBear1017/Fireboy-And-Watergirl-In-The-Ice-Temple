@@ -62,7 +62,7 @@ void Character::Update() {
 
     glm::vec2 visualPos = m_Transform.translation + m_VisualOffset;
     m_LegsObject->m_Transform.translation = visualPos;
-    m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 5.0f};
+    m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 4.0f};
 
     // if (m_DebugBox) {
     //     glm::vec2 pos = this->GetPosition();
