@@ -11,7 +11,8 @@ Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, 
     
     // 2. Glow Overlay
     m_Sprite = std::make_shared<AtlasSprite>(atlas, "pusher_block_light0000");
-    m_PusherObject = std::make_shared<Util::GameObject>(m_Sprite, 1.1f); 
+    // 設定發光層的 Z-Index 為 -0.05f，略高於底座 (-0.1f)，但依然低於地面 (0.0f)
+    m_PusherObject = std::make_shared<Util::GameObject>(m_Sprite, -0.05f); 
     AddChild(m_PusherObject);
     m_PusherObject->SetVisible(false);
     
@@ -29,7 +30,8 @@ Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, 
     m_PusherObject->m_Transform.translation = m_Transform.translation;
     m_PusherObject->m_Transform.scale = m_Transform.scale;
     
-    SetZIndex(1.0f); 
+    // 將整個按鈕底座設定為永遠在地磚 (0.0f) 後方
+    SetZIndex(-0.1f); 
 }
 
 std::optional<Collider> Button::GetCollider() const {
@@ -77,11 +79,6 @@ void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) 
     m_PusherObject->SetVisible(m_IsPressed);
     m_PusherObject->m_Transform.translation = m_Transform.translation;
     
-    if (m_CurrentYOffset < -5.0f) {
-        SetZIndex(-0.1f);
-        m_PusherObject->SetZIndex(-0.05f);
-    } else {
-        SetZIndex(1.0f);
-        m_PusherObject->SetZIndex(1.1f);
-    }
+    // Z-Index 已經在建構子設定為永遠在地面之後 (-0.1f)
+    // 利用地面作為天然遮罩，完美呈現「陷入」的視覺效果，不需再動態切換
 }
