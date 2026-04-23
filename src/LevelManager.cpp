@@ -20,7 +20,6 @@ bool LevelManager::IsValidCoord(const int row, const int col) const {
     return true;
 }
 
-// 在 LevelManager.cpp 中新增：
 TerrainType LevelManager::GetTerrain(const int row, const int col) const {
     if (!IsValidCoord(row, col)) return TerrainType::Empty;
     return m_LevelDefinition.terrainLayer[row][col];
@@ -46,7 +45,6 @@ bool LevelManager::IsHazardousFor(const Element element, const int row, const in
     }
 }
 
-// 網格座標轉成螢幕座標
 glm::vec2 LevelManager::TileToWorldPosition(const int row, const int col) const {
     const float startX = -(static_cast<float>(WINDOW_WIDTH) / 2.0F) + (m_TileSize / 2.0F);
     const float startY = (static_cast<float>(WINDOW_HEIGHT) / 2.0F) - (m_TileSize / 2.0F);
@@ -127,7 +125,7 @@ void LevelManager::RegisterObject(const LevelObject& object) {
                 m_LevelData.waterSpawn = coord;
                 m_LevelData.hasWaterSpawn = true;
             }
-            break; // 務必記得 break
+            break;
 
         case LevelObjectType::Door:
             if (object.element == Element::FIRE) {
@@ -137,7 +135,7 @@ void LevelManager::RegisterObject(const LevelObject& object) {
                 m_LevelData.waterDoor = coord;
                 m_LevelData.hasWaterDoor = true;
             }
-            break; // 務必記得 break
+            break;
 
         default:
             break;
