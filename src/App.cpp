@@ -416,14 +416,14 @@ void App::UpdateGameScene() {
 
     if (m_FireBoy) {
       m_FireBoy->SetInputEnabled(false);
-      m_FireBoy->SetVisible(false); // Simulate entering the door
+      // Removed m_FireBoy->SetVisible(false); because PlayEnterDoorAnimation handles visibility
     }
     if (m_WaterGirl) {
       m_WaterGirl->SetInputEnabled(false);
-      m_WaterGirl->SetVisible(false); // Simulate entering the door
+      // Removed m_WaterGirl->SetVisible(false); because PlayEnterDoorAnimation handles visibility
     }
 
-    if (m_LevelFinishTimer >= 2.0f) {
+    if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
       LOG_INFO("Level Complete! Returning to Menu.");
       SwitchScene(Scene::Cover);
     }
@@ -493,6 +493,8 @@ void App::UpdateGameScene() {
     if (m_FireDoor->IsFullyOpen() && m_WaterDoor->IsFullyOpen()) {
       LOG_INFO("Both players reached the doors!");
       m_LevelFinished = true;
+      if (m_FireBoy) m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
+      if (m_WaterGirl) m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
     }
   }
 }

@@ -34,6 +34,11 @@ private:
     float m_AnimationTimer = 0.0f;
     glm::vec2 m_VisualOffset = {0.0f, 32.0f};
 
+    std::shared_ptr<Util::GameObject> m_StairsObject;
+    std::shared_ptr<AtlasSprite> m_StairsSprite;
+    bool m_IsEnteringDoor = false;
+    float m_EnterDoorTimer = 0.0f;
+
     // std::shared_ptr<Util::GameObject> m_DebugBox;
 
     // std::shared_ptr<AtlasSprite> m_Sprite;
@@ -70,6 +75,8 @@ public:
     void SetInputEnabled(bool enabled) { m_InputEnabled = enabled; }
     void SetVisible(bool visible) { m_Visible = visible; }
     [[nodiscard]] bool IsVisible() const { return m_Visible; }
+
+    void PlayEnterDoorAnimation(const glm::vec2& doorPos);
 
 };
 

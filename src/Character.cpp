@@ -1,6 +1,7 @@
 #include "Character.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
+#include "Util/Time.hpp"
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -27,8 +28,15 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
     m_HeadObject->SetDrawable(m_HeadSprite);
     m_LegsObject->SetDrawable(m_LegsSprite);
 
+    m_StairsObject = std::make_shared<Util::GameObject>();
+    m_StairsObject->SetZIndex(zIndex + 2);
+    m_StairsSprite = std::make_shared<AtlasSprite>(atlas, prefix + "_stairs0000");
+    m_StairsObject->SetDrawable(m_StairsSprite);
+    m_StairsObject->m_Transform.scale = {0.0f, 0.0f}; // Hidden by default
+
     AddChild(m_HeadObject);
     AddChild(m_LegsObject);
+    AddChild(m_StairsObject);
 
     // std::string debugPath = std::string(RESOURCE_DIR) + "/reference/fireboy_and_watergirl_3/images/debug_red.png";
     // auto debugShape = std::make_shared<Util::Image>(debugPath);
@@ -42,9 +50,38 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
 void Character::AddChildrenTo(const std::shared_ptr<Util::GameObject>& root) {
     root->AddChild(m_LegsObject);
     root->AddChild(m_HeadObject);
+    root->AddChild(m_StairsObject);
 }
 
 void Character::Update() {
+    if (m_IsEnteringDoor) {
+        if (m_EnterDoorTimer > 0.0f) {
+            m_EnterDoorTimer -= Util::Time::GetDeltaTimeMs() / 1000.0f;
+            float progress = 1.0f - (m_EnterDoorTimer / 0.36f);
+            if (progress > 1.0f) progress = 1.0f;
+            float scale = 0.8f - (0.16f * progress); // Scale from 0.8 to ~0.64 (since base scale is 0.8)
+            m_StairsObject->m_Transform.scale = {scale, scale};
+        }
+        
+        // Update stairs animation (about 30 frames, play at ~25fps)
+        m_AnimationTimer += Util::Time::GetDeltaTimeMs() / 1000.0f;
+        if (m_AnimationTimer > 0.04f) {
+            m_AnimationFrame++;
+            m_AnimationTimer = 0.0f;
+        }
+        
+        int maxFrames = (m_Element == Element::FIRE) ? 31 : 31; // both have around 30 frames
+        int currentStairsFrame = std::min(m_AnimationFrame, maxFrames - 1); // Stop at last frame
+        
+        std::string prefix = (m_Element == Element::FIRE) ? "fire" : "water";
+        std::ostringstream ss_stairs;
+        ss_stairs << prefix << "_stairs" << std::setw(4) << std::setfill('0') << currentStairsFrame;
+        m_StairsSprite->SetFrame(ss_stairs.str());
+
+        m_StairsObject->m_Transform.translation = m_Transform.translation;
+        return; // Skip normal physics and animation
+    }
+
     ProcessInput();
     ApplyGravity();
 
@@ -55,6 +92,7 @@ void Character::Update() {
     if (!m_Visible) {
         m_HeadObject->m_Transform.scale = {0.0f, 0.0f};
         m_LegsObject->m_Transform.scale = {0.0f, 0.0f};
+        m_StairsObject->m_Transform.scale = {0.0f, 0.0f};
     } else {
         m_HeadObject->m_Transform.scale = m_Transform.scale;
         m_LegsObject->m_Transform.scale = m_Transform.scale;
@@ -169,4 +207,26 @@ void Character::UpdateAnimation() {
     } else if (m_Velocity.x < 0) {
         m_Transform.scale.x = -std::abs(m_Transform.scale.x);
     }
+}
+
+void Character::PlayEnterDoorAnimation(const glm::vec2& doorPos) {
+    m_IsEnteringDoor = true;
+    m_InputEnabled = false;
+    m_Velocity = {0.0f, 0.0f};
+    
+    // Hide standard body
+    m_HeadObject->SetVisible(false);
+    m_LegsObject->SetVisible(false);
+    m_Visible = false; // Prevents Update() from scaling them back up
+    
+    // Snap to door center
+    m_Transform.translation = {doorPos.x, doorPos.y + 4.0f};
+    
+    // Show stairs object
+    m_StairsObject->SetVisible(true);
+    m_StairsObject->m_Transform.scale = {0.8f, 0.8f}; // Start at base character scale
+    
+    m_AnimationFrame = 0;
+    m_AnimationTimer = 0.0f;
+    m_EnterDoorTimer = 0.36f;
 }
