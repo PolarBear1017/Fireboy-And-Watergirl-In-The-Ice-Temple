@@ -134,7 +134,7 @@ void CollisionSystem::ResolveCharacterTerrain(
         }
     } else if (velocity.x < 0.0F) {
         const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 1.0F}, tileSize);
-        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 1.0F}, tileSize);
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
 
         if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
             const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
