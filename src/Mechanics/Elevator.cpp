@@ -9,6 +9,11 @@ Elevator::Elevator(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& s
     SetZIndex(-1.0F);
     m_Transform.translation = startPos;
     m_LastPosition = startPos;
+
+    // Override the collision size to exactly match the sprite's visual dimensions.
+    // The visual size (138x26) is different from the default tiled size,
+    // which caused characters to fall off at the edges.
+    m_Size = m_Sprite->GetSize();
 }
 
 void Elevator::SetActivated(bool active) {
