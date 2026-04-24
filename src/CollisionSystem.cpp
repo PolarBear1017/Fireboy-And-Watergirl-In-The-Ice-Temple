@@ -279,3 +279,18 @@ void CollisionSystem::ResolveCharacterMechanics(
     character.SetPosition(pos);
     character.SetVelocity(vel);
 }
+
+bool CollisionSystem::CheckOverlap(const glm::vec2& center1, const glm::vec2& size1, 
+                                   const glm::vec2& center2, const glm::vec2& size2) const {
+    float left1 = center1.x - size1.x * 0.5f;
+    float right1 = center1.x + size1.x * 0.5f;
+    float bottom1 = center1.y - size1.y * 0.5f;
+    float top1 = center1.y + size1.y * 0.5f;
+
+    float left2 = center2.x - size2.x * 0.5f;
+    float right2 = center2.x + size2.x * 0.5f;
+    float bottom2 = center2.y - size2.y * 0.5f;
+    float top2 = center2.y + size2.y * 0.5f;
+
+    return !(left1 > right2 || right1 < left2 || bottom1 > top2 || top1 < bottom2);
+}
