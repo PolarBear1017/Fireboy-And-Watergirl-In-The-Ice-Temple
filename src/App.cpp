@@ -277,6 +277,7 @@ void App::BuildGameScene() {
 
   m_Activators.clear();
   m_Receivers.clear();
+  m_Diamonds.clear();
 
   // 2. 嚴格載入 JSON 關卡 (拔掉 try-catch 強制依賴 JSON)
   const LevelDefinition level =
@@ -312,6 +313,14 @@ void App::BuildGameScene() {
                                                  size, obj.group_id);
       m_Receivers.push_back(elevator);
       m_SceneRoot->AddChild(elevator);
+    } else if (obj.type == LevelObjectType::Diamond) {
+      std::string frameName = (obj.element == Element::FIRE) ? "diamond_fb0000" : "diamond_wg0000";
+      auto sprite = std::make_shared<AtlasSprite>(m_GameAtlas, frameName);
+      auto diamond = std::make_shared<Diamond>(sprite, 5.0f, obj.element);
+      diamond->m_Transform.translation = pos;
+      diamond->m_Transform.scale = glm::vec2(0.8f);
+      m_Diamonds.push_back(diamond);
+      m_SceneRoot->AddChild(diamond);
     }
   }
 
@@ -432,6 +441,38 @@ void App::UpdateGameScene() {
 
   if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
     SwitchScene(Scene::Cover);
+  }
+
+  for (auto& diamond : m_Diamonds) {
+    if (diamond->IsCollected()) continue;
+    glm::vec2 diamondPos = diamond->GetTransform().translation;
+    glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
+    
+    if (m_FireBoy) {
+        glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
+        glm::vec2 fbCenter = m_FireBoy->GetPosition();
+        fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
+        if (m_CollisionSystem.CheckOverlap(fbCenter, fbSize, diamondPos, diamondSize)) {
+            if (diamond->GetElement() == Element::FIRE || diamond->GetElement() == Element::NEUTRAL) {
+                diamond->Collect();
+                m_FireboyGems++;
+                LOG_INFO("Fireboy collected a diamond! Total: {}", m_FireboyGems);
+            }
+        }
+    }
+    
+    if (m_WaterGirl) {
+        glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
+        glm::vec2 wgCenter = m_WaterGirl->GetPosition();
+        wgCenter.y += wgSize.y * 0.5f;
+        if (m_CollisionSystem.CheckOverlap(wgCenter, wgSize, diamondPos, diamondSize)) {
+            if (diamond->GetElement() == Element::WATER || diamond->GetElement() == Element::NEUTRAL) {
+                diamond->Collect();
+                m_WatergirlGems++;
+                LOG_INFO("Watergirl collected a diamond! Total: {}", m_WatergirlGems);
+            }
+        }
+    }
   }
 
   // 1. 呼叫機關邏輯 (Polymorphic Update)

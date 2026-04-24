@@ -13,6 +13,9 @@ public:
     void ResolveCharacterMechanics(Character& character,
                                     const std::vector<std::shared_ptr<BaseMechanism>>& mechanisms) const;
 
+    bool CheckOverlap(const glm::vec2& center1, const glm::vec2& size1, 
+                      const glm::vec2& center2, const glm::vec2& size2) const;
+
 private:
     void ResolveCharacterHazards(Character& character,
                                  const LevelManager& levelManager) const;

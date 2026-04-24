@@ -15,6 +15,7 @@
 #include "Door.hpp"
 #include "Mechanics/Activator.hpp"
 #include "Mechanics/Receiver.hpp"
+#include "Mechanics/Diamond.hpp"
 
 class App {
 public:
@@ -88,6 +89,10 @@ private:
     // Mechanics
     std::vector<std::shared_ptr<Activator>> m_Activators;
     std::vector<std::shared_ptr<Receiver>> m_Receivers;
+    std::vector<std::shared_ptr<Diamond>> m_Diamonds;
+    
+    int m_FireboyGems = 0;
+    int m_WatergirlGems = 0;
     
     // Level State
     bool m_LevelFinished = false;
