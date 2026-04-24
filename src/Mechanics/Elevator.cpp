@@ -6,7 +6,7 @@ Elevator::Elevator(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& s
     : Receiver(groupId), m_StartPos(startPos), m_EndPos(endPos), m_Size(size) {
     m_Sprite = std::make_shared<AtlasSprite>(atlas, "moving_platform_light_off0000"); 
     SetDrawable(m_Sprite);
-    SetZIndex(0.0F); 
+    SetZIndex(-1.0F);
     m_Transform.translation = startPos;
     m_LastPosition = startPos;
 }
