@@ -154,6 +154,11 @@ void App::ResetSceneRoot() {
   m_MoreGamesTextObjects.clear();
   m_WalkthroughTextObjects.clear();
   m_GamePlaceholderSprite.reset();
+
+  m_Overlays.clear();
+  m_Activators.clear();
+  m_Receivers.clear();
+  m_Diamonds.clear();
 }
 
 void App::BuildCoverScene() {
@@ -251,121 +256,120 @@ void App::BuildCoverScene() {
 }
 
 void App::BuildGameScene() {
-  ResetSceneRoot();
+    ResetSceneRoot();
 
-  // 1. 建立背景 (拼貼磁磚寫法)
-  const float bgTileSize = 512.0F;
-  const int cols = (WINDOW_WIDTH / static_cast<int>(bgTileSize)) + 2;
-  const int rows = (WINDOW_HEIGHT / static_cast<int>(bgTileSize)) + 2;
+    // 1. 建立背景 (拼貼磁磚寫法)
+    const float bgTileSize = 512.0F;
+    const int cols = (WINDOW_WIDTH / static_cast<int>(bgTileSize)) + 2;
+    const int rows = (WINDOW_HEIGHT / static_cast<int>(bgTileSize)) + 2;
 
-  for (int i = 0; i < cols; ++i) {
-    for (int j = 0; j < rows; ++j) {
-      auto bgSprite =
-          std::make_shared<AtlasSprite>(m_TempleAtlas, "BackGround0000");
-      auto bgObject =
-          std::make_shared<Util::GameObject>(bgSprite, kBackgroundZ);
+    for (int i = 0; i < cols; ++i) {
+        for (int j = 0; j < rows; ++j) {
+            auto bgSprite = std::make_shared<AtlasSprite>(m_TempleAtlas, "BackGround0000");
+            auto bgObject =std::make_shared<Util::GameObject>(bgSprite, kBackgroundZ);
 
-      float x = -static_cast<float>(WINDOW_WIDTH) / 2.0F + (bgTileSize / 2.0F) +
-                static_cast<float>(i) * bgTileSize;
-      float y = static_cast<float>(WINDOW_HEIGHT) / 2.0F - (bgTileSize / 2.0F) -
-                static_cast<float>(j) * bgTileSize;
+            float x = -static_cast<float>(WINDOW_WIDTH) / 2.0F + (bgTileSize / 2.0F) +
+                  static_cast<float>(i) * bgTileSize;
+            float y = static_cast<float>(WINDOW_HEIGHT) / 2.0F - (bgTileSize / 2.0F) -
+                  static_cast<float>(j) * bgTileSize;
 
-      bgObject->m_Transform.translation = {x, y};
-      m_SceneRoot->AddChild(bgObject);
+            bgObject->m_Transform.translation = {x, y};
+            m_SceneRoot->AddChild(bgObject);
+        }
     }
-  }
 
-  m_Activators.clear();
-  m_Receivers.clear();
-  m_Diamonds.clear();
-
-  // 2. 嚴格載入 JSON 關卡 (拔掉 try-catch 強制依賴 JSON)
-  const LevelDefinition level =
-      LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
-  if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
-    LOG_ERROR("Level validation failed after JSON load.");
-    return;
-  }
-
-  // 3. 🌟 實體化機關 (讓電梯跟按鈕出現)
-  for (const auto &obj : level.objects) {
-    glm::vec2 pos =
-        m_LevelManager->TileToWorldPosition(obj.coord.row, obj.coord.col);
-    if (obj.type == LevelObjectType::Button) {
-      auto button = std::make_shared<Button>(m_MechAtlas, pos, obj.group_id);
-      m_Activators.push_back(button);
-      m_SceneRoot->AddChild(button);
-    } else if (obj.type == LevelObjectType::Lever) {
-      auto lever = std::make_shared<Lever>(m_MechAtlas, pos, obj.group_id);
-      m_Activators.push_back(lever);
-      m_SceneRoot->AddChild(lever);
-    } else if (obj.type == LevelObjectType::Elevator) {
-      glm::vec2 targetPos =
-          m_LevelManager->TileToWorldPosition(obj.target_row, obj.target_col);
-
-      // 計算電梯長度
-      float tileSize = static_cast<float>(level.tileSize);
-      glm::vec2 size = obj.is_horizontal
-                           ? glm::vec2(tileSize * obj.length, tileSize * 0.5f)
-                           : glm::vec2(tileSize, tileSize * obj.length);
-
-      auto elevator = std::make_shared<Elevator>(m_MechAtlas, pos, targetPos,
-                                                 size, obj.group_id);
-      m_Receivers.push_back(elevator);
-      m_SceneRoot->AddChild(elevator);
-    } else if (obj.type == LevelObjectType::Diamond) {
-      std::string frameName = (obj.element == Element::FIRE) ? "diamond_fb0000" : "diamond_wg0000";
-      auto sprite = std::make_shared<AtlasSprite>(m_GameAtlas, frameName);
-      auto diamond = std::make_shared<Diamond>(sprite, 5.0f, obj.element);
-      diamond->m_Transform.translation = pos;
-      diamond->m_Transform.scale = glm::vec2(0.8f);
-      m_Diamonds.push_back(diamond);
-      m_SceneRoot->AddChild(diamond);
+    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
+    if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
+        LOG_ERROR("Level validation failed after JSON load.");
+        return;
     }
-  }
 
-  const auto &levelData = m_LevelManager->GetLevelData();
+    for (const auto& overlayData : level.overlays) {
+        // 從資料算出世界座標
+        glm::vec2 startPos = m_LevelManager->TileToWorldPosition(overlayData.coord.row, overlayData.coord.col);
 
-  // 4. 建立火娃與水娃 (乾淨的動態讀取)
-  m_FireBoy = std::make_shared<Character>(m_GameAtlas, Element::FIRE);
-  if (levelData.hasFireSpawn) {
-    m_FireBoy->m_Transform.translation = m_LevelManager->TileToWorldPosition(
-        levelData.fireSpawn.row, levelData.fireSpawn.col);
-  } else {
-    m_FireBoy->m_Transform.translation = {0.0F, 0.0F};
-  }
-  m_SceneRoot->AddChild(m_FireBoy);
+        // 實體化 Overlay 物件
+        auto dynamicOverlay = std::make_shared<Overlay>(
+            m_OverlayAtlas,
+            overlayData.element,
+            startPos,
+            overlayData.width,
+            level.tileSize
+        );
 
-  m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
-  if (levelData.hasWaterSpawn) {
-    m_WaterGirl->m_Transform.translation = m_LevelManager->TileToWorldPosition(
-        levelData.waterSpawn.row, levelData.waterSpawn.col);
-  } else {
-    m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
-  }
-  m_SceneRoot->AddChild(m_WaterGirl);
+        m_Root.AddChild(dynamicOverlay);
+        m_Overlays.push_back(dynamicOverlay);
+    }
 
-  // 5. 建立過關大門 (動態計算座標)
-  if (levelData.hasFireDoor) {
-    glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(
-        levelData.fireDoor.row, levelData.fireDoor.col);
-    m_FireDoor =
-        std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
-    m_SceneRoot->AddChild(m_FireDoor);
-  }
+    // 3. 🌟 實體化機關 (讓電梯跟按鈕出現)
+    for (const auto &obj : level.objects) {
+        glm::vec2 pos = m_LevelManager->TileToWorldPosition(obj.coord.row, obj.coord.col);
+        if (obj.type == LevelObjectType::Button) {
+            auto button = std::make_shared<Button>(m_MechAtlas, pos, obj.group_id);
+            m_Activators.push_back(button);
+            m_SceneRoot->AddChild(button);
+        } else if (obj.type == LevelObjectType::Lever) {
+            auto lever = std::make_shared<Lever>(m_MechAtlas, pos, obj.group_id);
+            m_Activators.push_back(lever);
+            m_SceneRoot->AddChild(lever);
+        } else if (obj.type == LevelObjectType::Elevator) {
+            glm::vec2 targetPos = m_LevelManager->TileToWorldPosition(obj.target_row, obj.target_col);
 
-  if (levelData.hasWaterDoor) {
-    glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(
-        levelData.waterDoor.row, levelData.waterDoor.col);
-    m_WaterDoor =
-        std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
-    m_SceneRoot->AddChild(m_WaterDoor);
-  }
+            // 計算電梯長度
+            float tileSize = static_cast<float>(level.tileSize);
+            glm::vec2 size = obj.is_horizontal
+                             ? glm::vec2(tileSize * obj.length, tileSize * 0.5f)
+                             : glm::vec2(tileSize, tileSize * obj.length);
 
-  m_LevelFinished = false;
-  m_LevelFinishTimer = 0.0f;
+            auto elevator = std::make_shared<Elevator>(m_MechAtlas, pos, targetPos,
+                                                   size, obj.group_id);
+            m_Receivers.push_back(elevator);
+            m_SceneRoot->AddChild(elevator);
+        }
+    }
 
-  LOG_INFO("Entered Level 1.");
+    const auto &levelData = m_LevelManager->GetLevelData();
+
+    // 4. 建立火娃與水娃 (乾淨的動態讀取)
+    m_FireBoy = std::make_shared<Character>(m_GameAtlas, Element::FIRE);
+    if (levelData.hasFireSpawn) {
+        m_FireBoy->m_Transform.translation = m_LevelManager->TileToWorldPosition(
+            levelData.fireSpawn.row, levelData.fireSpawn.col);
+    } else {
+        m_FireBoy->m_Transform.translation = {0.0F, 0.0F};
+    }
+    m_SceneRoot->AddChild(m_FireBoy);
+
+    m_WaterGirl = std::make_shared<Character>(m_GameAtlas, Element::WATER);
+    if (levelData.hasWaterSpawn) {
+        m_WaterGirl->m_Transform.translation = m_LevelManager->TileToWorldPosition(
+            levelData.waterSpawn.row, levelData.waterSpawn.col);
+    } else {
+        m_WaterGirl->m_Transform.translation = {0.0F, 0.0F};
+    }
+    m_SceneRoot->AddChild(m_WaterGirl);
+
+    // 5. 建立過關大門 (動態計算座標)
+    if (levelData.hasFireDoor) {
+        glm::vec2 fireDoorPos = m_LevelManager->TileToWorldPosition(
+            levelData.fireDoor.row, levelData.fireDoor.col);
+        m_FireDoor =
+            std::make_shared<Door>(m_TempleAtlas, Element::FIRE, fireDoorPos);
+        m_SceneRoot->AddChild(m_FireDoor);
+    }
+
+    if (levelData.hasWaterDoor) {
+        glm::vec2 waterDoorPos = m_LevelManager->TileToWorldPosition(
+            levelData.waterDoor.row, levelData.waterDoor.col);
+        m_WaterDoor =
+            std::make_shared<Door>(m_TempleAtlas, Element::WATER, waterDoorPos);
+        m_SceneRoot->AddChild(m_WaterDoor);
+    }
+
+    m_LevelFinished = false;
+    m_LevelFinishTimer = 0.0f;
+
+    LOG_INFO("Entered Level 1.");
 }
 
 void App::UpdateCoverScene() {
@@ -418,30 +422,36 @@ void App::UpdateCoverScene() {
 }
 
 void App::UpdateGameScene() {
-  const auto elapsedSeconds = Util::Time::GetDeltaTime();
+    const auto elapsedSeconds = Util::Time::GetDeltaTime();
 
-  if (m_LevelFinished) {
-    m_LevelFinishTimer += elapsedSeconds;
-
-    if (m_FireBoy) {
-      m_FireBoy->SetInputEnabled(false);
-      // Removed m_FireBoy->SetVisible(false); because PlayEnterDoorAnimation handles visibility
+    if (m_LevelFinished) {
+        m_LevelFinishTimer += elapsedSeconds;
+        if (m_FireBoy) {
+            m_FireBoy->SetInputEnabled(false);
+            // Removed m_FireBoy->SetVisible(false); because PlayEnterDoorAnimation handles visibility
+        }
+        if (m_WaterGirl) {
+            m_WaterGirl->SetInputEnabled(false);
+            // Removed m_WaterGirl->SetVisible(false); because PlayEnterDoorAnimation handles visibility
+        }
+        if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
+            LOG_INFO("Level Complete! Returning to Menu.");
+            SwitchScene(Scene::Cover);
+        }
+        // Still need to update doors and other things to let animations finish
     }
-    if (m_WaterGirl) {
-      m_WaterGirl->SetInputEnabled(false);
-      // Removed m_WaterGirl->SetVisible(false); because PlayEnterDoorAnimation handles visibility
+
+    if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
+        SwitchScene(Scene::Cover);
     }
 
-    if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
-      LOG_INFO("Level Complete! Returning to Menu.");
-      SwitchScene(Scene::Cover);
+    for (auto& overlay : m_Overlays) {
+        overlay->Update(); // 讓水池流動吧！
     }
-    // Still need to update doors and other things to let animations finish
-  }
 
-  if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
-    SwitchScene(Scene::Cover);
-  }
+    // 呼叫機關邏輯 (Polymorphic Update)
+    glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
+    glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
   for (auto& diamond : m_Diamonds) {
     if (diamond->IsCollected()) continue;
@@ -479,63 +489,55 @@ void App::UpdateGameScene() {
   glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
   glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
-  std::unordered_map<int, bool> groupStates;
-  for (auto &activator : m_Activators) {
-    activator->Update(fPos, wPos);
-    if (activator->IsActivated()) {
-      groupStates[activator->GetGroupId()] = true;
+    for (auto &receiver : m_Receivers) {
+        bool isOn = groupStates[receiver->GetGroupId()];
+        receiver->SetActivated(isOn);
+        receiver->Update();
     }
-  }
 
-  for (auto &receiver : m_Receivers) {
-    bool isOn = groupStates[receiver->GetGroupId()];
-    receiver->SetActivated(isOn);
-    receiver->Update();
-  }
+    // 第二階段：處理機關碰撞 (動態平台)
+    std::vector<std::shared_ptr<BaseMechanism>> allMechs;
+    for (auto &a : m_Activators)
+        allMechs.push_back(a);
+    for (auto &r : m_Receivers)
+        allMechs.push_back(r);
 
-  // 第二階段：處理機關碰撞 (動態平台)
-  std::vector<std::shared_ptr<BaseMechanism>> allMechs;
-  for (auto &a : m_Activators)
-    allMechs.push_back(a);
-  for (auto &r : m_Receivers)
-    allMechs.push_back(r);
-
-  if (m_FireBoy) {
-    m_FireBoy->SetGroundState(GroundState::AIR);
-    m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
-    m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
-  }
-  if (m_WaterGirl) {
-    m_WaterGirl->SetGroundState(GroundState::AIR);
-    m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
-    m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
-  }
-
-  // --- 呼叫角色更新 ---
-  if (m_FireBoy != nullptr) {
-    m_FireBoy->Update();
-  }
-  if (m_WaterGirl != nullptr) {
-    m_WaterGirl->Update();
-  }
-
-  // 🌟 呼叫大門的邏輯：把玩家目前的精確座標餵給大門！
-  // (注意：如果你們 Character 沒有 GetPosition() 函數，請直接用
-  // m_Transform.translation)
-  if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
-    m_FireDoor->Update(m_FireBoy->m_Transform.translation);
-  }
-  if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
-    m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
-  }
-
-  // Check for victory
-  if (!m_LevelFinished && m_FireDoor && m_WaterDoor) {
-    if (m_FireDoor->IsFullyOpen() && m_WaterDoor->IsFullyOpen()) {
-      LOG_INFO("Both players reached the doors!");
-      m_LevelFinished = true;
-      if (m_FireBoy) m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
-      if (m_WaterGirl) m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
+    if (m_FireBoy) {
+        m_FireBoy->SetGroundState(GroundState::AIR);
+        m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
     }
-  }
+    if (m_WaterGirl) {
+        m_WaterGirl->SetGroundState(GroundState::AIR);
+        m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
+    }
+
+    // --- 呼叫角色更新 ---
+    if (m_FireBoy != nullptr) {
+        m_FireBoy->Update();
+    }
+    if (m_WaterGirl != nullptr) {
+        m_WaterGirl->Update();
+    }
+
+    // 🌟 呼叫大門的邏輯：把玩家目前的精確座標餵給大門！
+    // (注意：如果你們 Character 沒有 GetPosition() 函數，請直接用
+    // m_Transform.translation)
+    if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
+        m_FireDoor->Update(m_FireBoy->m_Transform.translation);
+    }
+    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
+        m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
+    }
+
+    // Check for victory
+    if (!m_LevelFinished && m_FireDoor && m_WaterDoor) {
+        if (m_FireDoor->IsFullyOpen() && m_WaterDoor->IsFullyOpen()) {
+            LOG_INFO("Both players reached the doors!");
+            m_LevelFinished = true;
+            if (m_FireBoy) m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
+            if (m_WaterGirl) m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
+        }
+    }
 }

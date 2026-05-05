@@ -37,7 +37,8 @@ struct GridCoord {
 
 struct LevelOverlay {
     Element element;
-    GridCoord coord;
+    GridCoord coord; // The start/left position
+    int width = 1;
 };
 
 struct LevelObject {

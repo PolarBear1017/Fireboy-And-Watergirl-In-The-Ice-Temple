@@ -147,7 +147,6 @@ bool LevelManager::HasSameTerrain(const int row, const int col, const TerrainTyp
     return m_LevelDefinition.terrainLayer[row][col] == terrain;
 }
 
-
 std::string LevelManager::DetermineGroundFrameName(const int row, const int col, const TerrainType terrain) const {
 
     const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
@@ -170,43 +169,43 @@ std::string LevelManager::DetermineGroundFrameName(const int row, const int col,
     }
 }
 
-std::string LevelManager::DetermineOverlayFrameName(const int row, const int col, const TerrainType terrain) const {
-    const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
-    const bool hasRight = HasSameTerrain(row, col + 1, terrain);
-
-    switch (terrain) {
-        case TerrainType::Ice:
-            if (!hasLeft && hasRight) return "IceBoxLeft0000";
-            if (hasLeft && !hasRight) return "IceBoxRight0000";
-            return "IceBox0000";
-
-        case TerrainType::Fire:
-            if (!hasLeft && hasRight) return "FireBoxLeft0000";
-            if (hasLeft && !hasRight) return "FireBoxRight0000";
-            return "FireBox0000";
-
-        case TerrainType::Water:
-            if (!hasLeft && hasRight) return "WaterBoxLeft0000";
-            if (hasLeft && !hasRight) return "WaterBoxRight0000";
-            return "WaterBox0000";
-
-        case TerrainType::Toxic:
-            if (!hasLeft && hasRight) return "GreenBoxLeft0000";
-            if (hasLeft && !hasRight) return "GreenBoxRight0000";
-            return "GreenBox0000";
-
-        default:
-            return "";
-    }
-}
-
-float LevelManager::DetermineOverlayZIndex(const TerrainType type) const {
-    int terrainNum = static_cast<int>(type);
-    if (terrainNum >= 20 && terrainNum <= 30) {
-        return 1.0F;
-    }
-    return 15.0F;
-}
+// std::string LevelManager::DetermineOverlayFrameName(const int row, const int col, const TerrainType terrain) const {
+//     const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
+//     const bool hasRight = HasSameTerrain(row, col + 1, terrain);
+//
+//     switch (terrain) {
+//         case TerrainType::Ice:
+//             if (!hasLeft && hasRight) return "IceBoxLeft0000";
+//             if (hasLeft && !hasRight) return "IceBoxRight0000";
+//             return "IceBox0000";
+//
+//         case TerrainType::Fire:
+//             if (!hasLeft && hasRight) return "FireBoxLeft0000";
+//             if (hasLeft && !hasRight) return "FireBoxRight0000";
+//             return "FireBox0000";
+//
+//         case TerrainType::Water:
+//             if (!hasLeft && hasRight) return "WaterBoxLeft0000";
+//             if (hasLeft && !hasRight) return "WaterBoxRight0000";
+//             return "WaterBox0000";
+//
+//         case TerrainType::Toxic:
+//             if (!hasLeft && hasRight) return "GreenBoxLeft0000";
+//             if (hasLeft && !hasRight) return "GreenBoxRight0000";
+//             return "GreenBox0000";
+//
+//         default:
+//             return "";
+//     }
+// }
+//
+// float LevelManager::DetermineOverlayZIndex(const TerrainType type) const {
+//     int terrainNum = static_cast<int>(type);
+//     if (terrainNum >= 20 && terrainNum <= 30) {
+//         return 1.0F;
+//     }
+//     return 15.0F;
+// }
 
 std::string LevelManager::DetermineObjectFrameName(const Element e) const {
     return "";
@@ -259,24 +258,24 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
     }
 
     // --- 2. 處理水池/冰塊 (新版極簡寫法) ---
-    for (const auto& overlayObj : level.overlays) {
-        const int r = overlayObj.coord.row;
-        const int c = overlayObj.coord.col;
-
-        const TerrainType terrain = level.terrainLayer[r][c];
-        const std::string frameName = DetermineOverlayFrameName(r, c, terrain);
-
-        if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) continue;
-
-        auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
-        auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineOverlayZIndex(terrain));
-
-        glm::vec2 pos = TileToWorldPosition(r, c);
-        tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
-
-        tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.033F);
-        root->AddChild(tileObj);
-    }
+    // for (const auto& overlayObj : level.overlays) {
+    //     const int r = overlayObj.coord.row;
+    //     const int c = overlayObj.coord.col;
+    //
+    //     const TerrainType terrain = level.terrainLayer[r][c];
+    //     const std::string frameName = DetermineOverlayFrameName(r, c, terrain);
+    //
+    //     if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) continue;
+    //
+    //     auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
+    //     auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineOverlayZIndex(terrain));
+    //
+    //     glm::vec2 pos = TileToWorldPosition(r, c);
+    //     tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
+    //
+    //     tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.033F);
+    //     root->AddChild(tileObj);
+    // }
 
     // 以下仍由 app.cpp 處理 可刪
     // --- 3. 處理物件 (出生點、門) ---
