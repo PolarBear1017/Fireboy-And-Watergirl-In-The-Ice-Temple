@@ -485,9 +485,14 @@ void App::UpdateGameScene() {
     }
   }
 
-  // 1. 呼叫機關邏輯 (Polymorphic Update)
-  glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
-  glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
+    std::unordered_map<int, bool> groupStates;
+
+    for (auto& activator : m_Activators) {
+        activator->Update(fPos, wPos);
+        if (activator->IsActivated()) {
+            groupStates[activator->GetGroupId()] = true;
+        }
+    }
 
     for (auto &receiver : m_Receivers) {
         bool isOn = groupStates[receiver->GetGroupId()];
