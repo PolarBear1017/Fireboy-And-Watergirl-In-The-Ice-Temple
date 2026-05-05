@@ -13,6 +13,7 @@
 #include "Level/LevelManager.hpp"
 #include "Character.hpp"
 #include "Door.hpp"
+#include "Overlay.hpp"
 #include "Mechanics/Activator.hpp"
 #include "Mechanics/Receiver.hpp"
 
@@ -75,6 +76,8 @@ private:
     std::shared_ptr<SpriteAtlas> m_OverlayAtlas;
     std::shared_ptr<SpriteAtlas> m_TempleAtlas;
     std::shared_ptr<LevelManager> m_LevelManager;
+    std::shared_ptr<SpriteAtlas> m_MechAtlas;
+
     CollisionSystem m_CollisionSystem;
 
     std::shared_ptr<Character> m_FireBoy;
@@ -83,7 +86,7 @@ private:
     std::shared_ptr<Door> m_FireDoor;
     std::shared_ptr<Door> m_WaterDoor;
 
-    std::shared_ptr<SpriteAtlas> m_MechAtlas;
+    std::vector<std::shared_ptr<Overlay>> m_Overlays;
 
     // Mechanics
     std::vector<std::shared_ptr<Activator>> m_Activators;

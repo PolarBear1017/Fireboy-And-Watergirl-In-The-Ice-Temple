@@ -35,6 +35,7 @@ public:
 
     [[nodiscard]] const LevelParseResult& GetLevelData() const { return m_LevelData; }
     [[nodiscard]] float GetTileSize() const { return m_TileSize; }
+    // [[nodiscard]] const std::vector<LevelOverlay>& GetOverlays() const {return m_LevelDefinition.overlays;}
 
     TerrainType GetTerrain(const int row, const int col) const;
     [[nodiscard]] bool IsWalkable(const int row, const int col) const;
@@ -55,8 +56,8 @@ private:
 
     // 取得各種 FrameName 與 ZIndex
     [[nodiscard]] std::string DetermineGroundFrameName(int row, int col, TerrainType terrain) const;
-    [[nodiscard]] std::string DetermineOverlayFrameName(int row, int col, TerrainType terrain) const;
-    float DetermineOverlayZIndex(TerrainType type) const;
+    // [[nodiscard]] std::string DetermineOverlayFrameName(int row, int col, TerrainType terrain) const;
+    // float DetermineOverlayZIndex(TerrainType type) const;
     [[nodiscard]] std::string DetermineObjectFrameName(Element e) const;
     [[nodiscard]] float DetermineObjectZIndex(LevelObjectType type) const;
 

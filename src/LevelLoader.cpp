@@ -8,7 +8,6 @@ namespace {
         for (int r = 0; r < level.height; ++r) {
             for (int c = 0; c < level.width; ++c) {
                 int value = rawGrid[r][c];
-
                 level.terrainLayer[r][c] = static_cast<TerrainType>(value);
 
                 if (value >= 30 && value <= 33) {
@@ -16,10 +15,16 @@ namespace {
                     overlay.coord = {r, c};
 
                     if (value == 30) overlay.element = Element::ICE;
-                    if (value == 31) overlay.element = Element::WATER;
-                    if (value == 32) overlay.element = Element::FIRE;
-                    if (value == 33) overlay.element = Element::TOXIC;
+                    else if (value == 31) overlay.element = Element::WATER;
+                    else if (value == 32) overlay.element = Element::FIRE;
+                    else if (value == 33) overlay.element = Element::TOXIC;
 
+                    int startC = c;
+                    while (c + 1 < level.width && rawGrid[r][c + 1] == value) {
+                        c++; // 推動外層迴圈的 col 指標，跳過已經合併的格子
+                        level.terrainLayer[r][c] = static_cast<TerrainType>(value); // 確保地圖陣列也有標記
+                    }
+                    overlay.width = c - startC + 1; // 計算總共橫跨了幾格
                     level.overlays.push_back(overlay);
                 }
             }
@@ -64,7 +69,7 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
     auto rawGrid = root.at("terrain").get<std::vector<std::vector<int>>>();
     ProcessTerrainArray(rawGrid, level);
 
-    // --- 3. 解析物件 ---
+    // --- 2. 解析物件 ---
     if (root.contains("objects")) {
         for (const auto& objectJson : root.at("objects")) {
             LevelObject object;
