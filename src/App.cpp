@@ -158,6 +158,7 @@ void App::ResetSceneRoot() {
   m_Overlays.clear();
   m_Activators.clear();
   m_Receivers.clear();
+  m_Diamonds.clear();
 }
 
 void App::BuildCoverScene() {
@@ -452,13 +453,41 @@ void App::UpdateGameScene() {
     glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
     glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
-    std::unordered_map<int, bool> groupStates;
-    for (auto &activator : m_Activators) {
-        activator->Update(fPos, wPos);
-        if (activator->IsActivated()) {
-            groupStates[activator->GetGroupId()] = true;
+  for (auto& diamond : m_Diamonds) {
+    if (diamond->IsCollected()) continue;
+    glm::vec2 diamondPos = diamond->GetTransform().translation;
+    glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
+    
+    if (m_FireBoy) {
+        glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
+        glm::vec2 fbCenter = m_FireBoy->GetPosition();
+        fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
+        if (m_CollisionSystem.CheckOverlap(fbCenter, fbSize, diamondPos, diamondSize)) {
+            if (diamond->GetElement() == Element::FIRE || diamond->GetElement() == Element::NEUTRAL) {
+                diamond->Collect();
+                m_FireboyGems++;
+                LOG_INFO("Fireboy collected a diamond! Total: {}", m_FireboyGems);
+            }
         }
     }
+    
+    if (m_WaterGirl) {
+        glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
+        glm::vec2 wgCenter = m_WaterGirl->GetPosition();
+        wgCenter.y += wgSize.y * 0.5f;
+        if (m_CollisionSystem.CheckOverlap(wgCenter, wgSize, diamondPos, diamondSize)) {
+            if (diamond->GetElement() == Element::WATER || diamond->GetElement() == Element::NEUTRAL) {
+                diamond->Collect();
+                m_WatergirlGems++;
+                LOG_INFO("Watergirl collected a diamond! Total: {}", m_WatergirlGems);
+            }
+        }
+    }
+  }
+
+  // 1. 呼叫機關邏輯 (Polymorphic Update)
+  glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
+  glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
     for (auto &receiver : m_Receivers) {
         bool isOn = groupStates[receiver->GetGroupId()];

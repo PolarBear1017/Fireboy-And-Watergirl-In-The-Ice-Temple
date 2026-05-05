@@ -38,6 +38,18 @@
     { "type": "elevator", "row": 12, "col": 36, "target_row": 8, "target_col": 36, "group_id": 2 },
     { "type": "button", "row": 5, "col": 33, "group_id": 3 },
     { "type": "button", "row": 5, "col": 19, "group_id": 3 },
-    { "type": "elevator", "row": 5, "col": 29, "target_row":5, "target_col": 22, "group_id": 3 }
+    { "type": "elevator", "row": 5, "col": 29, "target_row":5, "target_col": 22, "group_id": 3 },
+    {
+    "type": "diamond",
+    "element": "fire",
+    "row": 20,
+    "col": 10
+    },
+    {
+    "type": "diamond",
+    "element": "water",
+    "row": 20,
+    "col": 15
+    }
   ]
 }

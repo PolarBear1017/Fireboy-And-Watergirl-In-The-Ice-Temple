@@ -37,6 +37,7 @@ namespace {
         if (value == "button") return LevelObjectType::Button;
         if (value == "lever") return LevelObjectType::Lever;
         if (value == "elevator") return LevelObjectType::Elevator;
+        if (value == "diamond") return LevelObjectType::Diamond;
         throw std::runtime_error("LevelLoader: unsupported object type: " + value);
     }
 
@@ -76,7 +77,12 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
             std::string typeStr = objectJson.at("type").get<std::string>();
 
             object.type = ParseObjectType(typeStr);
-            object.element = ParseElement(typeStr);
+            
+            if (objectJson.contains("element")) {
+                object.element = ParseElement(objectJson.at("element").get<std::string>());
+            } else {
+                object.element = ParseElement(typeStr);
+            }
             object.coord.row = objectJson.at("row").get<int>();
             object.coord.col = objectJson.at("col").get<int>();
 
