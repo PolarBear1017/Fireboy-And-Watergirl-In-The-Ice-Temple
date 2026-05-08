@@ -325,6 +325,14 @@ void App::BuildGameScene() {
                                                    size, obj.group_id);
             m_Receivers.push_back(elevator);
             m_SceneRoot->AddChild(elevator);
+        } else if (obj.type == LevelObjectType::Diamond) {
+            std::string frameName = (obj.element == Element::FIRE) ? "diamond_fb0000" : "diamond_wg0000";
+            auto sprite = std::make_shared<AtlasSprite>(m_GameAtlas, frameName);
+            auto diamond = std::make_shared<Diamond>(sprite, 5.0f, obj.element);
+            diamond->m_Transform.translation = pos;
+            diamond->m_Transform.scale = glm::vec2(0.8f);
+            m_Diamonds.push_back(diamond);
+            m_SceneRoot->AddChild(diamond);
         }
     }
 
