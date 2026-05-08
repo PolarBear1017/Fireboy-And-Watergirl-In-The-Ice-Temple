@@ -70,7 +70,7 @@ void Character::Update() {
             m_AnimationTimer = 0.0f;
         }
         
-        int maxFrames = (m_Element == Element::FIRE) ? 31 : 31; // both have around 30 frames
+        int maxFrames = 30; // both have exactly 30 frames (0000 to 0029)
         int currentStairsFrame = std::min(m_AnimationFrame, maxFrames - 1); // Stop at last frame
         
         std::string prefix = (m_Element == Element::FIRE) ? "fire" : "water";
@@ -219,8 +219,8 @@ void Character::PlayEnterDoorAnimation(const glm::vec2& doorPos) {
     m_LegsObject->SetVisible(false);
     m_Visible = false; // Prevents Update() from scaling them back up
     
-    // Snap to door center
-    m_Transform.translation = {doorPos.x, doorPos.y + 4.0f};
+    // Snap to door center, but offset downwards so the character's feet stay near the door base
+    m_Transform.translation = {doorPos.x, doorPos.y - 12.0f};
     
     // Show stairs object
     m_StairsObject->SetVisible(true);
