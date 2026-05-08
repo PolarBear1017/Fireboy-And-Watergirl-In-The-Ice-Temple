@@ -13,7 +13,7 @@
 class Character : public Util::GameObject{
 private:
     glm::vec2 m_Velocity = {0.0f, 0.0f};
-    glm::vec2 m_CollisionSize = {25.6f, 40.0f};
+    glm::vec2 m_CollisionSize = {20.0f, 35.0f};
 
     float m_Gravity = 0.5f;
     float m_JumpForce = 12.5f;

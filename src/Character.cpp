@@ -144,8 +144,8 @@ void Character::UpdateAnimation() {
     // Default Status: Idle
     std::string legsAction = "legs_idle";
     std::string headAction = "head_idle";
-    int legsMaxFrames = 1;
-    int headMaxFrames = (m_Element == Element::FIRE) ? 19 : 30;
+    int legsMaxFrames;
+    int headMaxFrames;
 
     if (m_Velocity.x != 0) {
         legsAction = "legs_running";
