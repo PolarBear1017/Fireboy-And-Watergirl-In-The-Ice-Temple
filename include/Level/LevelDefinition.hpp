@@ -27,7 +27,8 @@ enum class LevelObjectType {
     Button,
     Lever,
     Elevator,
-    Diamond
+    Diamond,
+    Block
 };
 
 struct GridCoord {

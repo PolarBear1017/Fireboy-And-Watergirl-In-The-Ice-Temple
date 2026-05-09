@@ -159,6 +159,7 @@ void App::ResetSceneRoot() {
   m_Activators.clear();
   m_Receivers.clear();
   m_Diamonds.clear();
+  m_Blocks.clear();
 }
 
 void App::BuildCoverScene() {
@@ -333,6 +334,10 @@ void App::BuildGameScene() {
             diamond->m_Transform.scale = glm::vec2(0.8f);
             m_Diamonds.push_back(diamond);
             m_SceneRoot->AddChild(diamond);
+        } else if (obj.type == LevelObjectType::Block) {
+            auto block = std::make_shared<Block>(m_MechAtlas, pos);
+            m_Blocks.push_back(block);
+            m_SceneRoot->AddChild(block);
         }
     }
 
@@ -494,9 +499,16 @@ void App::UpdateGameScene() {
   }
 
     std::unordered_map<int, bool> groupStates;
+    
+    std::vector<glm::vec2> interactorPositions;
+    if (m_FireBoy) interactorPositions.push_back(fPos);
+    if (m_WaterGirl) interactorPositions.push_back(wPos);
+    for (const auto& block : m_Blocks) {
+        interactorPositions.push_back(block->GetPosition());
+    }
 
     for (auto& activator : m_Activators) {
-        activator->Update(fPos, wPos);
+        activator->Update(interactorPositions);
         if (activator->IsActivated()) {
             groupStates[activator->GetGroupId()] = true;
         }
@@ -514,16 +526,22 @@ void App::UpdateGameScene() {
         allMechs.push_back(a);
     for (auto &r : m_Receivers)
         allMechs.push_back(r);
+    for (auto &b : m_Blocks) {
+        b->Update();
+        // Resolve block against terrain
+        m_CollisionSystem.ResolveBlockTerrain(*b, *m_LevelManager);
+        allMechs.push_back(b);
+    }
 
     if (m_FireBoy) {
         m_FireBoy->SetGroundState(GroundState::AIR);
         m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
-        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs, *m_LevelManager);
     }
     if (m_WaterGirl) {
         m_WaterGirl->SetGroundState(GroundState::AIR);
         m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
-        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs, *m_LevelManager);
     }
 
     // --- 呼叫角色更新 ---

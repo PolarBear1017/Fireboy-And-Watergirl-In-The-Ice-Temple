@@ -17,6 +17,7 @@
 #include "Mechanics/Activator.hpp"
 #include "Mechanics/Receiver.hpp"
 #include "Mechanics/Diamond.hpp"
+#include "Mechanics/Block.hpp"
 
 class App {
 public:
@@ -93,6 +94,7 @@ private:
     std::vector<std::shared_ptr<Activator>> m_Activators;
     std::vector<std::shared_ptr<Receiver>> m_Receivers;
     std::vector<std::shared_ptr<Diamond>> m_Diamonds;
+    std::vector<std::shared_ptr<Block>> m_Blocks;
     
     int m_FireboyGems = 0;
     int m_WatergirlGems = 0;

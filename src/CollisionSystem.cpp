@@ -1,5 +1,6 @@
 #include "CollisionSystem.hpp"
 #include "Mechanics/Elevator.hpp"
+#include "Mechanics/Block.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -217,7 +218,8 @@ void CollisionSystem::ResolveCharacterTerrain(
 
 void CollisionSystem::ResolveCharacterMechanics(
     Character& character,
-    const std::vector<std::shared_ptr<BaseMechanism>>& mechanisms) const {
+    const std::vector<std::shared_ptr<BaseMechanism>>& mechanisms,
+    const LevelManager& levelManager) const {
     
     glm::vec2 pos = character.GetPosition(); // 🌟 記住：現在這是腳底！
     glm::vec2 vel = character.GetVelocity();
@@ -253,9 +255,72 @@ void CollisionSystem::ResolveCharacterMechanics(
 
             if (!isStandingOnTop && overlapX < overlapY) {
                 // 水平推擠 (側面撞擊)
-                if (charCenter.x > collider.center.x) pos.x += overlapX;
-                else pos.x -= overlapX;
-                vel.x = 0;
+                auto block = std::dynamic_pointer_cast<Block>(mech);
+                if (block) {
+                    glm::vec2 bVel = block->GetVelocity();
+                    glm::vec2 bPos = block->GetPosition();
+                    
+                    bool charPushesBlock = false;
+                    if (charCenter.x > collider.center.x) {
+                        if (vel.x < 0) charPushesBlock = true;
+                    } else {
+                        if (vel.x > 0) charPushesBlock = true;
+                    }
+
+                    if (charPushesBlock) {
+                        if (charCenter.x > collider.center.x) {
+                            bPos.x -= overlapX;
+                            bVel.x = vel.x;
+                        } else {
+                            bPos.x += overlapX;
+                            bVel.x = vel.x;
+                        }
+                        block->SetPosition(bPos);
+                        block->SetVelocity(bVel);
+                        
+                        ResolveBlockTerrain(*block, levelManager);
+                        
+                        glm::vec2 newBPos = block->GetPosition();
+                        if (charCenter.x > collider.center.x) {
+                            pos.x = newBPos.x + halfColl.x + halfChar.x;
+                        } else {
+                            pos.x = newBPos.x - halfColl.x - halfChar.x;
+                        }
+                        vel.x = block->GetVelocity().x;
+                    } else {
+                        // Block pushes character
+                        if (charCenter.x > collider.center.x) {
+                            pos.x += overlapX;
+                        } else {
+                            pos.x -= overlapX;
+                        }
+                        
+                        character.SetPosition(pos);
+                        character.SetVelocity(vel);
+                        ResolveCharacterTerrain(character, levelManager);
+                        glm::vec2 resolvedPos = character.GetPosition();
+                        
+                        float pushBack = resolvedPos.x - pos.x;
+                        if (std::abs(pushBack) > 0.001f) {
+                            bPos.x += pushBack;
+                            block->SetPosition(bPos);
+                            block->SetVelocity({0, block->GetVelocity().y});
+                            
+                            // Adjust character one more time to perfectly touch the block
+                            if (charCenter.x > collider.center.x) {
+                                resolvedPos.x = bPos.x + halfColl.x + halfChar.x;
+                            } else {
+                                resolvedPos.x = bPos.x - halfColl.x - halfChar.x;
+                            }
+                        }
+                        pos = resolvedPos;
+                        vel = character.GetVelocity();
+                    }
+                } else {
+                    if (charCenter.x > collider.center.x) pos.x += overlapX;
+                    else pos.x -= overlapX;
+                    vel.x = 0;
+                }
             } else {
                 if (charCenter.y > collider.center.y) {
                     pos.y = collider.center.y + halfColl.y;
@@ -293,4 +358,108 @@ bool CollisionSystem::CheckOverlap(const glm::vec2& center1, const glm::vec2& si
     float top2 = center2.y + size2.y * 0.5f;
 
     return !(left1 > right2 || right1 < left2 || bottom1 > top2 || top1 < bottom2);
+}
+
+void CollisionSystem::ResolveBlockTerrain(Block& block, const LevelManager& levelManager) const {
+    glm::vec2 position = block.GetPosition();
+    glm::vec2 velocity = block.GetVelocity();
+    const glm::vec2 size = block.GetSize();
+    const float tileSize = levelManager.GetTileSize();
+    const float halfWidth = size.x * 0.5F;
+    const float halfHeight = size.y * 0.5F;
+
+    auto GetSlopeAt = [&](float x, float y, TerrainType& outTerrain, GridCoord& outTile) {
+        GridCoord c = WorldToTile({x, y}, tileSize);
+        TerrainType t = levelManager.GetTerrain(c.row, c.col);
+        if (IsSlope(t)) {
+            outTerrain = t; outTile = c; return true;
+        }
+        GridCoord cBelow = WorldToTile({x, y - tileSize * 0.5f}, tileSize);
+        TerrainType tBelow = levelManager.GetTerrain(cBelow.row, cBelow.col);
+        if (IsSlope(tBelow)) {
+            outTerrain = tBelow; outTile = cBelow; return true;
+        }
+        return false;
+    };
+
+    bool currentlyOnSlope = false;
+    TerrainType slopeTerrain;
+    GridCoord slopeTile;
+
+    if (GetSlopeAt(position.x, position.y + 2.0F, slopeTerrain, slopeTile) ||
+        GetSlopeAt(position.x - halfWidth + 2.0F, position.y + 2.0F, slopeTerrain, slopeTile) ||
+        GetSlopeAt(position.x + halfWidth - 2.0F, position.y + 2.0F, slopeTerrain, slopeTile)) {
+        
+        currentlyOnSlope = true;
+        const glm::vec2 tileCenter = levelManager.TileToWorldPosition(slopeTile.row, slopeTile.col);
+        const float surfaceY = CalculateSlopeSurfaceY(slopeTerrain, tileCenter, tileSize, position.x);
+
+        if (velocity.y <= 0.0F) {
+            if (position.y - halfHeight <= surfaceY + 20.0F) {
+                position.y = surfaceY + halfHeight;
+                velocity.y = 0.0F;
+                
+                // Slight slide down slope
+                if (slopeTerrain == TerrainType::SlopeBL) {
+                    velocity.x -= 2.0f;
+                } else if (slopeTerrain == TerrainType::SlopeBR) {
+                    velocity.x += 2.0f;
+                }
+            }
+        }
+    }
+
+    auto IsSolidWall = [&](const GridCoord& coord) {
+        TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
+        if (t == TerrainType::Block || t == TerrainType::Ice || t == TerrainType::SnowBlock) return true;
+
+        if (IsSlope(t)) {
+            // Only allow passing through the slope we are currently standing on
+            if (currentlyOnSlope && coord.row == slopeTile.row && coord.col == slopeTile.col) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    };
+
+    if (velocity.x > 0.0F) {
+        const GridCoord rightTop = WorldToTile({position.x + halfWidth, position.y + halfHeight - 1.0F}, tileSize);
+        const GridCoord rightBottom = WorldToTile({position.x + halfWidth, position.y - halfHeight + 12.0F}, tileSize);
+        if (IsSolidWall(rightTop) || IsSolidWall(rightBottom)) {
+            const GridCoord hitTile = IsSolidWall(rightTop) ? rightTop : rightBottom;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
+            velocity.x = 0.0F;
+        }
+    } else if (velocity.x < 0.0F) {
+        const GridCoord leftTop = WorldToTile({position.x - halfWidth, position.y + halfHeight - 1.0F}, tileSize);
+        const GridCoord leftBottom = WorldToTile({position.x - halfWidth, position.y - halfHeight + 12.0F}, tileSize);
+        if (IsSolidWall(leftTop) || IsSolidWall(leftBottom)) {
+            const GridCoord hitTile = IsSolidWall(leftTop) ? leftTop : leftBottom;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
+            velocity.x = 0.0F;
+        }
+    }
+
+    if (!currentlyOnSlope && velocity.y <= 0.0F) {
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth + 1.0F, position.y - halfHeight - 2.0F}, tileSize);
+        const GridCoord bottomRight = WorldToTile({position.x + halfWidth - 1.0F, position.y - halfHeight - 2.0F}, tileSize);
+
+        auto IsWalkableFlat = [&](const GridCoord& c) {
+            TerrainType t = levelManager.GetTerrain(c.row, c.col);
+            return t != TerrainType::Empty && !IsSlope(t);
+        };
+
+        if (IsWalkableFlat(bottomLeft) || IsWalkableFlat(bottomRight)) {
+            const GridCoord hitTile = IsWalkableFlat(bottomLeft) ? bottomLeft : bottomRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.y = tileCenter.y + tileSize * 0.5F + halfHeight;
+            velocity.y = 0.0F;
+        }
+    }
+
+    block.SetPosition(position);
+    block.SetVelocity(velocity);
 }
