@@ -47,11 +47,11 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
     // this->AddChild(m_DebugBox); // 留一個 AddChild 就好
 }
 
-void Character::AddChildrenTo(const std::shared_ptr<Util::GameObject>& root) {
-    root->AddChild(m_LegsObject);
-    root->AddChild(m_HeadObject);
-    root->AddChild(m_StairsObject);
-}
+// void Character::AddChildrenTo(const std::shared_ptr<Util::GameObject>& root) {
+//     root->AddChild(m_LegsObject);
+//     root->AddChild(m_HeadObject);
+//     root->AddChild(m_StairsObject);
+// }
 
 void Character::Update() {
     if (m_IsEnteringDoor) {
@@ -110,24 +110,54 @@ void Character::Update() {
 }
 
 void Character::ProcessInput() {
-    m_Velocity.x = 0.0f;
     if (!m_InputEnabled) return;
+    m_RunningState = RunningState::Idle;
+
+    float acceleration = (m_GroundState == GroundState::ICE) ? 0.2F : 1.0f;
+    float maxSpeed = 5.0f;
+    float friction = (m_GroundState == GroundState::ICE) ? 0.1F : 0.8f;
 
     if (m_Element == Element::FIRE) {
-        if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {m_Velocity.x -= m_Speed;}
-        if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) {m_Velocity.x += m_Speed;}
+        if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {
+            m_Velocity.x -= acceleration;
+            m_RunningState = RunningState::Left;
+        }
+        if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) {
+            m_Velocity.x += acceleration;
+            m_RunningState = RunningState::Right;
+        }
         if (Util::Input::IsKeyPressed(Util::Keycode::UP) && IsGrounded()) {
             m_Velocity.y += m_JumpForce;
             m_GroundState = GroundState::AIR;
         }
     }
     if (m_Element == Element::WATER) {
-        if (Util::Input::IsKeyPressed(Util::Keycode::A)) {m_Velocity.x -= m_Speed;}
-        if (Util::Input::IsKeyPressed(Util::Keycode::D)) {m_Velocity.x += m_Speed;}
+        if (Util::Input::IsKeyPressed(Util::Keycode::A)) {
+            m_Velocity.x -= acceleration;
+            m_RunningState = RunningState::Left;
+        }
+        if (Util::Input::IsKeyPressed(Util::Keycode::D)) {
+            m_Velocity.x += acceleration;
+            m_RunningState = RunningState::Right;
+        }
         if (Util::Input::IsKeyPressed(Util::Keycode::W) && IsGrounded()) {
             m_Velocity.y += m_JumpForce;
             m_GroundState = GroundState::AIR;
         }
+    }
+
+    if (m_Velocity.x > 0.0f) {
+        m_Velocity.x -= friction;
+        if (m_Velocity.x < 0.0f) m_Velocity.x = 0.0f;
+    } else if (m_Velocity.x < 0.0f) {
+        m_Velocity.x += friction;
+        if (m_Velocity.x > 0.0f) m_Velocity.x = 0.0f;
+    }
+
+    if (m_Velocity.x > maxSpeed) {
+        m_Velocity.x = maxSpeed;
+    } else if (m_Velocity.x < -maxSpeed) {
+        m_Velocity.x = -maxSpeed;
     }
 }
 
@@ -147,7 +177,7 @@ void Character::UpdateAnimation() {
     int legsMaxFrames;
     int headMaxFrames;
 
-    if (m_Velocity.x != 0) {
+    if (m_RunningState != RunningState::Idle) {
         legsAction = "legs_running";
         legsMaxFrames = 8;
         headAction = "head_jumping";
@@ -156,10 +186,10 @@ void Character::UpdateAnimation() {
         legsAction = "legs_idle";
         legsMaxFrames = 1;
 
-        if (m_Velocity.y > 0.1f && !IsGrounded()) {
+        if (m_Velocity.y > 0.5f && !IsGrounded()) {
             headAction = "head_rising";
             headMaxFrames = (m_Element == Element::FIRE) ? 5 : 11;
-        } else if (m_Velocity.y < -0.1f && !IsGrounded()) {
+        } else if (m_Velocity.y < -0.5f && !IsGrounded()) {
             headAction = "head_falling";
             headMaxFrames = (m_Element == Element::FIRE) ? 5 : 11;
         } else {
@@ -202,9 +232,9 @@ void Character::UpdateAnimation() {
     ss_head << prefix << "_" << headAction << std::setw(4) << std::setfill('0') << currentHeadFrame;
     m_HeadSprite->SetFrame(ss_head.str());
 
-    if (m_Velocity.x > 0) {
+    if (m_RunningState == RunningState::Right) {
         m_Transform.scale.x = std::abs(m_Transform.scale.x);
-    } else if (m_Velocity.x < 0) {
+    } else if (m_RunningState == RunningState::Left) {
         m_Transform.scale.x = -std::abs(m_Transform.scale.x);
     }
 }

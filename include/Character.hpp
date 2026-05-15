@@ -17,9 +17,9 @@ private:
 
     float m_Gravity = 0.5f;
     float m_JumpForce = 12.5f;
-    float m_Speed = 5.0f;
     GroundState m_GroundState = GroundState::AIR;
     Element m_Element;
+    RunningState m_RunningState = RunningState::Idle;
 
     bool m_InputEnabled = true;
     bool m_Visible = true;
@@ -51,7 +51,7 @@ public:
     Character(const std::shared_ptr<SpriteAtlas>& atlas, Element element);
 
     void Update();
-    void AddChildrenTo(const std::shared_ptr<Util::GameObject>& root);
+    // void AddChildrenTo(const std::shared_ptr<Util::GameObject>& root);
 
     [[nodiscard]] glm::vec2 GetPosition() const { return m_Transform.translation; }
     [[nodiscard]] glm::vec2 GetVelocity() const { return m_Velocity; }

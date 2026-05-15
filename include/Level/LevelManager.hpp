@@ -56,6 +56,7 @@ private:
 
     // 取得各種 FrameName 與 ZIndex
     [[nodiscard]] std::string DetermineGroundFrameName(int row, int col, TerrainType terrain) const;
+    [[nodiscard]] std::string DetermineSnowFrameName(TerrainType terrain) const;
     // [[nodiscard]] std::string DetermineOverlayFrameName(int row, int col, TerrainType terrain) const;
     // float DetermineOverlayZIndex(TerrainType type) const;
     [[nodiscard]] std::string DetermineObjectFrameName(Element e) const;

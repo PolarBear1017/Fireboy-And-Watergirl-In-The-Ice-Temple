@@ -16,7 +16,15 @@ namespace {
     }
 
     bool IsSlope(TerrainType type) {
-        return type == TerrainType::SlopeBL || type == TerrainType::SlopeBR;
+        switch (type) {
+            case TerrainType::SlopeBL:
+            case TerrainType::SlopeBR:
+            case TerrainType::SnowSlopeBL:
+            case TerrainType::SnowSlopeBR:
+                return true;
+            default:
+                return false;
+        }
     }
 
     float CalculateSlopeSurfaceY(TerrainType type, const glm::vec2& tileCenter, float tileSize, float playerX) {
@@ -26,7 +34,7 @@ namespace {
         float rx = playerX - tileLeft; // 計算角色在磚塊內的相對 X 座標 (0 ~ tileSize)
         rx = std::clamp(rx, 0.0F, tileSize); // 防呆，確保不出界
 
-        if (type == TerrainType::SlopeBL) {
+        if (type == TerrainType::SlopeBL || type == TerrainType::SnowSlopeBL) {
             return tileBottom + (tileSize - rx);
         } else {
             return tileBottom + rx;
@@ -63,11 +71,6 @@ void CollisionSystem::ResolveCharacterTerrain(
     const glm::vec2 size = character.GetCollisionSize();
     const float tileSize = levelManager.GetTileSize();
     const float halfWidth = size.x * 0.5F;
-
-    // 基本的牆壁定義 (記得把冰塊加回來，否則會穿透冰塊)
-    // auto IsSolid = [&](TerrainType t) {
-    //     return t == TerrainType::Block || t == TerrainType::Ice || t == TerrainType::SnowBlock;
-    // };
 
     // 雙層斜坡探測器 (解決陷下去的關鍵)
     // 會先查腳底下，如果找不到，會自動往下挖半格查接縫處
@@ -119,9 +122,9 @@ void CollisionSystem::ResolveCharacterTerrain(
 
     // === 1. 水平碰撞 ===
     if (velocity.x > 0.0F) {
-        // 頭部與腳部感測器
+        // 頂部、底部感測器
         const GridCoord topRight = WorldToTile({position.x + halfWidth, position.y + size.y - 1.0F}, tileSize);
-        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 1.0F}, tileSize);
+        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 12.0F}, tileSize);
 
         // 🌟 呼叫新工具：topRight 是頭(false)，bottomRight 是腳(true)
         if (IsSolidWall(topRight, false) || IsSolidWall(bottomRight, true)) {
@@ -132,7 +135,7 @@ void CollisionSystem::ResolveCharacterTerrain(
         }
     } else if (velocity.x < 0.0F) {
         const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 1.0F}, tileSize);
-        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 1.0F}, tileSize);
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
 
         if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
             const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
@@ -151,7 +154,7 @@ void CollisionSystem::ResolveCharacterTerrain(
             const GridCoord hitTile = IsCeiling(topLeft) ? topLeft : topRight;
             const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
 
-            // 🌟 修正：撞到天花板後，腳底位置 = 天花板下緣「再往下扣掉整個身高」
+            // 撞到天花板後，腳底位置 = 天花板下緣「再往下扣掉整個身高」
             position.y = tileCenter.y - tileSize * 0.5F - size.y;
             velocity.y = 0.0F;
         }
@@ -160,11 +163,11 @@ void CollisionSystem::ResolveCharacterTerrain(
     character.SetGroundState(GroundState::AIR);
     bool currentlyOnSlope = false;
 
-    // === 3. 🌟 終極斜坡踩踏與爬坡檢查 ===
+    // === 3. 終極斜坡踩踏與爬坡檢查 ===
     TerrainType slopeTerrain;
     GridCoord slopeTile;
 
-    // 🌟 魔法展開：不管左邊、中間、還是右邊，只要抓到斜坡就立刻回傳 true
+    // 魔法展開：不管左邊、中間、還是右邊，只要抓到斜坡就立刻回傳 true
     if (GetSlopeAt(position.x, position.y + 2.0F, slopeTerrain, slopeTile) ||
         GetSlopeAt(position.x - halfWidth + 2.0F, position.y + 2.0F, slopeTerrain, slopeTile) ||
         GetSlopeAt(position.x + halfWidth - 2.0F, position.y + 2.0F, slopeTerrain, slopeTile)) {
@@ -173,12 +176,17 @@ void CollisionSystem::ResolveCharacterTerrain(
         const float surfaceY = CalculateSlopeSurfaceY(slopeTerrain, tileCenter, tileSize, position.x);
 
         if (velocity.y <= 0.0F) {
-            // 磁鐵吸附力加大到 20.0F
-            // 確保高速下坡時，火娃不會因為慣性而短暫「飛離」斜坡
+            // 磁鐵吸附力加大到 20.0F，確保高速下坡時不會因為慣性而飛離斜坡
             if (position.y <= surfaceY + 20.0F) {
                 position.y = surfaceY;
                 velocity.y = 0.0F;
-                character.SetGroundState(GroundState::GROUND); // 或 SLOPE 依你喜好
+
+                if (slopeTerrain == TerrainType::SnowSlopeBL || slopeTerrain == TerrainType::SnowSlopeBR) {
+                    character.SetGroundState(GroundState::ICE);
+                } else {
+                    character.SetGroundState(GroundState::GROUND);
+                }
+
                 currentlyOnSlope = true;
             }
         }
@@ -203,7 +211,11 @@ void CollisionSystem::ResolveCharacterTerrain(
             // 腳底完美貼齊平地
             position.y = tileCenter.y + tileSize * 0.5F;
             velocity.y = 0.0F;
-            character.SetGroundState(GroundState::GROUND);
+            if (levelManager.GetTerrain(hitTile.row, hitTile.col) == TerrainType::SnowBlock) {
+                character.SetGroundState(GroundState::ICE);
+            } else {
+                character.SetGroundState(GroundState::GROUND);
+            }
         }
     }
 
