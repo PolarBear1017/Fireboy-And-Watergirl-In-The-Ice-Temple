@@ -101,7 +101,7 @@ def convert_level(input_path, output_path):
                     new_obj['type'] = "elevator"
                     new_obj['row'] = row
                     new_obj['col'] = col
-                    new_obj['target_row'] = row + props.get('dy', 0)
+                    new_obj['target_row'] = row - props.get('dy', 0)
                     new_obj['target_col'] = col + props.get('dx', 0)
                     new_obj['length'] = w // tiled_tile_size
                     new_obj['is_horizontal'] = w > h
