@@ -50,11 +50,11 @@ def convert_level(input_path, output_path):
                 if val == 1:
                     mapped = 1
                 elif val == 8:
-                    mapped = 31 # water? Let's guess 8=water, 7=fire, 6=goo based on visual ordering?
+                    mapped = 33 # toxic
                 elif val == 7:
-                    mapped = 32 # fire?
+                    mapped = 32 # fire
                 elif val == 6:
-                    mapped = 33 # toxic?
+                    mapped = 31 # water
                 elif val == 2: mapped = 11
                 elif val == 3: mapped = 10
                 elif val == 4: mapped = 13
@@ -152,4 +152,13 @@ def convert_level(input_path, output_path):
         f.write(json_str)
 
 if __name__ == '__main__':
-    convert_level('reference/data/tutorials/levels/forest_01.json', 'Resources/levels/level0.json')
+    if len(sys.argv) >= 3:
+        input_file = sys.argv[1]
+        output_file = sys.argv[2]
+    else:
+        input_file = 'reference/data/tutorials/levels/forest_01.json'
+        output_file = 'Resources/levels/level0.json'
+    
+    print(f"Converting {input_file} -> {output_file}...")
+    convert_level(input_file, output_file)
+    print("Done!")
