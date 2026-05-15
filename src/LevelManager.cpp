@@ -154,6 +154,7 @@ std::string LevelManager::DetermineGroundFrameName(const int row, const int col,
 
     switch (terrain) {
         case TerrainType::Block:
+        case TerrainType::SnowBlock:
             // 遇到下面的覆蓋物時 應該用 HasSameTerrain() 判斷是否為覆蓋物邊緣（terrain 先轉成數字可能會比較好）
         case TerrainType::Ice:
         case TerrainType::Water:
@@ -161,51 +162,27 @@ std::string LevelManager::DetermineGroundFrameName(const int row, const int col,
         case TerrainType::Toxic:
             return "GroundBlock";
 
-        case TerrainType::SlopeBL: return "SlopeBlockBL";
-        case TerrainType::SlopeBR: return "SlopeBlockBR";
+        case TerrainType::SlopeBL:
+        case TerrainType::SnowSlopeBL:
+            return "SlopeBlockBL";
+        case TerrainType::SlopeBR:
+        case TerrainType::SnowSlopeBR:
+            return "SlopeBlockBR";
         case TerrainType::SlopeTL: return "SlopeBlockTL";
         case TerrainType::SlopeTR: return "SlopeBlockTR";
         default: return "";
     }
 }
 
-// std::string LevelManager::DetermineOverlayFrameName(const int row, const int col, const TerrainType terrain) const {
-//     const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
-//     const bool hasRight = HasSameTerrain(row, col + 1, terrain);
-//
-//     switch (terrain) {
-//         case TerrainType::Ice:
-//             if (!hasLeft && hasRight) return "IceBoxLeft0000";
-//             if (hasLeft && !hasRight) return "IceBoxRight0000";
-//             return "IceBox0000";
-//
-//         case TerrainType::Fire:
-//             if (!hasLeft && hasRight) return "FireBoxLeft0000";
-//             if (hasLeft && !hasRight) return "FireBoxRight0000";
-//             return "FireBox0000";
-//
-//         case TerrainType::Water:
-//             if (!hasLeft && hasRight) return "WaterBoxLeft0000";
-//             if (hasLeft && !hasRight) return "WaterBoxRight0000";
-//             return "WaterBox0000";
-//
-//         case TerrainType::Toxic:
-//             if (!hasLeft && hasRight) return "GreenBoxLeft0000";
-//             if (hasLeft && !hasRight) return "GreenBoxRight0000";
-//             return "GreenBox0000";
-//
-//         default:
-//             return "";
-//     }
-// }
-//
-// float LevelManager::DetermineOverlayZIndex(const TerrainType type) const {
-//     int terrainNum = static_cast<int>(type);
-//     if (terrainNum >= 20 && terrainNum <= 30) {
-//         return 1.0F;
-//     }
-//     return 15.0F;
-// }
+std::string LevelManager::DetermineSnowFrameName(TerrainType terrain) const {
+    switch (terrain) {
+        case TerrainType::SnowSlopeBL: return "SnowSlope0000";
+        case TerrainType::SnowSlopeBR: return "SnowSlope0001";
+        case TerrainType::SnowBlock:
+        default:
+            return "SnowFlat0000";
+    }
+}
 
 std::string LevelManager::DetermineObjectFrameName(const Element e) const {
     return "";
@@ -230,13 +207,11 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
     m_LevelDefinition = level;
     m_TileSize = static_cast<float>(level.tileSize);
 
-    for (const auto& object : level.objects) {
-        RegisterObject(object);
-    }
+    for (const auto& object : level.objects) {RegisterObject(object);}
 
     const float logicalCoreSize = 32.0F;
 
-    // --- 1. 處理地形 ---
+    // 處理地形
     for (int y = 0; y < level.height; ++y) {
         for (int x = 0; x < level.width; ++x) {
             const TerrainType terrain = level.terrainLayer[y][x];
@@ -251,57 +226,26 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
             // 🌟 使用統一函式並四捨五入確保對齊
             glm::vec2 pos = TileToWorldPosition(y, x);
             tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
-
             tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.035F);
             root->AddChild(tileObj);
+
+            int terrainValue = static_cast<int>(terrain);
+            // 20 ~ 22 is snow-related terrains
+            if (terrainValue >= 20 && terrainValue <= 22) {
+                std::string snowFrame = DetermineSnowFrameName(terrain);
+                if (!snowFrame.empty() && m_OverlayAtlas->HasFrame(snowFrame)) {
+                    auto snowSprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, snowFrame);
+                    auto snowObj = std::make_shared<Util::GameObject>(snowSprite, GROUND_Z_INDEX + 1.0F);
+
+                    snowObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
+
+                    glm::vec2 snowSize = snowSprite->GetSize();
+                    snowObj->m_Transform.scale = {(m_TileSize / snowSize.x) + 0.5F, (m_TileSize / snowSize.y) + 0.5F};
+                    root->AddChild(snowObj);
+                }
+            }
         }
     }
 
-    // --- 2. 處理水池/冰塊 (新版極簡寫法) ---
-    // for (const auto& overlayObj : level.overlays) {
-    //     const int r = overlayObj.coord.row;
-    //     const int c = overlayObj.coord.col;
-    //
-    //     const TerrainType terrain = level.terrainLayer[r][c];
-    //     const std::string frameName = DetermineOverlayFrameName(r, c, terrain);
-    //
-    //     if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) continue;
-    //
-    //     auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
-    //     auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineOverlayZIndex(terrain));
-    //
-    //     glm::vec2 pos = TileToWorldPosition(r, c);
-    //     tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
-    //
-    //     tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize + 0.033F);
-    //     root->AddChild(tileObj);
-    // }
-
-    // 以下仍由 app.cpp 處理 可刪
-    // --- 3. 處理物件 (出生點、門) ---
-    // for (const auto& object : level.objects) {
-    //     if (object.type == LevelObjectType::Spawn ||
-    //         object.type == LevelObjectType::Door) {
-    //         continue;
-    //         }
-    //
-    //     // 2. 處理其他的機關 (如 Button, Lever, Elevator)
-    //     // 🚨 注意：目前 DetermineObjectFrameName 只吃 Element(火/水)
-    //     // 如果是電梯 (Element::NEUTRAL)，目前會回傳空字串並跳過，這在現階段是安全的防呆機制。
-    //     const std::string frameName = DetermineObjectFrameName(object.element);
-    //
-    //     if (frameName.empty() || !m_OverlayAtlas->HasFrame(frameName)) {
-    //         continue;
-    //     }
-    //
-    //     auto sprite = std::make_shared<AtlasSprite>(m_OverlayAtlas, frameName);
-    //     auto tileObj = std::make_shared<Util::GameObject>(sprite, DetermineObjectZIndex(object.type));
-    //
-    //     // 確保座標對齊
-    //     glm::vec2 pos = TileToWorldPosition(object.coord.row, object.coord.col);
-    //     tileObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
-    //     tileObj->m_Transform.scale = glm::vec2(m_TileSize / logicalCoreSize * 0.75F);
-    //     root->AddChild(tileObj);
-    // }
     return true;
 }

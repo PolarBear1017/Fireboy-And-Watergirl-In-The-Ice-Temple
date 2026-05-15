@@ -470,45 +470,48 @@ void App::UpdateGameScene() {
         SwitchScene(Scene::Cover);
     }
 
-    for (auto& overlay : m_Overlays) {
-        overlay->Update(); // 讓水池流動吧！
-    }
+    // 讓水池流動
+    for (auto& overlay : m_Overlays) {overlay->Update();}
 
     // 呼叫機關邏輯 (Polymorphic Update)
     glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
     glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
-  for (auto& diamond : m_Diamonds) {
-    if (diamond->IsCollected()) continue;
-    glm::vec2 diamondPos = diamond->GetTransform().translation;
-    glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
+    // --- 呼叫角色更新 ---
+    if (m_FireBoy != nullptr) {m_FireBoy->Update();}
+    if (m_WaterGirl != nullptr) {m_WaterGirl->Update();}
+
+    for (auto& diamond : m_Diamonds) {
+        if (diamond->IsCollected()) continue;
+        glm::vec2 diamondPos = diamond->GetTransform().translation;
+        glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
     
-    if (m_FireBoy) {
-        glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
-        glm::vec2 fbCenter = m_FireBoy->GetPosition();
-        fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
-        if (m_CollisionSystem.CheckOverlap(fbCenter, fbSize, diamondPos, diamondSize)) {
-            if (diamond->GetElement() == Element::FIRE || diamond->GetElement() == Element::NEUTRAL) {
-                diamond->Collect();
-                m_FireboyGems++;
-                LOG_INFO("Fireboy collected a diamond! Total: {}", m_FireboyGems);
+        if (m_FireBoy) {
+            glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
+            glm::vec2 fbCenter = m_FireBoy->GetPosition();
+            fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
+            if (m_CollisionSystem.CheckOverlap(fbCenter, fbSize, diamondPos, diamondSize)) {
+                if (diamond->GetElement() == Element::FIRE || diamond->GetElement() == Element::NEUTRAL) {
+                    diamond->Collect();
+                    m_FireboyGems++;
+                    LOG_INFO("Fireboy collected a diamond! Total: {}", m_FireboyGems);
+                }
+            }
+        }
+    
+        if (m_WaterGirl) {
+            glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
+            glm::vec2 wgCenter = m_WaterGirl->GetPosition();
+            wgCenter.y += wgSize.y * 0.5f;
+            if (m_CollisionSystem.CheckOverlap(wgCenter, wgSize, diamondPos, diamondSize)) {
+                if (diamond->GetElement() == Element::WATER || diamond->GetElement() == Element::NEUTRAL) {
+                    diamond->Collect();
+                    m_WatergirlGems++;
+                    LOG_INFO("Watergirl collected a diamond! Total: {}", m_WatergirlGems);
+                }
             }
         }
     }
-    
-    if (m_WaterGirl) {
-        glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
-        glm::vec2 wgCenter = m_WaterGirl->GetPosition();
-        wgCenter.y += wgSize.y * 0.5f;
-        if (m_CollisionSystem.CheckOverlap(wgCenter, wgSize, diamondPos, diamondSize)) {
-            if (diamond->GetElement() == Element::WATER || diamond->GetElement() == Element::NEUTRAL) {
-                diamond->Collect();
-                m_WatergirlGems++;
-                LOG_INFO("Watergirl collected a diamond! Total: {}", m_WatergirlGems);
-            }
-        }
-    }
-  }
 
     std::unordered_map<int, bool> groupStates;
     
@@ -556,17 +559,8 @@ void App::UpdateGameScene() {
         m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs, *m_LevelManager);
     }
 
-    // --- 呼叫角色更新 ---
-    if (m_FireBoy != nullptr) {
-        m_FireBoy->Update();
-    }
-    if (m_WaterGirl != nullptr) {
-        m_WaterGirl->Update();
-    }
-
-    // 🌟 呼叫大門的邏輯：把玩家目前的精確座標餵給大門！
-    // (注意：如果你們 Character 沒有 GetPosition() 函數，請直接用
-    // m_Transform.translation)
+    // 把玩家的座標給大門
+    // (注意：如果 Character 沒有 GetPosition() 函數，請直接用 m_Transform.translation)
     if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
         m_FireDoor->Update(m_FireBoy->m_Transform.translation);
     }

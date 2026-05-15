@@ -12,5 +12,11 @@ enum class GroundState {
     DEAD
 };
 
+enum class RunningState {
+    Left,
+    Right,
+    Idle
+};
+
 
 #endif //GROUND_STATE_HPP
