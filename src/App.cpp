@@ -279,7 +279,7 @@ void App::BuildGameScene() {
         }
     }
 
-    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level1.json"));
+    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level0.json"));
     if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
         LOG_ERROR("Level validation failed after JSON load.");
         return;
@@ -321,6 +321,18 @@ void App::BuildGameScene() {
             glm::vec2 size = obj.is_horizontal
                              ? glm::vec2(tileSize * obj.length, tileSize * 0.5f)
                              : glm::vec2(tileSize, tileSize * obj.length);
+
+            // 修正：TileToWorldPosition 回傳的是第一格的中心，但電梯的中心點應該在整段長度的中間
+            if (obj.is_horizontal) {
+                float offset = (tileSize * obj.length) / 2.0f - (tileSize / 2.0f);
+                pos.x += offset;
+                targetPos.x += offset;
+            } else {
+                // 世界座標 Y 軸向上為正，向下為負
+                float offset = (tileSize * obj.length) / 2.0f - (tileSize / 2.0f);
+                pos.y -= offset;
+                targetPos.y -= offset;
+            }
 
             auto elevator = std::make_shared<Elevator>(m_MechAtlas, pos, targetPos,
                                                    size, obj.group_id);
