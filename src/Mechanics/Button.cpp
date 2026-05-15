@@ -23,7 +23,7 @@ Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, 
     // 根據您第二次的截圖，偏移 5.0f 時仍然有大約半格（約 16 像素）的懸空。
     // 這表示 Sprite 圖片（pusher_block0000）的下半部其實包含了大量的透明空白。
     // 為了將「視覺上的底邊」貼齊地面，我們需要將整個物件大幅度向下移。
-    m_InitialPosition = pos + glm::vec2(0.0f, 20.0f); 
+    m_InitialPosition = pos + glm::vec2(0.0f, -12.0f); 
     m_Transform.translation = m_InitialPosition;
     m_CurrentYOffset = 0.0f;
     
