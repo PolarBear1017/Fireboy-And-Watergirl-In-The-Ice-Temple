@@ -57,50 +57,50 @@
     {
       "type": "diamond",
       "element": "water",
-      "row": 6,
-      "col": 29
+      "row": 7,
+      "col": 30
     },
     {
       "type": "diamond",
       "element": "water",
-      "row": 9,
-      "col": 1
+      "row": 10,
+      "col": 2
     },
     {
       "type": "diamond",
       "element": "fire",
-      "row": 3,
-      "col": 24
+      "row": 4,
+      "col": 25
     },
     {
       "type": "diamond",
       "element": "fire",
-      "row": 12,
-      "col": 34
-    },
-    {
-      "type": "diamond",
-      "element": "fire",
-      "row": 20,
-      "col": 5
+      "row": 13,
+      "col": 35
     },
     {
       "type": "diamond",
       "element": "fire",
       "row": 21,
-      "col": 28
+      "col": 6
+    },
+    {
+      "type": "diamond",
+      "element": "fire",
+      "row": 22,
+      "col": 29
     },
     {
       "type": "diamond",
       "element": "water",
-      "row": 25,
-      "col": 20
+      "row": 26,
+      "col": 21
     },
     {
       "type": "diamond",
       "element": "water",
-      "row": 17,
-      "col": 31
+      "row": 18,
+      "col": 32
     },
     {
       "type": "button",
