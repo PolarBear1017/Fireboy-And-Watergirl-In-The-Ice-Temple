@@ -11,7 +11,7 @@ class Button : public Activator {
 public:
     Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& position, int groupId);
     
-    void Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) override;
+    void Update(const std::vector<glm::vec2>& interactorPositions) override;
     bool IsActivated() const override { return m_IsPressed; }
 
     std::optional<Collider> GetCollider() const override;

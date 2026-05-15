@@ -4,6 +4,7 @@
 #include "Character.hpp"
 #include "Level/LevelManager.hpp"
 #include "Mechanics/BaseMechanism.hpp"
+#include "Mechanics/Block.hpp"
 
 class CollisionSystem {
 public:
@@ -11,7 +12,10 @@ public:
                                  const LevelManager& levelManager) const;
 
     void ResolveCharacterMechanics(Character& character,
-                                    const std::vector<std::shared_ptr<BaseMechanism>>& mechanisms) const;
+                                    const std::vector<std::shared_ptr<BaseMechanism>>& mechanisms,
+                                    const LevelManager& levelManager) const;
+
+    void ResolveBlockTerrain(Block& block, const LevelManager& levelManager) const;
 
     bool CheckOverlap(const glm::vec2& center1, const glm::vec2& size1, 
                       const glm::vec2& center2, const glm::vec2& size2) const;
