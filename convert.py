@@ -59,6 +59,10 @@ def convert_level(input_path, output_path):
                 elif val == 3: mapped = 10
                 elif val == 4: mapped = 13
                 elif val == 5: mapped = 12
+                elif val == 12: mapped = 21 # SnowSlopeBL
+                elif val == 13: mapped = 20 # SnowSlopeBR
+                elif val == 15: mapped = 30 # SnowBlock
+                elif val == 14: mapped = 22 # Ice
                 else:
                     mapped = 0
                 row_data.append(mapped)
