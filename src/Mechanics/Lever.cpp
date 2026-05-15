@@ -29,7 +29,7 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     m_CurrentRotation = m_TargetRotation = -0.7f; // Approx -40 degrees (Left)
 }
 
-void Lever::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
+void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
     float dt = static_cast<float>(Util::Time::GetDeltaTimeMs()) / 1000.0f;
 
     if (m_Cooldown > 0.0f) {
@@ -64,6 +64,7 @@ void Lever::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
         }
     };
 
-    checkPush(fireboyPos);
-    checkPush(watergirlPos);
+    for (const auto& pos : interactorPositions) {
+        checkPush(pos);
+    }
 }

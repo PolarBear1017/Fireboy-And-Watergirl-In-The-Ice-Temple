@@ -38,6 +38,7 @@ namespace {
         if (value == "lever") return LevelObjectType::Lever;
         if (value == "elevator") return LevelObjectType::Elevator;
         if (value == "diamond") return LevelObjectType::Diamond;
+        if (value == "block") return LevelObjectType::Block;
         throw std::runtime_error("LevelLoader: unsupported object type: " + value);
     }
 

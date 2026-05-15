@@ -44,24 +44,30 @@ std::optional<Collider> Button::GetCollider() const {
     };
 }
 
-void Button::Update(const glm::vec2& fireboyPos, const glm::vec2& watergirlPos) {
+void Button::Update(const std::vector<glm::vec2>& interactorPositions) {
     // 1. Detection Logic
-    auto checkPressed = [&](const glm::vec2& charPos) {
-        // charPos.y 已經是角色腳底的座標 (由 CollisionSystem 賦值)
-        float charBottom = charPos.y;
-        float charLeft = charPos.x - 16.0f;
-        float charRight = charPos.x + 16.0f;
+    auto checkPressed = [&](const glm::vec2& pos) {
+        // pos.y 已經是角色腳底的座標 (由 CollisionSystem 賦值)
+        float posBottom = pos.y;
+        float posLeft = pos.x - 16.0f;
+        float posRight = pos.x + 16.0f;
         
         float btnTop = m_InitialPosition.y + 15.0f; 
         float btnLeft = m_InitialPosition.x - 33.0f;
         float btnRight = m_InitialPosition.x + 33.0f;
         
         // 增加向下容錯空間到 -40.0f，確保按鈕下沉時不會脫離判定
-        return (charBottom >= btnTop - 40.0f && charBottom <= btnTop + 10.0f) &&
-               (charRight > btnLeft && charLeft < btnRight);
+        return (posBottom >= btnTop - 40.0f && posBottom <= btnTop + 10.0f) &&
+               (posRight > btnLeft && posLeft < btnRight);
     };
 
-    m_IsPressed = checkPressed(fireboyPos) || checkPressed(watergirlPos);
+    m_IsPressed = false;
+    for (const auto& pos : interactorPositions) {
+        if (checkPressed(pos)) {
+            m_IsPressed = true;
+            break;
+        }
+    }
 
     // 2. Animation Logic (Sinking)
     // 將下沉深度從 -24.0f 改為 -20.0f。
