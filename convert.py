@@ -116,9 +116,13 @@ def convert_level(input_path, output_path):
                     elif local_gid == 4: 
                         new_obj['type'] = "diamond"
                         new_obj['element'] = "fire"
+                        row += 1
+                        col += 1
                     elif local_gid == 5:
                         new_obj['type'] = "diamond"
                         new_obj['element'] = "water"
+                        row += 1
+                        col += 1
                     else: continue
                     new_obj['row'] = row
                     new_obj['col'] = col
