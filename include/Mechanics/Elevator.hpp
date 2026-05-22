@@ -9,7 +9,7 @@
 
 class Elevator : public Receiver {
 public:
-    Elevator(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& startPos, const glm::vec2& endPos, const glm::vec2& size, int groupId);
+    Elevator(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& startPos, const glm::vec2& endPos, const glm::vec2& size, int groupId, bool isHorizontal = true);
 
     void Update() override;
     void SetActivated(bool active) override;

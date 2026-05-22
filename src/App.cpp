@@ -279,7 +279,7 @@ void App::BuildGameScene() {
         }
     }
 
-    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level0.json"));
+    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level2.json"));
     if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
         LOG_ERROR("Level validation failed after JSON load.");
         return;
@@ -335,7 +335,7 @@ void App::BuildGameScene() {
             }
 
             auto elevator = std::make_shared<Elevator>(m_MechAtlas, pos, targetPos,
-                                                   size, obj.group_id);
+                                                   size, obj.group_id, obj.is_horizontal);
             m_Receivers.push_back(elevator);
             m_SceneRoot->AddChild(elevator);
         } else if (obj.type == LevelObjectType::Diamond) {
