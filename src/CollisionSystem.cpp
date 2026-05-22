@@ -121,32 +121,7 @@ void CollisionSystem::ResolveCharacterTerrain(
         return t != TerrainType::Empty;
     };
 
-    // === 1. 水平碰撞 ===
-    if (velocity.x > 0.0F) {
-        // 頂部、底部感測器
-        const GridCoord topRight = WorldToTile({position.x + halfWidth, position.y + size.y - 1.0F}, tileSize);
-        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 12.0F}, tileSize);
-
-        // 🌟 呼叫新工具：topRight 是頭(false)，bottomRight 是腳(true)
-        if (IsSolidWall(topRight, false) || IsSolidWall(bottomRight, true)) {
-            const GridCoord hitTile = IsSolidWall(topRight, false) ? topRight : bottomRight;
-            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
-            position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
-            velocity.x = 0.0F;
-        }
-    } else if (velocity.x < 0.0F) {
-        const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 1.0F}, tileSize);
-        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
-
-        if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
-            const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
-            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
-            position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
-            velocity.x = 0.0F;
-        }
-    }
-
-    // === 2. 向上碰撞 (撞天花板) ===
+    // === 1. 向上碰撞 (撞天花板) ===
     if (velocity.y > 0.0F) {
         const GridCoord topLeft = WorldToTile({position.x - halfWidth + 1.0F, position.y + size.y}, tileSize);
         const GridCoord topRight = WorldToTile({position.x + halfWidth - 1.0F, position.y + size.y}, tileSize);
@@ -158,6 +133,31 @@ void CollisionSystem::ResolveCharacterTerrain(
             // 撞到天花板後，腳底位置 = 天花板下緣「再往下扣掉整個身高」
             position.y = tileCenter.y - tileSize * 0.5F - size.y;
             velocity.y = 0.0F;
+        }
+    }
+
+    // === 2. 水平碰撞 ===
+    if (velocity.x > 0.0F) {
+        // 頂部、底部感測器
+        const GridCoord topRight = WorldToTile({position.x + halfWidth, position.y + size.y - 4.0F}, tileSize);
+        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 12.0F}, tileSize);
+
+        // 🌟 呼叫新工具：topRight 是頭(false)，bottomRight 是腳(true)
+        if (IsSolidWall(topRight, false) || IsSolidWall(bottomRight, true)) {
+            const GridCoord hitTile = IsSolidWall(topRight, false) ? topRight : bottomRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
+            velocity.x = 0.0F;
+        }
+    } else if (velocity.x < 0.0F) {
+        const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 4.0F}, tileSize);
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
+
+        if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
+            const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
+            velocity.x = 0.0F;
         }
     }
 
