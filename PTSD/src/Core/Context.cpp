@@ -43,7 +43,7 @@ Context::Context() {
 
     m_Window =
         SDL_CreateWindow(TITLE, WINDOW_POS_X, WINDOW_POS_Y, WINDOW_WIDTH,
-                         WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+                         WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     if (m_Window == nullptr) {
         LOG_ERROR("Failed to create window");
@@ -122,9 +122,6 @@ void Context::Setup() {
 void Context::Update() {
     Util::Input::Update();
     SDL_GL_SwapWindow(m_Window);
-    int w, h;
-    SDL_GL_GetDrawableSize(m_Window, &w, &h);
-    glViewport(0, 0, w, h);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     constexpr ms_t frameTime = FPS_CAP != 0 ? 1000.0F / FPS_CAP : 0;

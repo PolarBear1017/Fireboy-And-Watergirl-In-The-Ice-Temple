@@ -114,8 +114,8 @@ void Character::ProcessInput() {
     m_RunningState = RunningState::Idle;
 
     float acceleration = (m_GroundState == GroundState::ICE) ? 0.2F : 1.0f;
-    float maxSpeed = 5.0f;
-    float friction = (m_GroundState == GroundState::ICE) ? 0.1F : 0.8f;
+    float maxSpeed = (m_GroundState == GroundState::ICE && m_Element == Element::WATER) ? 1.5F : 5.0F;
+    float friction = (m_GroundState == GroundState::ICE)? 0.1F : 0.8f;
 
     if (m_Element == Element::FIRE) {
         if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {
