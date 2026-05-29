@@ -282,22 +282,11 @@ void App::BuildGameScene() {
   }
 
   const LevelDefinition level =
-      LoadLevelDefinitionFromJsonFile(BuildLevelPath("level21.json"));
+      LoadLevelDefinitionFromJsonFile(BuildLevelPath("level2.json"));
   if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
     LOG_ERROR("Level validation failed after JSON load.");
     return;
   }
-
-  for (const auto &overlayData : level.overlays) {
-    // 從資料算出世界座標
-    glm::vec2 startPos = m_LevelManager->TileToWorldPosition(
-        overlayData.coord.row, overlayData.coord.col);
-
-    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level2.json"));
-    if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
-        LOG_ERROR("Level validation failed after JSON load.");
-        return;
-    }
 
     for (const auto& overlayData : level.overlays) {
         // 從資料算出世界座標
@@ -467,19 +456,31 @@ void App::UpdateCoverScene() {
 }
 
 void App::UpdateGameScene() {
-  const auto elapsedSeconds = Util::Time::GetDeltaTime();
+    const auto elapsedSeconds = Util::Time::GetDeltaTime();
 
-  if (m_LevelFinished) {
-    m_LevelFinishTimer += elapsedSeconds;
-    if (m_FireBoy) {
-      m_FireBoy->SetInputEnabled(false);
-      // Removed m_FireBoy->SetVisible(false); because PlayEnterDoorAnimation
-      // handles visibility
+    if (m_LevelFinished) {
+        m_LevelFinishTimer += elapsedSeconds;
+        if (m_FireBoy) {
+            m_FireBoy->SetInputEnabled(false);
+            // Removed m_FireBoy->SetVisible(false); because PlayEnterDoorAnimation
+            // handles visibility
+        }
+        if (m_WaterGirl) {
+            m_WaterGirl->SetInputEnabled(false);
+            // Removed m_WaterGirl->SetVisible(false); because PlayEnterDoorAnimation
+            // handles visibility
+        }
+        if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
+            LOG_INFO("Level Complete! Returning to Menu.");
+            SwitchScene(Scene::Cover);
+            return;
+        }
+        // Still need to update doors and other things to let animations finish
     }
-    if (m_WaterGirl) {
-      m_WaterGirl->SetInputEnabled(false);
-      // Removed m_WaterGirl->SetVisible(false); because PlayEnterDoorAnimation
-      // handles visibility
+
+    if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
+        SwitchScene(Scene::Cover);
+        return;
     }
 
     // 讓水池流動
@@ -487,7 +488,6 @@ void App::UpdateGameScene() {
         overlay->Update();
 
         auto newIndex = overlay->ConsumeNewlyConvertedIndex();
-
         for (int localCol : newIndex) {
             m_LevelManager->SwitchWaterAndIceTerrain(overlay->GetRow(), overlay->GetStartCol() + localCol);
         }
@@ -531,155 +531,80 @@ void App::UpdateGameScene() {
                 }
             }
         }
-    if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
-      LOG_INFO("Level Complete! Returning to Menu.");
-      SwitchScene(Scene::Cover);
     }
-    // Still need to update doors and other things to let animations finish
-  }
 
-  if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
-    SwitchScene(Scene::Cover);
-  }
+    std::unordered_map<int, bool> groupStates;
+
+    std::vector<glm::vec2> interactorPositions;
+    if (m_FireBoy) interactorPositions.push_back(fPos);
+    if (m_WaterGirl) interactorPositions.push_back(wPos);
+
+    for (const auto &block : m_Blocks) {
+      interactorPositions.push_back(block->GetPosition());
+    }
 
     for (auto& activator : m_Activators) {
         activator->Update(interactorPositions);
         if (activator->IsActivated()) {
-            if (activator->IsActivated()) {
-                int groupId = activator->GetGroupId();
+            int groupId = activator->GetGroupId();
 
-                if (groupId < 0) {
-                    size_t overlayIdx = std::abs(groupId) - 1;
-                    if (overlayIdx < m_Overlays.size()) {
-                        m_Overlays[overlayIdx]->StartConversion(activator->m_Transform.translation);
-                    }
-                } else {
-                    // 正數 ID 維持原本的電梯與大門邏輯
-                    groupStates[groupId] = true;
-                }
+            if (groupId < 0) {
+                size_t overlayIdx = std::abs(groupId) - 1;
+                if (overlayIdx < m_Overlays.size())
+                    m_Overlays[overlayIdx]->StartConversion(activator->m_Transform.translation);
+            } else {
+                groupStates[groupId] = true;
             }
         }
     }
 
-  // 呼叫機關邏輯 (Polymorphic Update)
-  glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
-  glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
+    for (auto &receiver : m_Receivers) {
+        bool isOn = groupStates[receiver->GetGroupId()];
+        receiver->SetActivated(isOn);
+        receiver->Update();
+    }
 
-  // --- 呼叫角色更新 ---
-  if (m_FireBoy != nullptr) {
-    m_FireBoy->Update();
-  }
-  if (m_WaterGirl != nullptr) {
-    m_WaterGirl->Update();
-  }
-
-  for (auto &diamond : m_Diamonds) {
-    if (diamond->IsCollected())
-      continue;
-    glm::vec2 diamondPos = diamond->GetTransform().translation;
-    glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
+    // 第二階段：處理機關碰撞 (動態平台)
+    std::vector<std::shared_ptr<BaseMechanism>> allMechs;
+    for (auto &a : m_Activators) allMechs.push_back(a);
+    for (auto &r : m_Receivers) allMechs.push_back(r);
+    for (auto &b : m_Blocks) {
+        b->Update();
+        // Resolve block against terrain
+        m_CollisionSystem.ResolveBlockTerrain(*b, *m_LevelManager);
+        allMechs.push_back(b);
+    }
 
     if (m_FireBoy) {
-      glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
-      glm::vec2 fbCenter = m_FireBoy->GetPosition();
-      fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
-      if (m_CollisionSystem.CheckOverlap(fbCenter, fbSize, diamondPos,
-                                         diamondSize)) {
-        if (diamond->GetElement() == Element::FIRE ||
-            diamond->GetElement() == Element::NEUTRAL) {
-          diamond->Collect();
-          m_FireboyGems++;
-          LOG_INFO("Fireboy collected a diamond! Total: {}", m_FireboyGems);
-        }
-      }
+        m_FireBoy->SetGroundState(GroundState::AIR);
+        m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs, *m_LevelManager);
     }
-
     if (m_WaterGirl) {
-      glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
-      glm::vec2 wgCenter = m_WaterGirl->GetPosition();
-      wgCenter.y += wgSize.y * 0.5f;
-      if (m_CollisionSystem.CheckOverlap(wgCenter, wgSize, diamondPos,
-                                         diamondSize)) {
-        if (diamond->GetElement() == Element::WATER ||
-            diamond->GetElement() == Element::NEUTRAL) {
-          diamond->Collect();
-          m_WatergirlGems++;
-          LOG_INFO("Watergirl collected a diamond! Total: {}", m_WatergirlGems);
+        m_WaterGirl->SetGroundState(GroundState::AIR);
+        m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
+        m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs, *m_LevelManager);
+    }
+
+    // 把玩家的座標給大門
+    // (注意：如果 Character 沒有 GetPosition() 函數，請直接用
+    // m_Transform.translation)
+    if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
+        m_FireDoor->Update(m_FireBoy->m_Transform.translation);
+    }
+    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
+        m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
+    }
+
+    // Check for victory
+    if (!m_LevelFinished && m_FireDoor && m_WaterDoor) {
+        if (m_FireDoor->IsFullyOpen() && m_WaterDoor->IsFullyOpen()) {
+            LOG_INFO("Both players reached the doors!");
+            m_LevelFinished = true;
+            if (m_FireBoy)
+                m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
+            if (m_WaterGirl)
+                m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
         }
-      }
     }
-  }
-
-  std::unordered_map<int, bool> groupStates;
-
-  std::vector<glm::vec2> interactorPositions;
-  if (m_FireBoy)
-    interactorPositions.push_back(fPos);
-  if (m_WaterGirl)
-    interactorPositions.push_back(wPos);
-  for (const auto &block : m_Blocks) {
-    interactorPositions.push_back(block->GetPosition());
-  }
-
-  for (auto &activator : m_Activators) {
-    activator->Update(interactorPositions);
-    if (activator->IsActivated()) {
-      groupStates[activator->GetGroupId()] = true;
-    }
-  }
-
-  for (auto &receiver : m_Receivers) {
-    bool isOn = groupStates[receiver->GetGroupId()];
-    receiver->SetActivated(isOn);
-    receiver->Update();
-  }
-
-  // 第二階段：處理機關碰撞 (動態平台)
-  std::vector<std::shared_ptr<BaseMechanism>> allMechs;
-  for (auto &a : m_Activators)
-    allMechs.push_back(a);
-  for (auto &r : m_Receivers)
-    allMechs.push_back(r);
-  for (auto &b : m_Blocks) {
-    b->Update();
-    // Resolve block against terrain
-    m_CollisionSystem.ResolveBlockTerrain(*b, *m_LevelManager);
-    allMechs.push_back(b);
-  }
-
-  if (m_FireBoy) {
-    m_FireBoy->SetGroundState(GroundState::AIR);
-    m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
-    m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs,
-                                                *m_LevelManager);
-  }
-  if (m_WaterGirl) {
-    m_WaterGirl->SetGroundState(GroundState::AIR);
-    m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
-    m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs,
-                                                *m_LevelManager);
-  }
-
-  // 把玩家的座標給大門
-  // (注意：如果 Character 沒有 GetPosition() 函數，請直接用
-  // m_Transform.translation)
-  if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
-    m_FireDoor->Update(m_FireBoy->m_Transform.translation);
-  }
-  if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
-    m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
-  }
-
-  // Check for victory
-  if (!m_LevelFinished && m_FireDoor && m_WaterDoor) {
-    if (m_FireDoor->IsFullyOpen() && m_WaterDoor->IsFullyOpen()) {
-      LOG_INFO("Both players reached the doors!");
-      m_LevelFinished = true;
-      if (m_FireBoy)
-        m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
-      if (m_WaterGirl)
-        m_WaterGirl->PlayEnterDoorAnimation(
-            m_WaterDoor->m_Transform.translation);
-    }
-  }
 }
