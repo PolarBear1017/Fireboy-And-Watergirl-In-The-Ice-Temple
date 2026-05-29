@@ -279,7 +279,7 @@ void App::BuildGameScene() {
         }
     }
 
-    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level0.json"));
+    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level2.json"));
     if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
         LOG_ERROR("Level validation failed after JSON load.");
         return;
@@ -292,6 +292,8 @@ void App::BuildGameScene() {
         // 實體化 Overlay 物件
         auto dynamicOverlay = std::make_shared<Overlay>(
             m_OverlayAtlas,
+            overlayData.coord.row,
+            overlayData.coord.col,
             overlayData.element,
             startPos,
             overlayData.width,
@@ -471,7 +473,15 @@ void App::UpdateGameScene() {
     }
 
     // 讓水池流動
-    for (auto& overlay : m_Overlays) {overlay->Update();}
+    for (auto& overlay : m_Overlays) {
+        overlay->Update();
+
+        auto newIndex = overlay->ConsumeNewlyConvertedIndex();
+
+        for (int localCol : newIndex) {
+            m_LevelManager->SwitchWaterAndIceTerrain(overlay->GetRow(), overlay->GetStartCol() + localCol);
+        }
+    }
 
     // 呼叫機關邏輯 (Polymorphic Update)
     glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
@@ -525,7 +535,19 @@ void App::UpdateGameScene() {
     for (auto& activator : m_Activators) {
         activator->Update(interactorPositions);
         if (activator->IsActivated()) {
-            groupStates[activator->GetGroupId()] = true;
+            if (activator->IsActivated()) {
+                int groupId = activator->GetGroupId();
+
+                if (groupId < 0) {
+                    size_t overlayIdx = std::abs(groupId) - 1;
+                    if (overlayIdx < m_Overlays.size()) {
+                        m_Overlays[overlayIdx]->StartConversion(activator->m_Transform.translation);
+                    }
+                } else {
+                    // 正數 ID 維持原本的電梯與大門邏輯
+                    groupStates[groupId] = true;
+                }
+            }
         }
     }
 
