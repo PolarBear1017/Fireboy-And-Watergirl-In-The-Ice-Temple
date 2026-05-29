@@ -73,6 +73,17 @@ def convert_level(input_path, output_path):
         level_data['terrain'] = [[0]*width for _ in range(height)]
         terrain_2d = level_data['terrain']
 
+    def get_tileset_and_local_gid(gid):
+        matching_ts = None
+        for ts in sorted(tiled_data.get('tilesets', []), key=lambda x: x.get('firstgid', 0)):
+            if ts.get('firstgid', 0) <= gid:
+                matching_ts = ts
+            else:
+                break
+        if matching_ts:
+            return matching_ts.get('source', '').lower(), gid - matching_ts.get('firstgid', 0)
+        return "", gid
+
     # objects
     # GID mappings
     # Chars (firstgid=16): 0:fire_spawn, 1:water_spawn, 2:fire_door, 3:water_door, 4:fire_diamond, 5:water_diamond
@@ -107,39 +118,51 @@ def convert_level(input_path, output_path):
                     new_obj['col'] = col
                     new_obj['target_row'] = row - props.get('dy', 0)
                     new_obj['target_col'] = col + props.get('dx', 0)
-                    new_obj['length'] = w // tiled_tile_size
                     new_obj['is_horizontal'] = w > h
+                    new_obj['length'] = (w if new_obj['is_horizontal'] else h) // tiled_tile_size
                     if 'group' in props:
                         new_obj['group_id'] = props['group']
-                elif gid >= 16 and gid < 24:
-                    local_gid = gid - 16
-                    if local_gid == 0: new_obj['type'] = "fire_spawn"
-                    elif local_gid == 1: new_obj['type'] = "water_spawn"
-                    elif local_gid == 2: new_obj['type'] = "fire_door"
-                    elif local_gid == 3: new_obj['type'] = "water_door"
-                    elif local_gid == 4: 
-                        new_obj['type'] = "diamond"
-                        new_obj['element'] = "fire"
-                        row += 1
-                        col += 1
-                    elif local_gid == 5:
-                        new_obj['type'] = "diamond"
-                        new_obj['element'] = "water"
-                        row += 1
-                        col += 1
-                    else: continue
-                    new_obj['row'] = row
-                    new_obj['col'] = col
-                elif gid >= 24:
-                    local_gid = gid - 24
-                    if local_gid == 0: new_obj['type'] = "button"
-                    elif local_gid in [1, 2]: new_obj['type'] = "lever"
-                    elif local_gid == 4: new_obj['type'] = "block"
-                    else: continue
-                    new_obj['row'] = row
-                    new_obj['col'] = col
-                    if 'group' in props:
-                        new_obj['group_id'] = props['group']
+                elif gid > 0:
+                    ts_source, local_gid = get_tileset_and_local_gid(gid)
+                    if 'chars' in ts_source:
+                        if local_gid == 0:
+                            new_obj['type'] = "fire_spawn"
+                            col += 1
+                        elif local_gid == 1:
+                            new_obj['type'] = "water_spawn"
+                            col += 1
+                        elif local_gid == 2:
+                            new_obj['type'] = "fire_door"
+                            col += 1
+                        elif local_gid == 3:
+                            new_obj['type'] = "water_door"
+                            col += 1
+                        elif local_gid == 4: 
+                            new_obj['type'] = "diamond"
+                            new_obj['element'] = "fire"
+                            row += 1
+                            col += 1
+                        elif local_gid == 5:
+                            new_obj['type'] = "diamond"
+                            new_obj['element'] = "water"
+                            row += 1
+                            col += 1
+                        else: continue
+                        new_obj['row'] = row
+                        new_obj['col'] = col
+                    elif 'objects' in ts_source and 'large' not in ts_source:
+                        if local_gid == 0: new_obj['type'] = "button"
+                        elif local_gid in [1, 2, 14]:
+                            new_obj['type'] = "lever"
+                            col += 1
+                        elif local_gid == 4: new_obj['type'] = "block"
+                        else: continue
+                        new_obj['row'] = row
+                        new_obj['col'] = col
+                        if 'group' in props:
+                            new_obj['group_id'] = props['group']
+                    else:
+                        continue
                 else:
                     continue
 

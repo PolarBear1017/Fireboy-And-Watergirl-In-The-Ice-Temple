@@ -37,22 +37,22 @@
     {
       "type": "fire_spawn",
       "row": 26,
-      "col": 1
+      "col": 2
     },
     {
       "type": "water_spawn",
       "row": 26,
-      "col": 3
+      "col": 4
     },
     {
       "type": "fire_door",
       "row": 3,
-      "col": 1
+      "col": 2
     },
     {
       "type": "water_door",
       "row": 3,
-      "col": 4
+      "col": 5
     },
     {
       "type": "diamond",
@@ -120,8 +120,8 @@
       "col": 10,
       "target_row": 11,
       "target_col": 8,
-      "length": 2,
       "is_horizontal": true,
+      "length": 2,
       "group_id": 1
     },
     {
@@ -130,8 +130,8 @@
       "col": 11,
       "target_row": 19,
       "target_col": 9,
-      "length": 2,
       "is_horizontal": true,
+      "length": 2,
       "group_id": 3
     },
     {
@@ -140,8 +140,15 @@
       "col": 8,
       "target_row": -1,
       "target_col": 8,
-      "length": 1,
-      "is_horizontal": false
+      "is_horizontal": false,
+      "length": 3,
+      "group_id": 2
+    },
+    {
+      "type": "lever",
+      "row": 9,
+      "col": 37,
+      "group_id": 2
     }
   ]
 }
