@@ -7,6 +7,12 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "lever_base0000");
     m_Sprite = std::make_shared<AtlasSprite>(atlas, "lever_stick0000"); 
     
+    m_BaseLightSprite = std::make_shared<AtlasSprite>(atlas, "lever_base_light_off0000");
+    m_StickLightSprite = std::make_shared<AtlasSprite>(atlas, "lever_stick_light_off0000");
+    
+    m_BaseLightSprite->SetColorTint(GetGroupColor(groupId));
+    m_StickLightSprite->SetColorTint(GetGroupColor(groupId));
+    
     SetDrawable(m_BaseSprite);
     
     m_StickObject = std::make_shared<Util::GameObject>(m_Sprite, 0.5f);
@@ -20,10 +26,20 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     m_Position.y = m_Transform.translation.y; // 讓互動範圍跟著圖片走
     m_Transform.scale = {0.8f, 0.8f};
 
+    m_BaseLightObj = std::make_shared<Util::GameObject>(m_BaseLightSprite, 1.05f);
+    m_BaseLightObj->m_Transform.translation = m_Transform.translation;
+    m_BaseLightObj->m_Transform.scale = m_Transform.scale;
+    AddChild(m_BaseLightObj);
+
     m_StickObject->m_Transform.translation = m_Transform.translation; 
     m_StickObject->m_Transform.translation.y -= 5.0f; // Offset to pivot properly on base
     m_StickObject->m_Transform.scale = {0.8f, 0.8f};
     AddChild(m_StickObject);
+
+    m_StickLightObj = std::make_shared<Util::GameObject>(m_StickLightSprite, 0.55f);
+    m_StickLightObj->m_Transform.translation = m_StickObject->m_Transform.translation;
+    m_StickLightObj->m_Transform.scale = m_StickObject->m_Transform.scale;
+    m_StickObject->AddChild(m_StickLightObj);
 
     // Initial state setup
     m_CurrentRotation = m_TargetRotation = -0.7f; // Approx -40 degrees (Left)
@@ -41,6 +57,18 @@ void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
     float lerpSpeed = 15.0f; 
     m_CurrentRotation += (m_TargetRotation - m_CurrentRotation) * lerpSpeed * dt;
     m_StickObject->m_Transform.rotation = m_CurrentRotation;
+
+    m_StickLightObj->m_Transform.translation = m_StickObject->m_Transform.translation;
+    m_StickLightObj->m_Transform.rotation = m_StickObject->m_Transform.rotation;
+
+    // Update light frames based on state
+    if (m_IsOn) {
+        m_BaseLightSprite->SetFrame("lever_base_light_on0000");
+        m_StickLightSprite->SetFrame("lever_stick_light_on0000");
+    } else {
+        m_BaseLightSprite->SetFrame("lever_base_light_off0000");
+        m_StickLightSprite->SetFrame("lever_stick_light_off0000");
+    }
 
     if (m_Cooldown > 0.0f) return;
 

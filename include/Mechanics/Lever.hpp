@@ -19,6 +19,11 @@ private:
     std::shared_ptr<AtlasSprite> m_Sprite;
     std::shared_ptr<AtlasSprite> m_BaseSprite;
     std::shared_ptr<Util::GameObject> m_StickObject;
+
+    std::shared_ptr<AtlasSprite> m_BaseLightSprite;
+    std::shared_ptr<AtlasSprite> m_StickLightSprite;
+    std::shared_ptr<Util::GameObject> m_BaseLightObj;
+    std::shared_ptr<Util::GameObject> m_StickLightObj;
     
     glm::vec2 m_Position;
     bool m_IsOn = false;

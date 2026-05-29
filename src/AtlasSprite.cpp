@@ -33,6 +33,9 @@ void AtlasSprite::Draw(const Core::Matrices &data) {
     m_Atlas->GetTexture()->Bind(UNIFORM_SURFACE_LOCATION);
 
     s_Program->Bind();
+    const GLint tintLoc = glGetUniformLocation(s_Program->GetId(), "colorTint");
+    glUniform4fv(tintLoc, 1, &m_ColorTint[0]);
+
     m_VertexArray->Bind();
     m_VertexArray->DrawTriangles();
 }
