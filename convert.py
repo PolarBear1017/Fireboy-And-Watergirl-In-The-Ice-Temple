@@ -133,7 +133,7 @@ def convert_level(input_path, output_path):
                 elif gid >= 24:
                     local_gid = gid - 24
                     if local_gid == 0: new_obj['type'] = "button"
-                    elif local_gid in [1, 2]: new_obj['type'] = "lever"
+                    elif local_gid in [1, 2, 14]: new_obj['type'] = "lever"
                     elif local_gid == 4: new_obj['type'] = "block"
                     else: continue
                     new_obj['row'] = row
