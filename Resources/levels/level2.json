@@ -37,12 +37,12 @@
     {
       "type": "fire_spawn",
       "row": 26,
-      "col": 1
+      "col": 2
     },
     {
       "type": "water_spawn",
       "row": 26,
-      "col": 3
+      "col": 4
     },
     {
       "type": "fire_door",
@@ -147,7 +147,7 @@
     {
       "type": "lever",
       "row": 9,
-      "col": 36,
+      "col": 37,
       "group_id": 2
     }
   ]
