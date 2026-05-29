@@ -212,10 +212,14 @@ void CollisionSystem::ResolveCharacterTerrain(
             // 腳底完美貼齊平地
             position.y = tileCenter.y + tileSize * 0.5F;
             velocity.y = 0.0F;
-            if (levelManager.GetTerrain(hitTile.row, hitTile.col) == TerrainType::SnowBlock) {
-                character.SetGroundState(GroundState::ICE);
-            } else {
-                character.SetGroundState(GroundState::GROUND);
+
+            switch (levelManager.GetTerrain(hitTile.row, hitTile.col)) {
+                case TerrainType::SnowBlock:
+                case TerrainType::Ice:
+                    character.SetGroundState(GroundState::ICE);
+                    break;
+                default:
+                    character.SetGroundState(GroundState::GROUND);
             }
         }
     }

@@ -44,6 +44,8 @@ public:
 
     bool LoadLevel(const LevelDefinition& level, const std::shared_ptr<Util::GameObject>& root);
 
+    void SwitchWaterAndIceTerrain(int row, int col);
+
 private:
     bool ValidateLevelDefinition(const LevelDefinition& level) const;
     // RegisterTerrain 有刪除疑慮

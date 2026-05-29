@@ -249,3 +249,13 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
 
     return true;
 }
+
+void LevelManager::SwitchWaterAndIceTerrain(int row, int col) {
+    if (!IsValidCoord(row, col)) return;
+    TerrainType curTerrain = m_LevelDefinition.terrainLayer[row][col];
+
+    if (curTerrain == TerrainType::Water)
+        m_LevelDefinition.terrainLayer[row][col] = TerrainType::Ice;
+    else if (curTerrain == TerrainType::Ice)
+        m_LevelDefinition.terrainLayer[row][col] = TerrainType::Water;
+}

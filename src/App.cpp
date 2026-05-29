@@ -293,14 +293,30 @@ void App::BuildGameScene() {
     glm::vec2 startPos = m_LevelManager->TileToWorldPosition(
         overlayData.coord.row, overlayData.coord.col);
 
-    // 實體化 Overlay 物件
-    auto dynamicOverlay =
-        std::make_shared<Overlay>(m_OverlayAtlas, overlayData.element, startPos,
-                                  overlayData.width, level.tileSize);
+    const LevelDefinition level = LoadLevelDefinitionFromJsonFile(BuildLevelPath("level2.json"));
+    if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
+        LOG_ERROR("Level validation failed after JSON load.");
+        return;
+    }
 
-    m_Root.AddChild(dynamicOverlay);
-    m_Overlays.push_back(dynamicOverlay);
-  }
+    for (const auto& overlayData : level.overlays) {
+        // 從資料算出世界座標
+        glm::vec2 startPos = m_LevelManager->TileToWorldPosition(overlayData.coord.row, overlayData.coord.col);
+
+        // 實體化 Overlay 物件
+        auto dynamicOverlay = std::make_shared<Overlay>(
+            m_OverlayAtlas,
+            overlayData.coord.row,
+            overlayData.coord.col,
+            overlayData.element,
+            startPos,
+            overlayData.width,
+            level.tileSize
+        );
+
+        m_Root.AddChild(dynamicOverlay);
+        m_Overlays.push_back(dynamicOverlay);
+    }
 
   // 3. 🌟 實體化機關 (讓電梯跟按鈕出現)
   for (const auto &obj : level.objects) {
@@ -465,6 +481,56 @@ void App::UpdateGameScene() {
       // Removed m_WaterGirl->SetVisible(false); because PlayEnterDoorAnimation
       // handles visibility
     }
+
+    // 讓水池流動
+    for (auto& overlay : m_Overlays) {
+        overlay->Update();
+
+        auto newIndex = overlay->ConsumeNewlyConvertedIndex();
+
+        for (int localCol : newIndex) {
+            m_LevelManager->SwitchWaterAndIceTerrain(overlay->GetRow(), overlay->GetStartCol() + localCol);
+        }
+    }
+
+    // 呼叫機關邏輯 (Polymorphic Update)
+    glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
+    glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
+
+    // --- 呼叫角色更新 ---
+    if (m_FireBoy != nullptr) {m_FireBoy->Update();}
+    if (m_WaterGirl != nullptr) {m_WaterGirl->Update();}
+
+    for (auto& diamond : m_Diamonds) {
+        if (diamond->IsCollected()) continue;
+        glm::vec2 diamondPos = diamond->GetTransform().translation;
+        glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
+    
+        if (m_FireBoy) {
+            glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
+            glm::vec2 fbCenter = m_FireBoy->GetPosition();
+            fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
+            if (m_CollisionSystem.CheckOverlap(fbCenter, fbSize, diamondPos, diamondSize)) {
+                if (diamond->GetElement() == Element::FIRE || diamond->GetElement() == Element::NEUTRAL) {
+                    diamond->Collect();
+                    m_FireboyGems++;
+                    LOG_INFO("Fireboy collected a diamond! Total: {}", m_FireboyGems);
+                }
+            }
+        }
+    
+        if (m_WaterGirl) {
+            glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
+            glm::vec2 wgCenter = m_WaterGirl->GetPosition();
+            wgCenter.y += wgSize.y * 0.5f;
+            if (m_CollisionSystem.CheckOverlap(wgCenter, wgSize, diamondPos, diamondSize)) {
+                if (diamond->GetElement() == Element::WATER || diamond->GetElement() == Element::NEUTRAL) {
+                    diamond->Collect();
+                    m_WatergirlGems++;
+                    LOG_INFO("Watergirl collected a diamond! Total: {}", m_WatergirlGems);
+                }
+            }
+        }
     if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
       LOG_INFO("Level Complete! Returning to Menu.");
       SwitchScene(Scene::Cover);
@@ -476,10 +542,24 @@ void App::UpdateGameScene() {
     SwitchScene(Scene::Cover);
   }
 
-  // 讓水池流動
-  for (auto &overlay : m_Overlays) {
-    overlay->Update();
-  }
+    for (auto& activator : m_Activators) {
+        activator->Update(interactorPositions);
+        if (activator->IsActivated()) {
+            if (activator->IsActivated()) {
+                int groupId = activator->GetGroupId();
+
+                if (groupId < 0) {
+                    size_t overlayIdx = std::abs(groupId) - 1;
+                    if (overlayIdx < m_Overlays.size()) {
+                        m_Overlays[overlayIdx]->StartConversion(activator->m_Transform.translation);
+                    }
+                } else {
+                    // 正數 ID 維持原本的電梯與大門邏輯
+                    groupStates[groupId] = true;
+                }
+            }
+        }
+    }
 
   // 呼叫機關邏輯 (Polymorphic Update)
   glm::vec2 fPos = m_FireBoy ? m_FireBoy->GetPosition() : glm::vec2(0.0f);
