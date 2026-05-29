@@ -120,8 +120,8 @@
       "col": 10,
       "target_row": 11,
       "target_col": 8,
-      "length": 2,
       "is_horizontal": true,
+      "length": 2,
       "group_id": 1
     },
     {
@@ -130,18 +130,18 @@
       "col": 11,
       "target_row": 19,
       "target_col": 9,
-      "length": 2,
       "is_horizontal": true,
+      "length": 2,
       "group_id": 3
     },
     {
       "type": "elevator",
-      "row": 3,
+      "row": 2,
       "col": 8,
-      "target_row": 0,
+      "target_row": -1,
       "target_col": 8,
-      "length": 1,
       "is_horizontal": false,
+      "length": 3,
       "group_id": 2
     },
     {
