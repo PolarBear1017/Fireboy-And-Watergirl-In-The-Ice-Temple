@@ -107,8 +107,8 @@ def convert_level(input_path, output_path):
                     new_obj['col'] = col
                     new_obj['target_row'] = row - props.get('dy', 0)
                     new_obj['target_col'] = col + props.get('dx', 0)
-                    new_obj['length'] = w // tiled_tile_size
                     new_obj['is_horizontal'] = w > h
+                    new_obj['length'] = (w if new_obj['is_horizontal'] else h) // tiled_tile_size
                     if 'group' in props:
                         new_obj['group_id'] = props['group']
                 elif gid >= 16 and gid < 24:
