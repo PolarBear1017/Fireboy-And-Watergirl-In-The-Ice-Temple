@@ -33,7 +33,7 @@
     { "type": "block", "row": 18, "col": 12 },
     { "type": "fire_door", "row": 2, "col": 3 },
     { "type": "water_door", "row": 2, "col": 6 },
-    { "type": "button", "row": 17, "col": 9, "group_id": 1 },
+    { "type": "button", "row": 21, "col": 9, "group_id": 1, "time": 4000 },
     { "type": "elevator", "row": 17, "col": 16, "target_row":16, "target_col": 16, "group_id": 1 },
     { "type": "lever", "row": 11, "col": 30, "group_id": 2 },
     { "type": "elevator", "row": 12, "col": 36, "target_row": 8, "target_col": 36, "group_id": 2 },

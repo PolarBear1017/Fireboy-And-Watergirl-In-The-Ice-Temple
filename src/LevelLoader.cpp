@@ -35,6 +35,7 @@ namespace {
         if (value.find("spawn") != std::string::npos) return LevelObjectType::Spawn;
         if (value.find("door") != std::string::npos) return LevelObjectType::Door;
         if (value == "button") return LevelObjectType::Button;
+        if (value == "timed_button" || value == "timedpusher") return LevelObjectType::TimedButton;
         if (value == "lever") return LevelObjectType::Lever;
         if (value == "elevator") return LevelObjectType::Elevator;
         if (value == "diamond") return LevelObjectType::Diamond;
@@ -92,6 +93,12 @@ LevelDefinition LoadLevelDefinitionFromJsonFile(const std::string& path) {
             if (objectJson.contains("is_horizontal")) object.is_horizontal = objectJson.at("is_horizontal").get<bool>();
             if (objectJson.contains("target_row")) object.target_row = objectJson.at("target_row").get<int>();
             if (objectJson.contains("target_col")) object.target_col = objectJson.at("target_col").get<int>();
+            if (objectJson.contains("time")) {
+                object.time = objectJson.at("time").get<float>();
+                if (object.type == LevelObjectType::Button) {
+                    object.type = LevelObjectType::TimedButton;
+                }
+            }
 
             level.objects.push_back(object);
         }

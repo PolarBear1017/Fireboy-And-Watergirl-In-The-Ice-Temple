@@ -4,7 +4,9 @@
 
 AtlasSprite::AtlasSprite(std::shared_ptr<SpriteAtlas> atlas,
                          std::string initialFrame)
-    : m_Atlas(std::move(atlas)) {
+    : m_Atlas(std::move(atlas)),
+      m_UseClockMask(false),
+      m_TimeRatio(1.0f) {
     if (s_Program == nullptr) {
         InitProgram();
     }
@@ -35,6 +37,13 @@ void AtlasSprite::Draw(const Core::Matrices &data) {
     s_Program->Bind();
     const GLint tintLoc = glGetUniformLocation(s_Program->GetId(), "colorTint");
     glUniform4fv(tintLoc, 1, &m_ColorTint[0]);
+
+    const GLint useMaskLoc = glGetUniformLocation(s_Program->GetId(), "useClockMask");
+    glUniform1i(useMaskLoc, m_UseClockMask ? 1 : 0);
+    if (m_UseClockMask) {
+        const GLint timeRatioLoc = glGetUniformLocation(s_Program->GetId(), "u_TimeRatio");
+        glUniform1f(timeRatioLoc, m_TimeRatio);
+    }
 
     m_VertexArray->Bind();
     m_VertexArray->DrawTriangles();

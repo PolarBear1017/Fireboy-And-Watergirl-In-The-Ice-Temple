@@ -18,6 +18,7 @@
 #include "Mechanics/Button.hpp"
 #include "Mechanics/Elevator.hpp"
 #include "Mechanics/Lever.hpp"
+#include "Mechanics/TimedButton.hpp"
 #include "Util/Text.hpp"
 #include <unordered_map>
 
@@ -282,7 +283,7 @@ void App::BuildGameScene() {
   }
 
   const LevelDefinition level =
-      LoadLevelDefinitionFromJsonFile(BuildLevelPath("level2.json"));
+      LoadLevelDefinitionFromJsonFile(BuildLevelPath("test_map.json"));
   if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
     LOG_ERROR("Level validation failed after JSON load.");
     return;
@@ -313,6 +314,10 @@ void App::BuildGameScene() {
         m_LevelManager->TileToWorldPosition(obj.coord.row, obj.coord.col);
     if (obj.type == LevelObjectType::Button) {
       auto button = std::make_shared<Button>(m_MechAtlas, pos, obj.group_id);
+      m_Activators.push_back(button);
+      m_SceneRoot->AddChild(button);
+    } else if (obj.type == LevelObjectType::TimedButton) {
+      auto button = std::make_shared<TimedButton>(m_MechAtlas, pos, obj.group_id, obj.time);
       m_Activators.push_back(button);
       m_SceneRoot->AddChild(button);
     } else if (obj.type == LevelObjectType::Lever) {
