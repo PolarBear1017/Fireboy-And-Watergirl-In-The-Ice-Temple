@@ -13,12 +13,13 @@ Elevator::Elevator(const std::shared_ptr<SpriteAtlas> &atlas,
   m_LastPosition = startPos;
 
   // Override the collision size to exactly match the sprite's visual
-  // dimensions. The visual size (138x26) is different from the default tiled
-  // size, which caused characters to fall off at the edges.
-  m_Size = m_Sprite->GetSize();
-  if (!isHorizontal) {
+  // dimensions for horizontal platforms. For vertical platforms, keep the
+  // tiled height to avoid sticking out of the floor and blocking characters.
+  if (isHorizontal) {
+    m_Size = m_Sprite->GetSize();
+  } else {
     m_Transform.rotation = glm::radians(90.0f);
-    std::swap(m_Size.x, m_Size.y);
+    m_Size = glm::vec2(m_Sprite->GetSize().y, size.y);
   }
 }
 
