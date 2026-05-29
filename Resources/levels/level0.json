@@ -99,13 +99,13 @@
     {
       "type": "button",
       "row": 10,
-      "col": 30,
+      "col": 31,
       "group_id": 5
     },
     {
       "type": "button",
       "row": 14,
-      "col": 10,
+      "col": 11,
       "group_id": 5
     },
     {

@@ -151,7 +151,9 @@ def convert_level(input_path, output_path):
                         new_obj['row'] = row
                         new_obj['col'] = col
                     elif 'objects' in ts_source and 'large' not in ts_source:
-                        if local_gid == 0: new_obj['type'] = "button"
+                        if local_gid == 0:
+                            new_obj['type'] = "button"
+                            col += 1
                         elif local_gid in [1, 2, 14]:
                             new_obj['type'] = "lever"
                             col += 1

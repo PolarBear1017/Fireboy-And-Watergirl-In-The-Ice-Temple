@@ -18,6 +18,9 @@ public:
     void Draw(const Core::Matrices &data) override;
     void SetFrame(const std::string &name);
 
+    void SetColorTint(const glm::vec4 &tint) { m_ColorTint = tint; }
+    glm::vec4 GetColorTint() const { return m_ColorTint; }
+
 private:
     void InitProgram();
     void RebuildVertexArray(const AtlasFrame &frame);
@@ -32,6 +35,7 @@ private:
     std::shared_ptr<SpriteAtlas> m_Atlas;
     std::string m_CurrentFrame;
     glm::vec2 m_Size = {1.0F, 1.0F};
+    glm::vec4 m_ColorTint = {1.0F, 1.0F, 1.0F, 1.0F};
 };
 
 #endif

@@ -11,10 +11,11 @@ Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, 
     
     // 2. Glow Overlay
     m_Sprite = std::make_shared<AtlasSprite>(atlas, "pusher_block_light0000");
+    m_Sprite->SetColorTint(GetGroupColor(groupId));
     // 設定發光層的 Z-Index 為 -0.05f，略高於底座 (-0.1f)，但依然低於地面 (0.0f)
     m_PusherObject = std::make_shared<Util::GameObject>(m_Sprite, -0.05f); 
     AddChild(m_PusherObject);
-    m_PusherObject->SetVisible(false);
+    m_PusherObject->SetVisible(true);
     
     // 3. Layout and Scale
     m_Transform.scale = {0.6f, 0.6f}; 
@@ -82,7 +83,7 @@ void Button::Update(const std::vector<glm::vec2>& interactorPositions) {
     m_Transform.translation.y = m_InitialPosition.y + m_CurrentYOffset;
 
     // 3. Visual Feedback
-    m_PusherObject->SetVisible(m_IsPressed);
+    m_PusherObject->SetVisible(true);
     m_PusherObject->m_Transform.translation = m_Transform.translation;
     
     // Z-Index 已經在建構子設定為永遠在地面之後 (-0.1f)

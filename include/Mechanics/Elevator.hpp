@@ -30,6 +30,16 @@ private:
     
     float m_Progress = 0.0f; // 0.0 -> StartPos, 1.0 -> EndPos
     float m_Speed = 2.0f;    // Time to complete transition in seconds
+
+    float m_TileLength = 0.0f;
+
+    std::shared_ptr<AtlasSprite> m_LeftCapSprite;
+    std::shared_ptr<AtlasSprite> m_RightCapSprite;
+    std::shared_ptr<AtlasSprite> m_CenterSprite;
+
+    std::shared_ptr<Util::GameObject> m_LeftCapObj;
+    std::shared_ptr<Util::GameObject> m_RightCapObj;
+    std::shared_ptr<Util::GameObject> m_CenterObj;
 };
 
 #endif

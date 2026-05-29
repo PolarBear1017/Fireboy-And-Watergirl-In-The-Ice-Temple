@@ -5,10 +5,11 @@ layout(location = 0) in vec2 uv;
 layout(location = 0) out vec4 fragColor;
 
 uniform sampler2D surface;
+uniform vec4 colorTint = vec4(1.0, 1.0, 1.0, 1.0);
 
 void main() {
     vec4 texColor = texture(surface, uv);
     if (texColor.a < 0.01)
         discard;
-    fragColor = texColor;
+    fragColor = texColor * colorTint;
 }
