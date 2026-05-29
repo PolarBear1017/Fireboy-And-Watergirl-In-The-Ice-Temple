@@ -21,6 +21,11 @@ public:
     void SetColorTint(const glm::vec4 &tint) { m_ColorTint = tint; }
     glm::vec4 GetColorTint() const { return m_ColorTint; }
 
+    void SetClockMask(bool useMask, float timeRatio) {
+        m_UseClockMask = useMask;
+        m_TimeRatio = timeRatio;
+    }
+
 private:
     void InitProgram();
     void RebuildVertexArray(const AtlasFrame &frame);
@@ -36,6 +41,9 @@ private:
     std::string m_CurrentFrame;
     glm::vec2 m_Size = {1.0F, 1.0F};
     glm::vec4 m_ColorTint = {1.0F, 1.0F, 1.0F, 1.0F};
+
+    bool m_UseClockMask = false;
+    float m_TimeRatio = 1.0f;
 };
 
 #endif

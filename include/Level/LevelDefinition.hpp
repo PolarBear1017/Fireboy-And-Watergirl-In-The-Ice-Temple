@@ -28,7 +28,8 @@ enum class LevelObjectType {
     Lever,
     Elevator,
     Diamond,
-    Block
+    Block,
+    TimedButton
 };
 
 struct GridCoord {
@@ -51,6 +52,7 @@ struct LevelObject {
     bool is_horizontal = true;
     int target_row = -1;
     int target_col = -1;
+    float time = 0.0f;
 };
 
 struct LevelDefinition {
