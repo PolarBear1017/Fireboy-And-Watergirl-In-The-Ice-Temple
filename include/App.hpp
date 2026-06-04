@@ -29,6 +29,7 @@ public:
 
     enum class Scene {
         Cover,
+        Map,
         Game,
     };
 
@@ -47,6 +48,11 @@ private:
     void BuildGameScene();
     void UpdateCoverScene();
     void UpdateGameScene();
+    void BuildMapScene();
+    void UpdateMapScene();
+    void DrawPathLine(const glm::vec2& start, const glm::vec2& end);
+    void MarkCurrentLevelCompleted();
+    void SetupMapNodes();
 
 private:
     State m_CurrentState = State::START;
@@ -102,6 +108,27 @@ private:
     // Level State
     bool m_LevelFinished = false;
     float m_LevelFinishTimer = 0.0f;
+
+    struct MapNode {
+        int id;
+        std::string filename;
+        std::string type; // "" (normal), "puzzle", "speed"
+        float x;          // 0.0 ~ 1.0
+        float y;          // 0.0 ~ 1.0
+        std::vector<int> requiredLevels;
+        
+        bool unlocked = false;
+        bool completed = false;
+        
+        std::shared_ptr<AtlasSprite> sprite;
+        std::shared_ptr<Util::GameObject> gameObject;
+        std::shared_ptr<Util::GameObject> lockObject;
+        std::shared_ptr<Util::GameObject> maskObject;
+    };
+
+    std::vector<MapNode> m_MapNodes;
+    std::string m_CurrentLevelPath;
+    float m_MapBackgroundScale = 1.5F;
 };
 
 #endif
