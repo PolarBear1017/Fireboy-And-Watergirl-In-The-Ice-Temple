@@ -154,9 +154,13 @@ def convert_level(input_path, output_path):
                         if local_gid == 0:
                             new_obj['type'] = "button"
                             col += 1
-                        elif local_gid in [1, 2, 14]:
+                        elif local_gid in [1, 2]:
                             new_obj['type'] = "lever"
                             col += 1
+                        elif local_gid == 14:
+                            new_obj['type'] = "timed_button"
+                            col += 1
+                            new_obj['time'] = float(props.get('time', 2000.0))
                         elif local_gid == 4: new_obj['type'] = "block"
                         else: continue
                         new_obj['row'] = row

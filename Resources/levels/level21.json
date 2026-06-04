@@ -109,24 +109,28 @@
       "group_id": 3
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 8000.0,
       "row": 23,
       "col": 2,
       "group_id": 1
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 5000.0,
       "row": 23,
       "col": 36,
       "group_id": 8
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 6000.0,
       "row": 27,
       "col": 2
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 9000.0,
       "row": 11,
       "col": 36,
       "group_id": 4
@@ -144,7 +148,8 @@
       "group_id": 41
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 6000.0,
       "row": 3,
       "col": 36,
       "group_id": 21

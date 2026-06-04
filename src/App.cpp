@@ -283,7 +283,7 @@ void App::BuildGameScene() {
   }
 
   const LevelDefinition level =
-      LoadLevelDefinitionFromJsonFile(BuildLevelPath("test_map.json"));
+      LoadLevelDefinitionFromJsonFile(BuildLevelPath("level7.json"));
   if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
     LOG_ERROR("Level validation failed after JSON load.");
     return;

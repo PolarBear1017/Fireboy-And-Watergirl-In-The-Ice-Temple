@@ -97,13 +97,15 @@
       "col": 7
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 4000.0,
       "row": 5,
       "col": 36,
       "group_id": 2
     },
     {
-      "type": "lever",
+      "type": "timed_button",
+      "time": 2600.0,
       "row": 15,
       "col": 7
     },
