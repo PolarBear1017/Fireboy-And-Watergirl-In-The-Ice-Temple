@@ -103,13 +103,12 @@ void CollisionSystem::ResolveCharacterTerrain(
     // 增加 isBottom 參數，用來判斷現在是不是在測量腳部的碰撞
     auto IsSolidWall = [&](const GridCoord& coord, bool isBottom) {
         TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
-        if (t != TerrainType::Block) return false;
 
-        // 如果這是下半身 (腳步) 的碰撞感測器
+        if (t == TerrainType::Empty) return false;
+        if (IsSlope(t)) return false;
+        // 寬容下半身碰撞感測器
         if (isBottom) {
-            // 如果正在斜坡上，允許腳步穿透前方階梯
             if (onSlope) return false;
-            // 如果牆的上方是斜坡 (代表正要走上斜坡)，也允許穿透
             TerrainType tileAbove = levelManager.GetTerrain(coord.row - 1, coord.col);
             if (IsSlope(tileAbove)) return false;
         }
@@ -121,7 +120,32 @@ void CollisionSystem::ResolveCharacterTerrain(
         return t != TerrainType::Empty;
     };
 
-    // === 1. 向上碰撞 (撞天花板) ===
+    // === 水平碰撞 ===
+    if (velocity.x > 0.0F) {
+        // 頂部、底部感測器
+        const GridCoord topRight = WorldToTile({position.x + halfWidth, position.y + size.y - 8.0F}, tileSize);
+        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 12.0F}, tileSize);
+
+        // 🌟 呼叫新工具：topRight 是頭(false)，bottomRight 是腳(true)
+        if (IsSolidWall(topRight, false) || IsSolidWall(bottomRight, true)) {
+            const GridCoord hitTile = IsSolidWall(topRight, false) ? topRight : bottomRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
+            velocity.x = 0.0F;
+        }
+    } else if (velocity.x < 0.0F) {
+        const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 8.0F}, tileSize);
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
+
+        if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
+            const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
+            velocity.x = 0.0F;
+        }
+    }
+
+    // === 向上碰撞 (撞天花板) ===
     if (velocity.y > 0.0F) {
         const GridCoord topLeft = WorldToTile({position.x - halfWidth + 1.0F, position.y + size.y}, tileSize);
         const GridCoord topRight = WorldToTile({position.x + halfWidth - 1.0F, position.y + size.y}, tileSize);
@@ -133,31 +157,6 @@ void CollisionSystem::ResolveCharacterTerrain(
             // 撞到天花板後，腳底位置 = 天花板下緣「再往下扣掉整個身高」
             position.y = tileCenter.y - tileSize * 0.5F - size.y;
             velocity.y = 0.0F;
-        }
-    }
-
-    // === 2. 水平碰撞 ===
-    if (velocity.x > 0.0F) {
-        // 頂部、底部感測器
-        const GridCoord topRight = WorldToTile({position.x + halfWidth, position.y + size.y - 4.0F}, tileSize);
-        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 12.0F}, tileSize);
-
-        // 🌟 呼叫新工具：topRight 是頭(false)，bottomRight 是腳(true)
-        if (IsSolidWall(topRight, false) || IsSolidWall(bottomRight, true)) {
-            const GridCoord hitTile = IsSolidWall(topRight, false) ? topRight : bottomRight;
-            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
-            position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
-            velocity.x = 0.0F;
-        }
-    } else if (velocity.x < 0.0F) {
-        const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 4.0F}, tileSize);
-        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
-
-        if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
-            const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
-            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
-            position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
-            velocity.x = 0.0F;
         }
     }
 

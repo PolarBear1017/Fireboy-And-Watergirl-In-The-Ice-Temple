@@ -137,13 +137,20 @@ void Overlay::UpdateConversion() {
             if (m_MistLeft) m_MistLeft->m_Transform.translation = m_Puddles[leftIdx]->m_Transform.translation+ glm::vec2(-16.0f, 0.0f);
             m_NewlyConvertedIndex.push_back(leftIdx);
             stillSpreading = true;
+        } else {
+            RemoveChild(m_MistLeft);
+            m_MistLeft = nullptr;
         }
+
         if ((leftIdx != rightIdx) && (rightIdx < m_Width)) {
             m_Elements[rightIdx] = (m_Elements[rightIdx] == Element::WATER) ? Element::ICE : Element::WATER;
             m_Puddles[rightIdx]->SetZIndex((m_Elements[rightIdx] == Element::ICE) ? 1.0F : 15.0F);
             if (m_MistRight) m_MistRight->m_Transform.translation = m_Puddles[rightIdx]->m_Transform.translation + glm::vec2(16.0f, 0.0f);
             m_NewlyConvertedIndex.push_back(rightIdx);
             stillSpreading = true;
+        } else if (leftIdx != rightIdx){
+            RemoveChild(m_MistRight);
+            m_MistRight = nullptr;
         }
 
         m_ConvRadius++;
@@ -151,8 +158,14 @@ void Overlay::UpdateConversion() {
         if (!stillSpreading) {
             m_IsConverting = false;
 
-            if (m_MistLeft) { RemoveChild(m_MistLeft); m_MistLeft = nullptr; }
-            if (m_MistRight) { RemoveChild(m_MistRight); m_MistRight = nullptr; }
+            if (m_MistLeft) {
+                RemoveChild(m_MistLeft);
+                m_MistLeft = nullptr;
+            }
+            if (m_MistRight) {
+                RemoveChild(m_MistRight);
+                m_MistRight = nullptr;
+            }
         }
     }
 }
