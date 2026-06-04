@@ -102,6 +102,7 @@ void App::Start() {
   m_LevelManager =
       std::make_shared<LevelManager>(m_GroundAtlas, m_OverlayAtlas);
 
+  SetupMapNodes();
   SwitchScene(Scene::Cover);
   m_CurrentState = State::UPDATE;
 }
@@ -115,6 +116,10 @@ void App::Update() {
   switch (m_CurrentScene) {
   case Scene::Cover:
     UpdateCoverScene();
+    break;
+
+  case Scene::Map:
+    UpdateMapScene();
     break;
 
   case Scene::Game:
@@ -135,6 +140,10 @@ void App::SwitchScene(const Scene scene) {
   switch (scene) {
   case Scene::Cover:
     BuildCoverScene();
+    break;
+
+  case Scene::Map:
+    BuildMapScene();
     break;
 
   case Scene::Game:
@@ -283,7 +292,7 @@ void App::BuildGameScene() {
   }
 
   const LevelDefinition level =
-      LoadLevelDefinitionFromJsonFile(BuildLevelPath("level7.json"));
+      LoadLevelDefinitionFromJsonFile(BuildLevelPath(m_CurrentLevelPath));
   if (!m_LevelManager->LoadLevel(level, m_SceneRoot)) {
     LOG_ERROR("Level validation failed after JSON load.");
     return;
@@ -442,7 +451,7 @@ void App::UpdateCoverScene() {
   if (Util::Input::IsKeyUp(Util::Keycode::RETURN) ||
       Util::Input::IsKeyUp(Util::Keycode::KP_ENTER) ||
       Util::Input::IsKeyUp(Util::Keycode::SPACE)) {
-    SwitchScene(Scene::Game);
+    SwitchScene(Scene::Map);
   }
 
   if (Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
@@ -455,7 +464,7 @@ void App::UpdateCoverScene() {
     if (worldX >= -85.0F && worldX <= 85.0F && worldY >= -65.0F &&
         worldY <= -15.0F) {
       LOG_INFO("PLAY clicked!");
-      SwitchScene(Scene::Game);
+      SwitchScene(Scene::Map);
     }
   }
 }
@@ -477,14 +486,15 @@ void App::UpdateGameScene() {
         }
         if (m_LevelFinishTimer >= 1.6f) { // Adjusted from 2.0f to 1.6f
             LOG_INFO("Level Complete! Returning to Menu.");
-            SwitchScene(Scene::Cover);
+            MarkCurrentLevelCompleted();
+            SwitchScene(Scene::Map);
             return;
         }
         // Still need to update doors and other things to let animations finish
     }
 
     if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
-        SwitchScene(Scene::Cover);
+        SwitchScene(Scene::Map);
         return;
     }
 
@@ -610,6 +620,210 @@ void App::UpdateGameScene() {
                 m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
             if (m_WaterGirl)
                 m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
+        }
+    }
+}
+
+void App::SetupMapNodes() {
+    m_MapNodes.clear();
+
+    // 關卡 0 (普通)：起點
+    m_MapNodes.push_back({0, "level0.json", "", 0.5f, 0.85f, {}, true, false});
+    
+    // 關卡 2 (普通)：需要先過關卡 0
+    m_MapNodes.push_back({2, "level2.json", "", 0.5f, 0.65f, {0}, false, false});
+    
+    // 關卡 6 (速度)：分支左，需要先過關卡 2
+    m_MapNodes.push_back({6, "level6.json", "speed", 0.35f, 0.45f, {2}, false, false});
+    
+    // 關卡 7 (普通)：分支右，需要先過關卡 2
+    m_MapNodes.push_back({7, "level7.json", "", 0.65f, 0.45f, {2}, false, false});
+    
+    // 關卡 21 (解謎)：終點，只要過關卡 6 或關卡 7 其中一關即可解鎖
+    m_MapNodes.push_back({21, "level21.json", "puzzle", 0.5f, 0.25f, {6, 7}, false, false});
+
+    m_CurrentLevelPath = "level0.json";
+}
+
+void App::DrawPathLine(const glm::vec2& start, const glm::vec2& end) {
+    auto lineSprite = std::make_shared<AtlasSprite>(m_TempleAtlas, "MenuBackground0000");
+    auto lineObj = std::make_shared<Util::GameObject>(lineSprite, kDecorationZ);
+    
+    glm::vec2 diff = end - start;
+    float len = glm::length(diff);
+    float angle = std::atan2(diff.y, diff.x);
+    
+    lineObj->m_Transform.translation = start + diff * 0.5f;
+    lineObj->m_Transform.rotation = angle;
+    // MenuBackground0000 的大小為 512x512
+    lineObj->m_Transform.scale = { len / 512.0f, 6.0f / 512.0f };
+    // 染成原版地圖的灰色 (#99A5AA)
+    lineSprite->SetColorTint({ 0.60f, 0.65f, 0.67f, 1.0f });
+    
+    m_SceneRoot->AddChild(lineObj);
+}
+
+void App::BuildMapScene() {
+    ResetSceneRoot();
+
+    // 1. 設置地圖背景 (拼貼 MenuBackground0000 磁磚寫法)
+    const float bgTileSize = 512.0F;
+    const int cols = (WINDOW_WIDTH / static_cast<int>(bgTileSize)) + 2;
+    const int rows = (WINDOW_HEIGHT / static_cast<int>(bgTileSize)) + 2;
+
+    for (int i = 0; i < cols; ++i) {
+        for (int j = 0; j < rows; ++j) {
+            auto bgSprite =
+                std::make_shared<AtlasSprite>(m_TempleAtlas, "MenuBackground0000");
+            auto bgObject =
+                std::make_shared<Util::GameObject>(bgSprite, kBackgroundZ);
+
+            float x = -static_cast<float>(WINDOW_WIDTH) / 2.0F + (bgTileSize / 2.0F) +
+                      static_cast<float>(i) * bgTileSize;
+            float y = static_cast<float>(WINDOW_HEIGHT) / 2.0F - (bgTileSize / 2.0F) -
+                      static_cast<float>(j) * bgTileSize;
+
+            bgObject->m_Transform.translation = {x, y};
+            m_SceneRoot->AddChild(bgObject);
+        }
+    }
+
+    // 重新評估各關卡解鎖狀態
+    for (auto& node : m_MapNodes) {
+        if (node.id == 0) {
+            node.unlocked = true;
+        } else {
+            // 對於關卡 21：只需前置之一完成即解鎖
+            if (node.id == 21) {
+                node.unlocked = false;
+                for (int req : node.requiredLevels) {
+                    auto it = std::find_if(m_MapNodes.begin(), m_MapNodes.end(), [req](const MapNode& n){ return n.id == req; });
+                    if (it != m_MapNodes.end() && it->completed) {
+                        node.unlocked = true;
+                        break;
+                    }
+                }
+            } else {
+                // 對於其他關卡：所有前置關卡皆需完成
+                node.unlocked = true;
+                for (int req : node.requiredLevels) {
+                    auto it = std::find_if(m_MapNodes.begin(), m_MapNodes.end(), [req](const MapNode& n){ return n.id == req; });
+                    if (it != m_MapNodes.end() && !it->completed) {
+                        node.unlocked = false;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. 繪製關卡連線 (依序連接)
+    auto getWorldPos = [&](const MapNode& node) -> glm::vec2 {
+        float mapW = 800.0f * m_MapBackgroundScale;
+        float mapH = 395.0f * m_MapBackgroundScale;
+        return { (node.x - 0.5f) * mapW, (0.5f - node.y) * mapH };
+    };
+
+    // 畫線：0 -> 2, 2 -> 6, 2 -> 7, 6 -> 21, 7 -> 21
+    DrawPathLine(getWorldPos(m_MapNodes[0]), getWorldPos(m_MapNodes[1])); // 0 -> 2
+    DrawPathLine(getWorldPos(m_MapNodes[1]), getWorldPos(m_MapNodes[2])); // 2 -> 6
+    DrawPathLine(getWorldPos(m_MapNodes[1]), getWorldPos(m_MapNodes[3])); // 2 -> 7
+    DrawPathLine(getWorldPos(m_MapNodes[2]), getWorldPos(m_MapNodes[4])); // 6 -> 21
+    DrawPathLine(getWorldPos(m_MapNodes[3]), getWorldPos(m_MapNodes[4])); // 7 -> 21
+
+    // 3. 實體化鑽石按鈕與外框
+    for (auto& node : m_MapNodes) {
+        glm::vec2 pos = getWorldPos(node);
+        std::string frameName = "DiamondDark0000"; // 預設鎖定
+        std::string maskFrameName = "DiamondDark_Bkg_Mask0000"; // 預設鎖定外框
+
+        if (node.unlocked) {
+            std::string prefix = "Diamond";
+            if (node.type == "puzzle") prefix = "DiamondPuzzle";
+            else if (node.type == "speed") prefix = "DiamondSpeed";
+            
+            // 已通關顯示 0003 幀，未通關顯示 0000 幀
+            frameName = prefix + (node.completed ? "0003" : "0000");
+            maskFrameName = prefix + "_Bkg_Mask0000";
+        }
+
+        // 建立黃色/鎖定外框 (ZIndex 稍微低於鑽石)
+        auto maskSprite = std::make_shared<AtlasSprite>(m_MenuAtlas, maskFrameName);
+        node.maskObject = std::make_shared<Util::GameObject>(maskSprite, kButtonZ - 0.2f);
+        node.maskObject->m_Transform.translation = pos;
+        node.maskObject->m_Transform.scale = {0.7f, 0.7f};
+        m_SceneRoot->AddChild(node.maskObject);
+
+        // 建立鑽石
+        node.sprite = std::make_shared<AtlasSprite>(m_MenuAtlas, frameName);
+        node.gameObject = std::make_shared<Util::GameObject>(node.sprite, kButtonZ);
+        node.gameObject->m_Transform.translation = pos;
+        node.gameObject->m_Transform.scale = {0.7f, 0.7f};
+        m_SceneRoot->AddChild(node.gameObject);
+
+        // 如果鎖定，疊加鎖頭圖示
+        if (!node.unlocked) {
+            auto lockSprite = std::make_shared<AtlasSprite>(m_MenuAtlas, "Lock0000");
+            node.lockObject = std::make_shared<Util::GameObject>(lockSprite, kButtonZ + 1.0f);
+            node.lockObject->m_Transform.translation = pos;
+            node.lockObject->m_Transform.scale = {0.6f, 0.6f};
+            m_SceneRoot->AddChild(node.lockObject);
+        } else {
+            node.lockObject.reset();
+        }
+    }
+}
+
+void App::UpdateMapScene() {
+    const auto cursor = Util::Input::GetCursorPosition();
+    const float worldX = cursor.x;
+    const float worldY = cursor.y;
+
+    auto getWorldPos = [&](const MapNode& node) -> glm::vec2 {
+        float mapW = 800.0f * m_MapBackgroundScale;
+        float mapH = 395.0f * m_MapBackgroundScale;
+        return { (node.x - 0.5f) * mapW, (0.5f - node.y) * mapH };
+    };
+
+    for (auto& node : m_MapNodes) {
+        if (!node.unlocked) continue;
+
+        glm::vec2 pos = getWorldPos(node);
+        float dist = glm::distance(pos, glm::vec2(worldX, worldY));
+
+        // 懸停偵測 (半徑 40 像素)
+        if (dist < 40.0f) {
+            // 點擊時縮小按鈕與外框
+            if (Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+                node.gameObject->m_Transform.scale = {0.65f, 0.65f};
+                if (node.maskObject) node.maskObject->m_Transform.scale = {0.65f, 0.65f};
+                LOG_INFO("Entering level: {}", node.filename);
+                m_CurrentLevelPath = node.filename;
+                SwitchScene(Scene::Game);
+                return;
+            } else {
+                // 懸停時放大
+                node.gameObject->m_Transform.scale = {0.8f, 0.8f};
+                if (node.maskObject) node.maskObject->m_Transform.scale = {0.8f, 0.8f};
+            }
+        } else {
+            // 還原為預設縮放
+            node.gameObject->m_Transform.scale = {0.7f, 0.7f};
+            if (node.maskObject) node.maskObject->m_Transform.scale = {0.7f, 0.7f};
+        }
+    }
+
+    // 按下 Backspace 可回主封面
+    if (Util::Input::IsKeyUp(Util::Keycode::BACKSPACE)) {
+        SwitchScene(Scene::Cover);
+    }
+}
+
+void App::MarkCurrentLevelCompleted() {
+    for (auto& node : m_MapNodes) {
+        if (node.filename == m_CurrentLevelPath) {
+            node.completed = true;
+            break;
         }
     }
 }
