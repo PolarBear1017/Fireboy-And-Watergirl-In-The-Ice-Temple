@@ -47,7 +47,7 @@ struct LevelObject {
     LevelObjectType type;
     Element element;
     GridCoord coord;
-    int group_id = -1;
+    int group_id = 0;
     int length = 1;
     bool is_horizontal = true;
     int target_row = -1;
