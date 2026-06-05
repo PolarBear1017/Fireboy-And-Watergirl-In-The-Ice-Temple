@@ -114,7 +114,7 @@ void Character::ProcessInput() {
     m_RunningState = RunningState::Idle;
 
     float acceleration = (m_GroundState == GroundState::ICE) ? 0.2F : 1.0f;
-    float maxSpeed = (m_GroundState == GroundState::ICE && m_Element == Element::WATER) ? 1.0F : 5.0F;
+    float maxSpeed = (m_GroundState == GroundState::ICE && m_Element == Element::WATER) ? 1.0F: 5.0F;
     float friction = (m_GroundState == GroundState::ICE)? 0.1F : 0.8f;
 
     if (m_Element == Element::FIRE) {
@@ -129,6 +129,8 @@ void Character::ProcessInput() {
         if (Util::Input::IsKeyPressed(Util::Keycode::UP) && IsGrounded()) {
             m_Velocity.y += m_JumpForce;
             m_GroundState = GroundState::AIR;
+            if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) m_Velocity.x = -maxSpeed;
+            if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) m_Velocity.x = maxSpeed;
         }
     }
     if (m_Element == Element::WATER) {
@@ -143,6 +145,8 @@ void Character::ProcessInput() {
         if (Util::Input::IsKeyPressed(Util::Keycode::W) && IsGrounded()) {
             m_Velocity.y += m_JumpForce;
             m_GroundState = GroundState::AIR;
+            if (Util::Input::IsKeyPressed(Util::Keycode::A)) m_Velocity.x = -maxSpeed;
+            if (Util::Input::IsKeyPressed(Util::Keycode::D)) m_Velocity.x = maxSpeed;
         }
     }
 
