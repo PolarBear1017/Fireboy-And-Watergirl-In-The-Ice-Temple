@@ -39,6 +39,11 @@ private:
     bool m_IsEnteringDoor = false;
     float m_EnterDoorTimer = 0.0f;
 
+    std::shared_ptr<Util::GameObject> m_DeathObject;
+    std::shared_ptr<AtlasSprite> m_DeathSprite;
+    bool m_IsDying = false;
+    bool m_IsDead = false;
+
     // std::shared_ptr<Util::GameObject> m_DebugBox;
 
     // std::shared_ptr<AtlasSprite> m_Sprite;
@@ -75,6 +80,10 @@ public:
     void SetInputEnabled(bool enabled) { m_InputEnabled = enabled; }
     void SetVisible(bool visible) { m_Visible = visible; }
     [[nodiscard]] bool IsVisible() const { return m_Visible; }
+
+    [[nodiscard]] bool IsDying() const { return m_IsDying; }
+    [[nodiscard]] bool IsDead() const { return m_IsDead; }
+    void Kill();
 
     void PlayEnterDoorAnimation(const glm::vec2& doorPos);
 

@@ -50,19 +50,15 @@ void CollisionSystem::ResolveCharacterHazards(Character& character, const LevelM
     const GridCoord footTile = WorldToTile({position.x, position.y - 1.0F}, tileSize);
 
     const auto& levelData = levelManager.GetLevelData();
-    const bool shouldRespawn =
+    const bool isHazardous =
         levelManager.IsHazardousFor(character.GetElement(), footTile.row,
                                     footTile.col) &&
         ((character.GetElement() == Element::FIRE && levelData.hasFireSpawn) ||
          (character.GetElement() == Element::WATER && levelData.hasWaterSpawn));
 
-    if (!shouldRespawn) {return;}
-
-    const GridCoord spawn = character.GetElement() == Element::FIRE ? levelData.fireSpawn : levelData.waterSpawn;
-
-    character.SetPosition(levelManager.TileToWorldPosition(spawn.row, spawn.col));
-    character.SetVelocity({0.0F, 0.0F});
-    character.SetGroundState(GroundState::AIR);
+    if (isHazardous) {
+        character.Kill();
+    }
 }
 
 void CollisionSystem::ResolveCharacterTerrain(

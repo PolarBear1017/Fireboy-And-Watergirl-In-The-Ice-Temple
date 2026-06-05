@@ -498,6 +498,27 @@ void App::UpdateGameScene() {
         return;
     }
 
+    bool isAnyDying = (m_FireBoy && m_FireBoy->IsDying()) || (m_WaterGirl && m_WaterGirl->IsDying());
+    bool isAnyDead = (m_FireBoy && m_FireBoy->IsDead()) || (m_WaterGirl && m_WaterGirl->IsDead());
+
+    if (isAnyDying || isAnyDead) {
+        if (m_FireBoy) {
+            m_FireBoy->SetInputEnabled(false);
+            m_FireBoy->SetVelocity({0.0f, 0.0f});
+            m_FireBoy->Update();
+        }
+        if (m_WaterGirl) {
+            m_WaterGirl->SetInputEnabled(false);
+            m_WaterGirl->SetVelocity({0.0f, 0.0f});
+            m_WaterGirl->Update();
+        }
+        if (isAnyDead) {
+            LOG_INFO("Player died! Restarting level.");
+            BuildGameScene();
+        }
+        return;
+    }
+
     // 讓水池流動
     for (auto& overlay : m_Overlays) {
         overlay->Update();
