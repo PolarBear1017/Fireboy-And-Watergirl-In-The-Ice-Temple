@@ -78,8 +78,18 @@ void Input::UpdateKeyState(const SDL_Event *event) {
 void Input::Update() {
     int x, y;
     SDL_GetMouseState(&x, &y);
-    s_CursorPosition.x = static_cast<float>(x);
-    s_CursorPosition.y = static_cast<float>(y);
+
+    int current_width = WINDOW_WIDTH;
+    int current_height = WINDOW_HEIGHT;
+    SDL_Window* window = SDL_GL_GetCurrentWindow();
+    if (window != nullptr) {
+        SDL_GetWindowSize(window, &current_width, &current_height);
+    }
+    if (current_width <= 0) current_width = WINDOW_WIDTH;
+    if (current_height <= 0) current_height = WINDOW_HEIGHT;
+
+    s_CursorPosition.x = static_cast<float>(x) * (static_cast<float>(WINDOW_WIDTH) / current_width);
+    s_CursorPosition.y = static_cast<float>(y) * (static_cast<float>(WINDOW_HEIGHT) / current_height);
 
     s_CursorPosition.x -= static_cast<float>(WINDOW_WIDTH) / 2;
     s_CursorPosition.y =
