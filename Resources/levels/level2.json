@@ -106,33 +106,13 @@
       "type": "button",
       "row": 15,
       "col": 30,
-      "group_id": 1
+      "group_id": -2
     },
     {
       "type": "button",
       "row": 22,
       "col": 4,
-      "group_id": 3
-    },
-    {
-      "type": "elevator",
-      "row": 11,
-      "col": 10,
-      "target_row": 11,
-      "target_col": 8,
-      "is_horizontal": true,
-      "length": 2,
-      "group_id": 1
-    },
-    {
-      "type": "elevator",
-      "row": 19,
-      "col": 11,
-      "target_row": 19,
-      "target_col": 9,
-      "is_horizontal": true,
-      "length": 2,
-      "group_id": 3
+      "group_id": -4
     },
     {
       "type": "elevator",

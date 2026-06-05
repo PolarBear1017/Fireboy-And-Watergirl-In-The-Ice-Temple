@@ -163,11 +163,11 @@ void CollisionSystem::ResolveCharacterTerrain(
     character.SetGroundState(GroundState::AIR);
     bool currentlyOnSlope = false;
 
-    // === 3. 終極斜坡踩踏與爬坡檢查 ===
+    // === 斜坡踩踏與爬坡檢查 ===
     TerrainType slopeTerrain;
     GridCoord slopeTile;
 
-    // 魔法展開：不管左邊、中間、還是右邊，只要抓到斜坡就立刻回傳 true
+    // 不管左、中、右，只要抓到斜坡就回傳 true
     if (GetSlopeAt(position.x, position.y + 2.0F, slopeTerrain, slopeTile) ||
         GetSlopeAt(position.x - halfWidth + 2.0F, position.y + 2.0F, slopeTerrain, slopeTile) ||
         GetSlopeAt(position.x + halfWidth - 2.0F, position.y + 2.0F, slopeTerrain, slopeTile)) {
@@ -183,6 +183,12 @@ void CollisionSystem::ResolveCharacterTerrain(
 
                 if (slopeTerrain == TerrainType::SnowSlopeBL || slopeTerrain == TerrainType::SnowSlopeBR) {
                     character.SetGroundState(GroundState::ICE);
+
+                    if (character.GetElement() == Element::FIRE) {
+                        const float slidingAcceleration = 0.5F;
+                        if (slopeTerrain == TerrainType::SnowSlopeBL) velocity.x += slidingAcceleration;
+                        else if (slopeTerrain == TerrainType::SnowSlopeBR) velocity.x -= slidingAcceleration;
+                    }
                 } else {
                     character.SetGroundState(GroundState::GROUND);
                 }
