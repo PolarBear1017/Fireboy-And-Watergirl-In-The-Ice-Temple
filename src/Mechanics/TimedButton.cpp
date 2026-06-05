@@ -38,8 +38,8 @@ TimedButton::TimedButton(const std::shared_ptr<SpriteAtlas>& atlas, const glm::v
     m_BaseLightOnObject->SetVisible(false);
     AddChild(m_BaseLightOnObject);
 
-    // 4. Moving Block (pusher_block_silver0000)
-    m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "pusher_block_silver0000");
+    // 4. Moving Block (pusher_block0000)
+    m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "pusher_block0000");
     SetDrawable(m_BaseSprite);
     SetZIndex(-0.1f); // Layering button block
 

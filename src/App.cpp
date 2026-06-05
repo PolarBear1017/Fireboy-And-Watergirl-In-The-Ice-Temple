@@ -688,33 +688,9 @@ void App::BuildMapScene() {
         }
     }
 
-    // 重新評估各關卡解鎖狀態
+    // 重新評估各關卡解鎖狀態 (測試用：全部解鎖)
     for (auto& node : m_MapNodes) {
-        if (node.id == 0) {
-            node.unlocked = true;
-        } else {
-            // 對於關卡 21：只需前置之一完成即解鎖
-            if (node.id == 21) {
-                node.unlocked = false;
-                for (int req : node.requiredLevels) {
-                    auto it = std::find_if(m_MapNodes.begin(), m_MapNodes.end(), [req](const MapNode& n){ return n.id == req; });
-                    if (it != m_MapNodes.end() && it->completed) {
-                        node.unlocked = true;
-                        break;
-                    }
-                }
-            } else {
-                // 對於其他關卡：所有前置關卡皆需完成
-                node.unlocked = true;
-                for (int req : node.requiredLevels) {
-                    auto it = std::find_if(m_MapNodes.begin(), m_MapNodes.end(), [req](const MapNode& n){ return n.id == req; });
-                    if (it != m_MapNodes.end() && !it->completed) {
-                        node.unlocked = false;
-                        break;
-                    }
-                }
-            }
-        }
+        node.unlocked = true;
     }
 
     // 2. 繪製關卡連線 (依序連接)
