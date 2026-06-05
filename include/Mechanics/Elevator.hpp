@@ -19,6 +19,7 @@ public:
     }
 
     glm::vec2 GetDeltaPosition() const { return m_Transform.translation - m_LastPosition; }
+    void SetPosition(const glm::vec2& newPos);
 
 private:
     std::shared_ptr<AtlasSprite> m_Sprite;
@@ -40,6 +41,8 @@ private:
     std::shared_ptr<Util::GameObject> m_LeftCapObj;
     std::shared_ptr<Util::GameObject> m_RightCapObj;
     std::shared_ptr<Util::GameObject> m_CenterObj;
+
+    void UpdateChildren();
 };
 
 #endif

@@ -23,6 +23,10 @@ public:
 private:
     void ResolveCharacterHazards(Character& character,
                                  const LevelManager& levelManager) const;
+
+    glm::vec2 ResolveTerrainForPosition(const glm::vec2& testPos,
+                                         const glm::vec2& size,
+                                         const LevelManager& levelManager) const;
 };
 
 #endif
