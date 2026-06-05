@@ -1,6 +1,7 @@
 #include "Mechanics/Elevator.hpp"
 #include "Util/Time.hpp"
 #include <cmath>
+#include <glm/geometric.hpp>
 
 Elevator::Elevator(const std::shared_ptr<SpriteAtlas> &atlas,
                    const glm::vec2 &startPos, const glm::vec2 &endPos,
@@ -76,7 +77,10 @@ void Elevator::Update() {
   m_LastPosition = m_Transform.translation;
   m_Transform.translation = m_StartPos + (m_EndPos - m_StartPos) * m_Progress;
 
-  // Update child transforms
+  UpdateChildren();
+}
+
+void Elevator::UpdateChildren() {
   float theta = m_Transform.rotation;
   float cosT = std::cos(theta);
   float sinT = std::sin(theta);
@@ -95,4 +99,15 @@ void Elevator::Update() {
   // Center: local translation (0, 0)
   m_CenterObj->m_Transform.translation = m_Transform.translation;
   m_CenterObj->m_Transform.rotation = theta;
+}
+
+void Elevator::SetPosition(const glm::vec2& newPos) {
+  glm::vec2 direction = m_EndPos - m_StartPos;
+  float len2 = glm::dot(direction, direction);
+  if (len2 > 0.0001f) {
+    m_Progress = glm::dot(newPos - m_StartPos, direction) / len2;
+    m_Progress = glm::clamp(m_Progress, 0.0f, 1.0f);
+  }
+  m_Transform.translation = m_StartPos + direction * m_Progress;
+  UpdateChildren();
 }

@@ -336,32 +336,184 @@ void CollisionSystem::ResolveCharacterMechanics(
                         vel = character.GetVelocity();
                     }
                 } else {
-                    if (charCenter.x > collider.center.x) pos.x += overlapX;
-                    else pos.x -= overlapX;
+                    auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
+                    if (elevator) {
+                        float pushedX = (charCenter.x > collider.center.x) ? (collider.center.x + halfColl.x + halfChar.x) : (collider.center.x - halfColl.x - halfChar.x);
+                        glm::vec2 resolved_pos = ResolveTerrainForPosition({pushedX, pos.y}, size, levelManager);
+                        if (charCenter.x > collider.center.x) {
+                            if (resolved_pos.x < pushedX) {
+                                elevator->SetPosition({resolved_pos.x - halfChar.x - halfColl.x, collider.center.y});
+                                pos.x = resolved_pos.x;
+                            } else {
+                                pos.x = pushedX;
+                            }
+                        } else {
+                            if (resolved_pos.x > pushedX) {
+                                elevator->SetPosition({resolved_pos.x + halfChar.x + halfColl.x, collider.center.y});
+                                pos.x = resolved_pos.x;
+                            } else {
+                                pos.x = pushedX;
+                            }
+                        }
+                    } else {
+                        if (charCenter.x > collider.center.x) pos.x += overlapX;
+                        else pos.x -= overlapX;
+                    }
                     vel.x = 0;
                 }
             } else {
                 if (charCenter.y > collider.center.y) {
-                    pos.y = collider.center.y + halfColl.y;
-                    vel.y = 0;
+                    float pushedY = collider.center.y + halfColl.y;
+                    glm::vec2 resolved_pos = ResolveTerrainForPosition({pos.x, pushedY}, size, levelManager);
 
-                    // 電梯跟隨邏輯 (維持原樣，完美運作)
                     auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
                     if (elevator) {
-                        pos += elevator->GetDeltaPosition();
+                        if (resolved_pos.y < pushedY) {
+                            elevator->SetPosition({collider.center.x, resolved_pos.y - halfColl.y});
+                            pos.y = resolved_pos.y;
+                        } else {
+                            pos.y = pushedY;
+                            pos += elevator->GetDeltaPosition();
+                        }
                         character.SetGroundState(GroundState::MOVING_PLATFORM);
                     } else {
+                        pos.y = resolved_pos.y;
                         character.SetGroundState(GroundState::GROUND);
                     }
                 } else {
-                    pos.y = collider.center.y - halfColl.y - size.y;
-                    vel.y = 0;
+                    float pushedY = collider.center.y - halfColl.y - size.y;
+                    glm::vec2 resolved_pos = ResolveTerrainForPosition({pos.x, pushedY}, size, levelManager);
+
+                    auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
+                    if (elevator) {
+                        if (resolved_pos.y > pushedY) {
+                            elevator->SetPosition({collider.center.x, resolved_pos.y + size.y + halfColl.y});
+                            pos.y = resolved_pos.y;
+                        } else {
+                            pos.y = pushedY;
+                        }
+                    } else {
+                        pos.y = resolved_pos.y;
+                    }
                 }
+                vel.y = 0;
             }
         }
     }
     character.SetPosition(pos);
     character.SetVelocity(vel);
+}
+
+glm::vec2 CollisionSystem::ResolveTerrainForPosition(
+    const glm::vec2& testPos,
+    const glm::vec2& size,
+    const LevelManager& levelManager) const {
+    glm::vec2 position = testPos;
+    const float tileSize = levelManager.GetTileSize();
+    const float halfWidth = size.x * 0.5F;
+
+    auto GetSlopeAt = [&](float x, float y, TerrainType& outTerrain, GridCoord& outTile) {
+        GridCoord c = WorldToTile({x, y}, tileSize);
+        TerrainType t = levelManager.GetTerrain(c.row, c.col);
+        if (IsSlope(t)) {
+            outTerrain = t; outTile = c; return true;
+        }
+        GridCoord cBelow = WorldToTile({x, y - tileSize * 0.5f}, tileSize);
+        TerrainType tBelow = levelManager.GetTerrain(cBelow.row, cBelow.col);
+        if (IsSlope(tBelow)) {
+            outTerrain = tBelow; outTile = cBelow; return true;
+        }
+        return false;
+    };
+
+    bool onSlope = false;
+    TerrainType dummyT; GridCoord dummyC;
+    if (GetSlopeAt(position.x, position.y + 2.0F, dummyT, dummyC) ||
+        GetSlopeAt(position.x - halfWidth + 2.0F, position.y + 2.0F, dummyT, dummyC) ||
+        GetSlopeAt(position.x + halfWidth - 2.0F, position.y + 2.0F, dummyT, dummyC)) {
+        onSlope = true;
+    }
+
+    auto IsSolidWall = [&](const GridCoord& coord, bool isBottom) {
+        TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
+        if (t == TerrainType::Empty) return false;
+        if (IsSlope(t)) return false;
+        if (isBottom) {
+            if (onSlope) return false;
+            TerrainType tileAbove = levelManager.GetTerrain(coord.row - 1, coord.col);
+            if (IsSlope(tileAbove)) return false;
+        }
+        return true;
+    };
+
+    auto IsCeiling = [&](const GridCoord& coord) {
+        TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
+        return t != TerrainType::Empty;
+    };
+
+    // Horizontal check (right)
+    {
+        const GridCoord topRight = WorldToTile({position.x + halfWidth, position.y + size.y - 8.0F}, tileSize);
+        const GridCoord bottomRight = WorldToTile({position.x + halfWidth, position.y + 12.0F}, tileSize);
+        if (IsSolidWall(topRight, false) || IsSolidWall(bottomRight, true)) {
+            const GridCoord hitTile = IsSolidWall(topRight, false) ? topRight : bottomRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
+        }
+    }
+    // Horizontal check (left)
+    {
+        const GridCoord topLeft = WorldToTile({position.x - halfWidth, position.y + size.y - 8.0F}, tileSize);
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth, position.y + 12.0F}, tileSize);
+        if (IsSolidWall(topLeft, false) || IsSolidWall(bottomLeft, true)) {
+            const GridCoord hitTile = IsSolidWall(topLeft, false) ? topLeft : bottomLeft;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
+        }
+    }
+
+    // Ceiling check (upward)
+    {
+        const GridCoord topLeft = WorldToTile({position.x - halfWidth + 1.0F, position.y + size.y}, tileSize);
+        const GridCoord topRight = WorldToTile({position.x + halfWidth - 1.0F, position.y + size.y}, tileSize);
+        if (IsCeiling(topLeft) || IsCeiling(topRight)) {
+            const GridCoord hitTile = IsCeiling(topLeft) ? topLeft : topRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.y = tileCenter.y - tileSize * 0.5F - size.y;
+        }
+    }
+
+    // Slope check
+    bool currentlyOnSlope = false;
+    TerrainType slopeTerrain;
+    GridCoord slopeTile;
+    if (GetSlopeAt(position.x, position.y + 2.0F, slopeTerrain, slopeTile) ||
+        GetSlopeAt(position.x - halfWidth + 2.0F, position.y + 2.0F, slopeTerrain, slopeTile) ||
+        GetSlopeAt(position.x + halfWidth - 2.0F, position.y + 2.0F, slopeTerrain, slopeTile)) {
+        const glm::vec2 tileCenter = levelManager.TileToWorldPosition(slopeTile.row, slopeTile.col);
+        const float surfaceY = CalculateSlopeSurfaceY(slopeTerrain, tileCenter, tileSize, position.x);
+        if (position.y <= surfaceY + 20.0F) {
+            position.y = surfaceY;
+            currentlyOnSlope = true;
+        }
+    }
+
+    // Flat ground check
+    if (!currentlyOnSlope) {
+        const GridCoord bottomLeft = WorldToTile({position.x - halfWidth + 1.0F, position.y - 2.0F}, tileSize);
+        const GridCoord bottomRight = WorldToTile({position.x + halfWidth - 1.0F, position.y - 2.0F}, tileSize);
+        auto IsWalkableFlat = [&](const GridCoord& c) {
+            TerrainType t = levelManager.GetTerrain(c.row, c.col);
+            return t != TerrainType::Empty && !IsSlope(t);
+        };
+        if (IsWalkableFlat(bottomLeft) || IsWalkableFlat(bottomRight)) {
+            const GridCoord hitTile = IsWalkableFlat(bottomLeft) ? bottomLeft : bottomRight;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
+            position.y = tileCenter.y + tileSize * 0.5F;
+        }
+    }
+
+    return position;
 }
 
 bool CollisionSystem::CheckOverlap(const glm::vec2& center1, const glm::vec2& size1, 
