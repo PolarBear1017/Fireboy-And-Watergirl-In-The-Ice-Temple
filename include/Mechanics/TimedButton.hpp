@@ -17,10 +17,10 @@ public:
     std::optional<Collider> GetCollider() const override;
 
 private:
-    // Moving button block (standard button graphics, but silver)
+    // Moving button block (standard button graphics, gold)
     std::shared_ptr<Util::GameObject> m_PusherObject;
     std::shared_ptr<AtlasSprite> m_Sprite;
-    std::shared_ptr<AtlasSprite> m_BaseSprite; // pusher_block_silver0000
+    std::shared_ptr<AtlasSprite> m_BaseSprite; // pusher_block0000
 
     // Static background clock dial
     std::shared_ptr<Util::GameObject> m_BasePanelObject;
