@@ -34,9 +34,16 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
     m_StairsObject->SetDrawable(m_StairsSprite);
     m_StairsObject->m_Transform.scale = {0.0f, 0.0f}; // Hidden by default
 
+    m_DeathObject = std::make_shared<Util::GameObject>();
+    m_DeathObject->SetZIndex(zIndex + 3);
+    m_DeathSprite = std::make_shared<AtlasSprite>(atlas, "death_smoke0000");
+    m_DeathObject->SetDrawable(m_DeathSprite);
+    m_DeathObject->m_Transform.scale = {0.0f, 0.0f}; // Hidden by default
+
     AddChild(m_HeadObject);
     AddChild(m_LegsObject);
     AddChild(m_StairsObject);
+    AddChild(m_DeathObject);
 
     // std::string debugPath = std::string(RESOURCE_DIR) + "/reference/fireboy_and_watergirl_3/images/debug_red.png";
     // auto debugShape = std::make_shared<Util::Image>(debugPath);
@@ -54,6 +61,41 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
 // }
 
 void Character::Update() {
+    if (m_IsDying) {
+        m_AnimationTimer += Util::Time::GetDeltaTimeMs() / 1000.0f;
+        if (m_AnimationTimer > 0.03f) { // ~30 fps
+            m_AnimationFrame++;
+            m_AnimationTimer = 0.0f;
+        }
+
+        int maxFrames = 45; // death_smoke0000 to death_smoke0044
+        if (m_AnimationFrame >= maxFrames) {
+            m_IsDying = false;
+            m_IsDead = true;
+            m_DeathObject->m_Transform.scale = {0.0f, 0.0f};
+        } else {
+            std::ostringstream ss_death;
+            ss_death << "death_smoke" << std::setw(4) << std::setfill('0') << m_AnimationFrame;
+            m_DeathSprite->SetFrame(ss_death.str());
+            m_DeathObject->m_Transform.translation = m_Transform.translation + m_VisualOffset;
+            float baseScale = 0.8f;
+            m_DeathObject->m_Transform.scale = {m_Transform.scale.x, baseScale};
+        }
+
+        m_HeadObject->m_Transform.scale = {0.0f, 0.0f};
+        m_LegsObject->m_Transform.scale = {0.0f, 0.0f};
+        m_StairsObject->m_Transform.scale = {0.0f, 0.0f};
+        return;
+    }
+
+    if (m_IsDead) {
+        m_HeadObject->m_Transform.scale = {0.0f, 0.0f};
+        m_LegsObject->m_Transform.scale = {0.0f, 0.0f};
+        m_StairsObject->m_Transform.scale = {0.0f, 0.0f};
+        m_DeathObject->m_Transform.scale = {0.0f, 0.0f};
+        return;
+    }
+
     if (m_IsEnteringDoor) {
         if (m_EnterDoorTimer > 0.0f) {
             m_EnterDoorTimer -= Util::Time::GetDeltaTimeMs() / 1000.0f;
@@ -264,3 +306,15 @@ void Character::PlayEnterDoorAnimation(const glm::vec2& doorPos) {
     m_AnimationTimer = 0.0f;
     m_EnterDoorTimer = 0.36f;
 }
+
+void Character::Kill() {
+    if (m_IsDying || m_IsDead) return;
+    m_IsDying = true;
+    m_InputEnabled = false;
+    m_Velocity = {0.0f, 0.0f};
+    m_Visible = false;
+    m_AnimationFrame = 0;
+    m_AnimationTimer = 0.0f;
+    m_DeathObject->m_Transform.scale = {0.8f, 0.8f};
+}
+
