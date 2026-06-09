@@ -57,7 +57,9 @@ void CollisionSystem::ResolveCharacterHazards(Character& character, const LevelM
          (character.GetElement() == Element::WATER && levelData.hasWaterSpawn));
 
     if (isHazardous) {
-        character.Kill();
+        if (!character.IsGodMode()) {
+            character.Kill();
+        }
     }
 }
 

@@ -43,8 +43,10 @@ private:
     std::shared_ptr<AtlasSprite> m_DeathSprite;
     bool m_IsDying = false;
     bool m_IsDead = false;
+    bool m_GodMode = false;
 
     // std::shared_ptr<Util::GameObject> m_DebugBox;
+
 
     // std::shared_ptr<AtlasSprite> m_Sprite;
 
@@ -84,6 +86,9 @@ public:
     [[nodiscard]] bool IsDying() const { return m_IsDying; }
     [[nodiscard]] bool IsDead() const { return m_IsDead; }
     void Kill();
+    void Respawn(const glm::vec2& position);
+    void SetGodMode(bool enabled) { m_GodMode = enabled; }
+    [[nodiscard]] bool IsGodMode() const { return m_GodMode; }
 
     void PlayEnterDoorAnimation(const glm::vec2& doorPos);
 

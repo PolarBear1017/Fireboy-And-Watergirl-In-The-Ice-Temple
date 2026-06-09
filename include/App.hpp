@@ -53,6 +53,7 @@ private:
     void DrawPathLine(const glm::vec2& start, const glm::vec2& end);
     void MarkCurrentLevelCompleted();
     void SetupMapNodes();
+    void DrawDevMenu();
 
 private:
     State m_CurrentState = State::START;
@@ -129,6 +130,11 @@ private:
     std::vector<MapNode> m_MapNodes;
     std::string m_CurrentLevelPath;
     float m_MapBackgroundScale = 1.5F;
+
+    bool m_IndependentRespawn = false;
+    bool m_GodMode = false;
+    bool m_ShowDevMenu = true;
+    bool m_AllLevelsUnlocked = false;
 };
 
 #endif

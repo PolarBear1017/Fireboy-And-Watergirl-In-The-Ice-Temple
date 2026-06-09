@@ -1,5 +1,6 @@
 #include "App.hpp"
 
+#include <imgui.h>
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -112,6 +113,17 @@ void App::Update() {
     m_CurrentState = State::END;
     return;
   }
+
+  if (Util::Input::IsKeyDown(Util::Keycode::F3)) {
+    m_ShowDevMenu = !m_ShowDevMenu;
+  }
+
+  if (m_ShowDevMenu) {
+    DrawDevMenu();
+  }
+
+  if (m_FireBoy) m_FireBoy->SetGodMode(m_GodMode);
+  if (m_WaterGirl) m_WaterGirl->SetGodMode(m_GodMode);
 
   switch (m_CurrentScene) {
   case Scene::Cover:
@@ -498,25 +510,52 @@ void App::UpdateGameScene() {
         return;
     }
 
-    bool isAnyDying = (m_FireBoy && m_FireBoy->IsDying()) || (m_WaterGirl && m_WaterGirl->IsDying());
-    bool isAnyDead = (m_FireBoy && m_FireBoy->IsDead()) || (m_WaterGirl && m_WaterGirl->IsDead());
+    if (m_IndependentRespawn) {
+        const auto& levelData = m_LevelManager->GetLevelData();
 
-    if (isAnyDying || isAnyDead) {
-        if (m_FireBoy) {
+        if (m_FireBoy && (m_FireBoy->IsDying() || m_FireBoy->IsDead())) {
             m_FireBoy->SetInputEnabled(false);
             m_FireBoy->SetVelocity({0.0f, 0.0f});
             m_FireBoy->Update();
+            if (m_FireBoy->IsDead()) {
+                glm::vec2 spawn = levelData.hasFireSpawn ? m_LevelManager->TileToWorldPosition(
+                    levelData.fireSpawn.row, levelData.fireSpawn.col) : glm::vec2(0.0f);
+                m_FireBoy->Respawn(spawn);
+                LOG_INFO("Fireboy respawned at starting point.");
+            }
         }
-        if (m_WaterGirl) {
+        if (m_WaterGirl && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead())) {
             m_WaterGirl->SetInputEnabled(false);
             m_WaterGirl->SetVelocity({0.0f, 0.0f});
             m_WaterGirl->Update();
+            if (m_WaterGirl->IsDead()) {
+                glm::vec2 spawn = levelData.hasWaterSpawn ? m_LevelManager->TileToWorldPosition(
+                    levelData.waterSpawn.row, levelData.waterSpawn.col) : glm::vec2(0.0f);
+                m_WaterGirl->Respawn(spawn);
+                LOG_INFO("Watergirl respawned at starting point.");
+            }
         }
-        if (isAnyDead) {
-            LOG_INFO("Player died! Restarting level.");
-            BuildGameScene();
+    } else {
+        bool isAnyDying = (m_FireBoy && m_FireBoy->IsDying()) || (m_WaterGirl && m_WaterGirl->IsDying());
+        bool isAnyDead = (m_FireBoy && m_FireBoy->IsDead()) || (m_WaterGirl && m_WaterGirl->IsDead());
+
+        if (isAnyDying || isAnyDead) {
+            if (m_FireBoy) {
+                m_FireBoy->SetInputEnabled(false);
+                m_FireBoy->SetVelocity({0.0f, 0.0f});
+                m_FireBoy->Update();
+            }
+            if (m_WaterGirl) {
+                m_WaterGirl->SetInputEnabled(false);
+                m_WaterGirl->SetVelocity({0.0f, 0.0f});
+                m_WaterGirl->Update();
+            }
+            if (isAnyDead) {
+                LOG_INFO("Player died! Restarting level.");
+                BuildGameScene();
+            }
+            return;
         }
-        return;
     }
 
     // 讓水池流動
@@ -534,15 +573,19 @@ void App::UpdateGameScene() {
     glm::vec2 wPos = m_WaterGirl ? m_WaterGirl->GetPosition() : glm::vec2(0.0f);
 
     // --- 呼叫角色更新 ---
-    if (m_FireBoy != nullptr) {m_FireBoy->Update();}
-    if (m_WaterGirl != nullptr) {m_WaterGirl->Update();}
+    if (m_FireBoy != nullptr && !(m_IndependentRespawn && (m_FireBoy->IsDying() || m_FireBoy->IsDead()))) {
+        m_FireBoy->Update();
+    }
+    if (m_WaterGirl != nullptr && !(m_IndependentRespawn && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead()))) {
+        m_WaterGirl->Update();
+    }
 
     for (auto& diamond : m_Diamonds) {
         if (diamond->IsCollected()) continue;
         glm::vec2 diamondPos = diamond->GetTransform().translation;
         glm::vec2 diamondSize(30.0f, 30.0f); // Default approx size for diamonds
     
-        if (m_FireBoy) {
+        if (m_FireBoy && !(m_IndependentRespawn && (m_FireBoy->IsDying() || m_FireBoy->IsDead()))) {
             glm::vec2 fbSize = m_FireBoy->GetCollisionSize();
             glm::vec2 fbCenter = m_FireBoy->GetPosition();
             fbCenter.y += fbSize.y * 0.5f; // Adjust feet to center
@@ -555,7 +598,7 @@ void App::UpdateGameScene() {
             }
         }
     
-        if (m_WaterGirl) {
+        if (m_WaterGirl && !(m_IndependentRespawn && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead()))) {
             glm::vec2 wgSize = m_WaterGirl->GetCollisionSize();
             glm::vec2 wgCenter = m_WaterGirl->GetPosition();
             wgCenter.y += wgSize.y * 0.5f;
@@ -572,8 +615,8 @@ void App::UpdateGameScene() {
     std::unordered_map<int, bool> groupStates;
 
     std::vector<glm::vec2> interactorPositions;
-    if (m_FireBoy) interactorPositions.push_back(fPos);
-    if (m_WaterGirl) interactorPositions.push_back(wPos);
+    if (m_FireBoy && !(m_IndependentRespawn && (m_FireBoy->IsDying() || m_FireBoy->IsDead()))) interactorPositions.push_back(fPos);
+    if (m_WaterGirl && !(m_IndependentRespawn && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead()))) interactorPositions.push_back(wPos);
 
     for (const auto &block : m_Blocks) {
       interactorPositions.push_back(block->GetPosition());
@@ -611,24 +654,22 @@ void App::UpdateGameScene() {
         allMechs.push_back(b);
     }
 
-    if (m_FireBoy) {
+    if (m_FireBoy && !(m_IndependentRespawn && (m_FireBoy->IsDying() || m_FireBoy->IsDead()))) {
         m_FireBoy->SetGroundState(GroundState::AIR);
         m_CollisionSystem.ResolveCharacterTerrain(*m_FireBoy, *m_LevelManager);
         m_CollisionSystem.ResolveCharacterMechanics(*m_FireBoy, allMechs, *m_LevelManager);
     }
-    if (m_WaterGirl) {
+    if (m_WaterGirl && !(m_IndependentRespawn && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead()))) {
         m_WaterGirl->SetGroundState(GroundState::AIR);
         m_CollisionSystem.ResolveCharacterTerrain(*m_WaterGirl, *m_LevelManager);
         m_CollisionSystem.ResolveCharacterMechanics(*m_WaterGirl, allMechs, *m_LevelManager);
     }
 
     // 把玩家的座標給大門
-    // (注意：如果 Character 沒有 GetPosition() 函數，請直接用
-    // m_Transform.translation)
-    if (m_FireDoor != nullptr && m_FireBoy != nullptr) {
+    if (m_FireDoor != nullptr && m_FireBoy != nullptr && !(m_IndependentRespawn && (m_FireBoy->IsDying() || m_FireBoy->IsDead()))) {
         m_FireDoor->Update(m_FireBoy->m_Transform.translation);
     }
-    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr) {
+    if (m_WaterDoor != nullptr && m_WaterGirl != nullptr && !(m_IndependentRespawn && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead()))) {
         m_WaterDoor->Update(m_WaterGirl->m_Transform.translation);
     }
 
@@ -709,9 +750,35 @@ void App::BuildMapScene() {
         }
     }
 
-    // 重新評估各關卡解鎖狀態 (測試用：全部解鎖)
+    // 重新評估各關卡解鎖狀態
     for (auto& node : m_MapNodes) {
-        node.unlocked = true;
+        if (m_AllLevelsUnlocked) {
+            node.unlocked = true;
+        } else if (node.id == 0) {
+            node.unlocked = true;
+        } else {
+            // 對於關卡 21：只需前置之一完成即解鎖
+            if (node.id == 21) {
+                node.unlocked = false;
+                for (int req : node.requiredLevels) {
+                    auto it = std::find_if(m_MapNodes.begin(), m_MapNodes.end(), [req](const MapNode& n){ return n.id == req; });
+                    if (it != m_MapNodes.end() && it->completed) {
+                        node.unlocked = true;
+                        break;
+                    }
+                }
+            } else {
+                // 對於其他關卡：所有前置關卡皆需完成
+                node.unlocked = true;
+                for (int req : node.requiredLevels) {
+                    auto it = std::find_if(m_MapNodes.begin(), m_MapNodes.end(), [req](const MapNode& n){ return n.id == req; });
+                    if (it != m_MapNodes.end() && !it->completed) {
+                        node.unlocked = false;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     // 2. 繪製關卡連線 (依序連接)
@@ -824,3 +891,87 @@ void App::MarkCurrentLevelCompleted() {
         }
     }
 }
+
+void App::DrawDevMenu() {
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(WINDOW_WIDTH) - 260.0f, 10.0f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(240.0f, 320.0f), ImGuiCond_FirstUseEver);
+
+    if (ImGui::Begin("Dev Tools (F3)", &m_ShowDevMenu, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::Separator();
+
+        ImGui::Checkbox("Independent Respawn", &m_IndependentRespawn);
+        ImGui::Checkbox("God Mode", &m_GodMode);
+
+        ImGui::Separator();
+
+        if (m_CurrentScene == Scene::Game) {
+            ImGui::Text("Game Cheats:");
+            if (ImGui::Button("Teleport to Doors")) {
+                if (m_FireBoy && m_FireDoor) {
+                    m_FireBoy->SetPosition(m_FireDoor->m_Transform.translation);
+                }
+                if (m_WaterGirl && m_WaterDoor) {
+                    m_WaterGirl->SetPosition(m_WaterDoor->m_Transform.translation);
+                }
+            }
+            if (ImGui::Button("Instant Win")) {
+                m_LevelFinished = true;
+                if (m_FireBoy && m_FireDoor) {
+                    m_FireBoy->PlayEnterDoorAnimation(m_FireDoor->m_Transform.translation);
+                }
+                if (m_WaterGirl && m_WaterDoor) {
+                    m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
+                }
+            }
+            if (ImGui::Button("Reset Level")) {
+                BuildGameScene();
+            }
+        }
+
+        if (m_CurrentScene == Scene::Map) {
+            ImGui::Text("Map Cheats:");
+            if (ImGui::Checkbox("Unlock All Levels", &m_AllLevelsUnlocked)) {
+                BuildMapScene();
+            }
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Scene Navigation:");
+        if (ImGui::Button("Go to Map")) {
+            SwitchScene(Scene::Map);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Go to Cover")) {
+            SwitchScene(Scene::Cover);
+        }
+
+        ImGui::Text("Load Level:");
+        if (ImGui::Button("L0")) {
+            m_CurrentLevelPath = "level0.json";
+            SwitchScene(Scene::Game);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("L2")) {
+            m_CurrentLevelPath = "level2.json";
+            SwitchScene(Scene::Game);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("L6")) {
+            m_CurrentLevelPath = "level6.json";
+            SwitchScene(Scene::Game);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("L7")) {
+            m_CurrentLevelPath = "level7.json";
+            SwitchScene(Scene::Game);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("L21")) {
+            m_CurrentLevelPath = "level21.json";
+            SwitchScene(Scene::Game);
+        }
+    }
+    ImGui::End();
+}
+

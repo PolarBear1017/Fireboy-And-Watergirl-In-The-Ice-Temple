@@ -318,3 +318,20 @@ void Character::Kill() {
     m_DeathObject->m_Transform.scale = {0.8f, 0.8f};
 }
 
+void Character::Respawn(const glm::vec2& position) {
+    m_IsDying = false;
+    m_IsDead = false;
+    m_InputEnabled = true;
+    m_Visible = true;
+    m_Velocity = {0.0f, 0.0f};
+    SetPosition(position);
+    m_AnimationFrame = 0;
+    m_AnimationTimer = 0.0f;
+    m_DeathObject->m_Transform.scale = {0.0f, 0.0f};
+    m_HeadObject->m_Transform.scale = m_Transform.scale;
+    m_LegsObject->m_Transform.scale = m_Transform.scale;
+    m_HeadObject->SetVisible(true);
+    m_LegsObject->SetVisible(true);
+}
+
+
