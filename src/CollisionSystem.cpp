@@ -22,6 +22,8 @@ namespace {
             case TerrainType::SlopeBR:
             case TerrainType::SnowSlopeBL:
             case TerrainType::SnowSlopeBR:
+            case TerrainType::ShallowSlopeBL:
+            case TerrainType::ShallowSlopeBR:
                 return true;
             default:
                 return false;
@@ -31,15 +33,17 @@ namespace {
     float CalculateSlopeSurfaceY(TerrainType type, const glm::vec2& tileCenter, float tileSize, float playerX) {
         const float tileLeft = tileCenter.x - tileSize * 0.5F;
         const float tileBottom = tileCenter.y - tileSize * 0.5F;
+        float rx = std::clamp(playerX - tileLeft, 0.0F, tileSize);
 
-        float rx = playerX - tileLeft; // 計算角色在磚塊內的相對 X 座標 (0 ~ tileSize)
-        rx = std::clamp(rx, 0.0F, tileSize); // 防呆，確保不出界
-
-        if (type == TerrainType::SlopeBL || type == TerrainType::SnowSlopeBL) {
+        if (type == TerrainType::SlopeBL || type == TerrainType::SnowSlopeBL)
             return tileBottom + (tileSize - rx);
-        } else {
+        if (type == TerrainType::SlopeBR || type == TerrainType::SnowSlopeBR)
             return tileBottom + rx;
-        }
+        if (type == TerrainType::ShallowSlopeBL)
+            return tileBottom + tileSize * 0.5F + ((tileSize - rx) * 0.5F);
+        if (type == TerrainType::ShallowSlopeBR)
+            return tileBottom + tileSize * 0.5F + (rx * 0.5F);
+        return tileBottom;
     }
 } // namespace
 
@@ -72,17 +76,25 @@ void CollisionSystem::ResolveCharacterTerrain(
     // 雙層斜坡探測器 (解決陷下去的關鍵)
     // 會先查腳底下，如果找不到，會自動往下挖半格查接縫處
     auto GetSlopeAt = [&](float x, float y, TerrainType& outTerrain, GridCoord& outTile) {
-        GridCoord c = WorldToTile({x, y}, tileSize);
-        TerrainType t = levelManager.GetTerrain(c.row, c.col);
-        if (IsSlope(t)) {
-            outTerrain = t; outTile = c; return true;
-        }
-        // 往下深探半個磚塊
-        GridCoord cBelow = WorldToTile({x, y - tileSize * 0.5f}, tileSize);
-        TerrainType tBelow = levelManager.GetTerrain(cBelow.row, cBelow.col);
-        if (IsSlope(tBelow)) {
-            outTerrain = tBelow; outTile = cBelow; return true;
-        }
+        auto CheckTile = [&](GridCoord c) {
+            TerrainType t = levelManager.GetTerrain(c.row, c.col);
+            // 遇到液體則回傳 Shallow 系列
+            if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+                if (levelManager.IsLeft(c.row, c.col, t)) t = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(c.row, c.col, t)) t = TerrainType::ShallowSlopeBR;
+                else t = TerrainType::ShallowBlock;
+            }
+
+            if (IsSlope(t)) {
+                outTerrain = t;
+                outTile = c;
+                return true;
+            }
+            return false;
+        };
+
+        if (CheckTile(WorldToTile({x, y}, tileSize))) return true;
+        if (CheckTile(WorldToTile({x, y - tileSize * 0.5f}, tileSize))) return true;
         return false;
     };
 
@@ -101,11 +113,24 @@ void CollisionSystem::ResolveCharacterTerrain(
         TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
 
         if (t == TerrainType::Empty) return false;
+        if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+            if (levelManager.IsLeft(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBL;
+            else if (levelManager.IsRight(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBR;
+            else t = TerrainType::ShallowBlock;
+        }
         if (IsSlope(t)) return false;
+        if (t == TerrainType::ShallowBlock) return false;
+
         // 寬容下半身碰撞感測器
         if (isBottom) {
             if (onSlope) return false;
             TerrainType tileAbove = levelManager.GetTerrain(coord.row - 1, coord.col);
+
+            if (tileAbove == TerrainType::Water || tileAbove == TerrainType::Fire || tileAbove == TerrainType::Toxic) {
+                if (levelManager.IsLeft(coord.row - 1, coord.col, tileAbove)) tileAbove = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(coord.row - 1, coord.col, tileAbove)) tileAbove = TerrainType::ShallowSlopeBR;
+                else tileAbove = TerrainType::ShallowBlock;
+            }
             if (IsSlope(tileAbove)) return false;
         }
         return true;
@@ -200,21 +225,40 @@ void CollisionSystem::ResolveCharacterTerrain(
         const GridCoord bottomLeft = WorldToTile({position.x - halfWidth + 1.0F, position.y - 2.0F}, tileSize);
         const GridCoord bottomRight = WorldToTile({position.x + halfWidth - 1.0F, position.y - 2.0F}, tileSize);
 
-        // 🌟 建立一個小巧的檢查器：確認這塊磚可以走，而且絕對不是斜坡
+        // 檢查器：確認這塊磚可以走，且不是斜坡
         auto IsWalkableFlat = [&](const GridCoord& c) {
             TerrainType t = levelManager.GetTerrain(c.row, c.col);
-            return t != TerrainType::Empty && !IsSlope(t);
+            if (t == TerrainType::Empty) return false;
+
+            // 遇到水池則替換為淺坑地形
+            if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+                if (levelManager.IsLeft(c.row, c.col, t)) t = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(c.row, c.col, t)) t = TerrainType::ShallowSlopeBR;
+                else t = TerrainType::ShallowBlock;
+            }
+            return !IsSlope(t); // 只要替換後不是斜坡，就是平地 (包含 ShallowBlock)
         };
 
         if (IsWalkableFlat(bottomLeft) || IsWalkableFlat(bottomRight)) {
             const GridCoord hitTile = IsWalkableFlat(bottomLeft) ? bottomLeft : bottomRight;
             const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
 
-            // 腳底完美貼齊平地
-            position.y = tileCenter.y + tileSize * 0.5F;
+            // 取回「最原始」的材質，用來判定狀態和到底要不要往下沉
+            TerrainType originalTerrain = levelManager.GetTerrain(hitTile.row, hitTile.col);
+
+            switch (originalTerrain) {
+                case TerrainType::Water:
+                case TerrainType::Fire:
+                case TerrainType::Toxic:
+                    position.y = tileCenter.y;
+                    break;
+                default:
+                    position.y = tileCenter.y + tileSize * 0.5F;
+            }
             velocity.y = 0.0F;
 
-            switch (levelManager.GetTerrain(hitTile.row, hitTile.col)) {
+            // 狀態判定依然看最原始的材質
+            switch (originalTerrain) {
                 case TerrainType::SnowBlock:
                 case TerrainType::Ice:
                     character.SetGroundState(GroundState::ICE);
@@ -433,10 +477,21 @@ glm::vec2 CollisionSystem::ResolveTerrainForPosition(
     auto IsSolidWall = [&](const GridCoord& coord, bool isBottom) {
         TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
         if (t == TerrainType::Empty) return false;
+        if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+            if (levelManager.IsLeft(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBL;
+            else if (levelManager.IsRight(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBR;
+            else t = TerrainType::ShallowBlock;
+        }
         if (IsSlope(t)) return false;
+        if (t == TerrainType::ShallowBlock) return false;
         if (isBottom) {
             if (onSlope) return false;
             TerrainType tileAbove = levelManager.GetTerrain(coord.row - 1, coord.col);
+            if (tileAbove == TerrainType::Water || tileAbove == TerrainType::Fire || tileAbove == TerrainType::Toxic) {
+                if (levelManager.IsLeft(coord.row - 1, coord.col, tileAbove)) tileAbove = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(coord.row - 1, coord.col, tileAbove)) tileAbove = TerrainType::ShallowSlopeBR;
+                else tileAbove = TerrainType::ShallowBlock;
+            }
             if (IsSlope(tileAbove)) return false;
         }
         return true;
@@ -536,16 +591,24 @@ void CollisionSystem::ResolveBlockTerrain(Block& block, const LevelManager& leve
     const float halfHeight = size.y * 0.5F;
 
     auto GetSlopeAt = [&](float x, float y, TerrainType& outTerrain, GridCoord& outTile) {
-        GridCoord c = WorldToTile({x, y}, tileSize);
-        TerrainType t = levelManager.GetTerrain(c.row, c.col);
-        if (IsSlope(t)) {
-            outTerrain = t; outTile = c; return true;
-        }
-        GridCoord cBelow = WorldToTile({x, y - tileSize * 0.5f}, tileSize);
-        TerrainType tBelow = levelManager.GetTerrain(cBelow.row, cBelow.col);
-        if (IsSlope(tBelow)) {
-            outTerrain = tBelow; outTile = cBelow; return true;
-        }
+        auto CheckTile = [&](GridCoord c) {
+            TerrainType t = levelManager.GetTerrain(c.row, c.col);
+
+            if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+                if (levelManager.IsLeft(c.row, c.col, t)) t = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(c.row, c.col, t)) t = TerrainType::ShallowSlopeBR;
+                else t = TerrainType::ShallowBlock;
+            }
+            if (IsSlope(t)) {
+                outTerrain = t;
+                outTile = c;
+                return true;
+            }
+            return false;
+        };
+
+        if (CheckTile(WorldToTile({x, y}, tileSize))) return true;
+        if (CheckTile(WorldToTile({x, y - tileSize * 0.5f}, tileSize))) return true;
         return false;
     };
 
@@ -553,9 +616,9 @@ void CollisionSystem::ResolveBlockTerrain(Block& block, const LevelManager& leve
     TerrainType slopeTerrain;
     GridCoord slopeTile;
 
-    if (GetSlopeAt(position.x, position.y + 2.0F, slopeTerrain, slopeTile) ||
-        GetSlopeAt(position.x - halfWidth + 2.0F, position.y + 2.0F, slopeTerrain, slopeTile) ||
-        GetSlopeAt(position.x + halfWidth - 2.0F, position.y + 2.0F, slopeTerrain, slopeTile)) {
+    if (GetSlopeAt(position.x, position.y - halfHeight + 2.0F, slopeTerrain, slopeTile) ||
+        GetSlopeAt(position.x - halfWidth + 2.0F, position.y - halfHeight + 2.0F, slopeTerrain, slopeTile) ||
+        GetSlopeAt(position.x + halfWidth - 2.0F, position.y - halfHeight + 2.0F, slopeTerrain, slopeTile)) {
         
         currentlyOnSlope = true;
         const glm::vec2 tileCenter = levelManager.TileToWorldPosition(slopeTile.row, slopeTile.col);
@@ -565,36 +628,49 @@ void CollisionSystem::ResolveBlockTerrain(Block& block, const LevelManager& leve
             if (position.y - halfHeight <= surfaceY + 20.0F) {
                 position.y = surfaceY + halfHeight;
                 velocity.y = 0.0F;
-                
-                // Slight slide down slope
-                if (slopeTerrain == TerrainType::SlopeBL) {
-                    velocity.x -= 2.0f;
-                } else if (slopeTerrain == TerrainType::SlopeBR) {
-                    velocity.x += 2.0f;
-                }
             }
         }
     }
 
-    auto IsSolidWall = [&](const GridCoord& coord) {
+    auto IsSolidWall = [&](const GridCoord& coord, bool isBottom) {
         TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
-        if (t == TerrainType::Block || t == TerrainType::Ice || t == TerrainType::SnowBlock) return true;
 
-        if (IsSlope(t)) {
-            // Only allow passing through the slope we are currently standing on
-            if (currentlyOnSlope && coord.row == slopeTile.row && coord.col == slopeTile.col) {
-                return false;
-            }
-            return true;
+        if (t == TerrainType::Empty) return false;
+
+        // 把液體轉換成 Shallow 系列
+        if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+            if (levelManager.IsLeft(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBL;
+            else if (levelManager.IsRight(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBR;
+            else t = TerrainType::ShallowBlock;
         }
-        return false;
+
+        if (IsSlope(t)) return false; // 斜坡不阻擋水平移動 (交給 Y 軸推高)
+        if (t == TerrainType::ShallowBlock) return false; // 坑底可以穿透
+
+        // 只有這三種材質會擋住方塊
+        bool isSolid = (t == TerrainType::Block || t == TerrainType::Ice || t == TerrainType::SnowBlock);
+        if (!isSolid) return false;
+
+        // 下半身寬容機制
+        if (isBottom) {
+            if (currentlyOnSlope) return false;
+            TerrainType tileAbove = levelManager.GetTerrain(coord.row - 1, coord.col);
+
+            if (tileAbove == TerrainType::Water || tileAbove == TerrainType::Fire || tileAbove == TerrainType::Toxic) {
+                if (levelManager.IsLeft(coord.row - 1, coord.col, tileAbove)) tileAbove = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(coord.row - 1, coord.col, tileAbove)) tileAbove = TerrainType::ShallowSlopeBR;
+                else tileAbove = TerrainType::ShallowBlock;
+            }
+            if (IsSlope(tileAbove)) return false;
+        }
+        return true;
     };
 
     if (velocity.x > 0.0F) {
         const GridCoord rightTop = WorldToTile({position.x + halfWidth, position.y + halfHeight - 1.0F}, tileSize);
         const GridCoord rightBottom = WorldToTile({position.x + halfWidth, position.y - halfHeight + 12.0F}, tileSize);
-        if (IsSolidWall(rightTop) || IsSolidWall(rightBottom)) {
-            const GridCoord hitTile = IsSolidWall(rightTop) ? rightTop : rightBottom;
+        if (IsSolidWall(rightTop, false) || IsSolidWall(rightBottom, true)) {
+            const GridCoord hitTile = IsSolidWall(rightTop, false) ? rightTop : rightBottom;
             const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
             position.x = tileCenter.x - tileSize * 0.5F - halfWidth;
             velocity.x = 0.0F;
@@ -602,8 +678,8 @@ void CollisionSystem::ResolveBlockTerrain(Block& block, const LevelManager& leve
     } else if (velocity.x < 0.0F) {
         const GridCoord leftTop = WorldToTile({position.x - halfWidth, position.y + halfHeight - 1.0F}, tileSize);
         const GridCoord leftBottom = WorldToTile({position.x - halfWidth, position.y - halfHeight + 12.0F}, tileSize);
-        if (IsSolidWall(leftTop) || IsSolidWall(leftBottom)) {
-            const GridCoord hitTile = IsSolidWall(leftTop) ? leftTop : leftBottom;
+        if (IsSolidWall(leftTop, false) || IsSolidWall(leftBottom, true)) {
+            const GridCoord hitTile = IsSolidWall(leftTop, false) ? leftTop : leftBottom;
             const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
             position.x = tileCenter.x + tileSize * 0.5F + halfWidth;
             velocity.x = 0.0F;
@@ -616,13 +692,26 @@ void CollisionSystem::ResolveBlockTerrain(Block& block, const LevelManager& leve
 
         auto IsWalkableFlat = [&](const GridCoord& c) {
             TerrainType t = levelManager.GetTerrain(c.row, c.col);
-            return t != TerrainType::Empty && !IsSlope(t);
+            if (t == TerrainType::Empty) return false;
+
+            if (t == TerrainType::Water || t == TerrainType::Fire || t == TerrainType::Toxic) {
+                if (levelManager.IsLeft(c.row, c.col, t)) t = TerrainType::ShallowSlopeBL;
+                else if (levelManager.IsRight(c.row, c.col, t)) t = TerrainType::ShallowSlopeBR;
+                else t = TerrainType::ShallowBlock;
+            }
+            return !IsSlope(t);
         };
 
         if (IsWalkableFlat(bottomLeft) || IsWalkableFlat(bottomRight)) {
             const GridCoord hitTile = IsWalkableFlat(bottomLeft) ? bottomLeft : bottomRight;
             const glm::vec2 tileCenter = levelManager.TileToWorldPosition(hitTile.row, hitTile.col);
-            position.y = tileCenter.y + tileSize * 0.5F + halfHeight;
+            TerrainType originalTerrain = levelManager.GetTerrain(hitTile.row, hitTile.col);
+
+            if (originalTerrain == TerrainType::Water || originalTerrain == TerrainType::Fire || originalTerrain == TerrainType::Toxic) {
+                position.y = tileCenter.y + halfHeight;
+            } else {
+                position.y = tileCenter.y + tileSize * 0.5F + halfHeight;
+            }
             velocity.y = 0.0F;
         }
     }

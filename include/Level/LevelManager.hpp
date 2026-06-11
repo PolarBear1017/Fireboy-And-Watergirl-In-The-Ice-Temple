@@ -37,9 +37,11 @@ public:
     [[nodiscard]] float GetTileSize() const { return m_TileSize; }
     // [[nodiscard]] const std::vector<LevelOverlay>& GetOverlays() const {return m_LevelDefinition.overlays;}
 
-    TerrainType GetTerrain(const int row, const int col) const;
-    [[nodiscard]] bool IsWalkable(const int row, const int col) const;
+    TerrainType GetTerrain( int row,  int col) const;
+    [[nodiscard]] bool IsWalkable( int row,  int col) const;
     [[nodiscard]] bool IsHazardousFor(Element element, int row, int col) const;
+    [[nodiscard]] bool IsLeft( int row, int col, TerrainType terrain) const;
+    [[nodiscard]] bool IsRight( int row, int col, TerrainType terrain) const;
     [[nodiscard]] glm::vec2 TileToWorldPosition(int row, int col) const;
 
     bool LoadLevel(const LevelDefinition& level, const std::shared_ptr<Util::GameObject>& root);

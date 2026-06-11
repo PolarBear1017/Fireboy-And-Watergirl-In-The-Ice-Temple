@@ -45,6 +45,17 @@ bool LevelManager::IsHazardousFor(const Element element, const int row, const in
     }
 }
 
+bool LevelManager::IsLeft(int row, int col, TerrainType terrain) const {
+    if (!HasSameTerrain(row, col-1, terrain) && HasSameTerrain(row, col+1, terrain)) return true;
+    return false;
+}
+
+bool LevelManager::IsRight(int row, int col, TerrainType terrain) const {
+    if (HasSameTerrain(row, col-1, terrain) && !HasSameTerrain(row, col+1, terrain)) return true;
+    return false;
+}
+
+
 glm::vec2 LevelManager::TileToWorldPosition(const int row, const int col) const {
     const float startX = -(static_cast<float>(WINDOW_WIDTH) / 2.0F) + (m_TileSize / 2.0F);
     const float startY = (static_cast<float>(WINDOW_HEIGHT) / 2.0F) - (m_TileSize / 2.0F);
@@ -148,28 +159,26 @@ bool LevelManager::HasSameTerrain(const int row, const int col, const TerrainTyp
 }
 
 std::string LevelManager::DetermineGroundFrameName(const int row, const int col, const TerrainType terrain) const {
-
-    const bool hasLeft = HasSameTerrain(row, col - 1, terrain);
-    const bool hasRight = HasSameTerrain(row, col + 1, terrain);
-
     switch (terrain) {
         case TerrainType::Block:
         case TerrainType::SnowBlock:
-            // 遇到下面的覆蓋物時 應該用 HasSameTerrain() 判斷是否為覆蓋物邊緣（terrain 先轉成數字可能會比較好）
+            return "GroundBlock";
         case TerrainType::Ice:
         case TerrainType::Water:
         case TerrainType::Fire:
         case TerrainType::Toxic:
-            return "GroundBlock";
+            if (IsLeft(row, col, terrain)) return "ShallowSlopeBL";
+            if (IsRight(row, col, terrain)) return "ShallowSlopeBR";
+            return "ShallowBlock";
 
         case TerrainType::SlopeBL:
         case TerrainType::SnowSlopeBL:
-            return "SlopeBlockBL";
+            return "SlopeBL";
         case TerrainType::SlopeBR:
         case TerrainType::SnowSlopeBR:
-            return "SlopeBlockBR";
-        case TerrainType::SlopeTL: return "SlopeBlockTL";
-        case TerrainType::SlopeTR: return "SlopeBlockTR";
+            return "SlopeBR";
+        case TerrainType::SlopeTL: return "SlopeTL";
+        case TerrainType::SlopeTR: return "SlopeTR";
         default: return "";
     }
 }
