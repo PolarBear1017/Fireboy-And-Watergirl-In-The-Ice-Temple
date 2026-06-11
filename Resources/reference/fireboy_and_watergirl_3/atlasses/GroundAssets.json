@@ -1,121 +1,184 @@
 {
-	"frames": [
-		{
-			"filename": "GroundBlock",
-			"frame": {
-				"x": 1,
-				"y": 1,
-				"w": 32,
-				"h": 32
-			},
-			"rotated": false,
-			"trimmed": false,
-			"spriteSourceSize": {
-				"x": 0,
-				"y": 0,
-				"w": 32,
-				"h": 32
-			},
-			"sourceSize": {
-				"w": 32,
-				"h": 32
-			}
-		},
-		{
-			"filename": "SlopeBlockBL",
-			"frame": {
-				"x": 35,
-				"y": 1,
-				"w": 32,
-				"h": 32
-			},
-			"rotated": false,
-			"trimmed": false,
-			"spriteSourceSize": {
-				"x": 0,
-				"y": 0,
-				"w": 32,
-				"h": 32
-			},
-			"sourceSize": {
-				"w": 32,
-				"h": 32
-			}
-		},
-		{
-			"filename": "SlopeBlockBR",
-			"frame": {
-				"x": 1,
-				"y": 35,
-				"w": 32,
-				"h": 32
-			},
-			"rotated": false,
-			"trimmed": false,
-			"spriteSourceSize": {
-				"x": 0,
-				"y": 0,
-				"w": 32,
-				"h": 32
-			},
-			"sourceSize": {
-				"w": 32,
-				"h": 32
-			}
-		},
-		{
-			"filename": "SlopeBlockTL",
-			"frame": {
-				"x": 35,
-				"y": 35,
-				"w": 32,
-				"h": 32
-			},
-			"rotated": false,
-			"trimmed": false,
-			"spriteSourceSize": {
-				"x": 0,
-				"y": 0,
-				"w": 32,
-				"h": 32
-			},
-			"sourceSize": {
-				"w": 32,
-				"h": 32
-			}
-		},
-		{
-			"filename": "SlopeBlockTR",
-
-			"frame": {
-				"x": 69,
-				"y": 1,
-				"w": 32,
-				"h": 32
-			},
-			"rotated": false,
-			"trimmed": false,
-			"spriteSourceSize": {
-				"x": 0,
-				"y": 0,
-				"w": 32,
-				"h": 32
-			},
-			"sourceSize": {
-				"w": 32,
-				"h": 32
-			}
-		}
-	],
-	"meta": {
-		"app": "http://www.codeandweb.com/texturepacker",
-		"version": "1.0",
-		"image": "spritesheet.png",
-		"format": "RGBA8888",
-		"size": {
-			"w": 102,
-			"h": 68
-		},
-		"scale": "1"
-	}
+    "frames": [
+        {
+            "frame": {
+                "x": 1,
+                "y": 1,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "GroundBlock"
+        },
+        {
+            "frame": {
+                "x": 35,
+                "y": 1,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "ShallowBlock"
+        },
+        {
+            "frame": {
+                "x": 1,
+                "y": 35,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "ShallowSlopeBL"
+        },
+        {
+            "frame": {
+                "x": 35,
+                "y": 35,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "ShallowSlopeBR"
+        },
+        {
+            "frame": {
+                "x": 69,
+                "y": 1,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "SlopeBL"
+        },
+        {
+            "frame": {
+                "x": 69,
+                "y": 35,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "SlopeBR"
+        },
+        {
+            "frame": {
+                "x": 1,
+                "y": 69,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "SlopeTL"
+        },
+        {
+            "frame": {
+                "x": 35,
+                "y": 69,
+                "w": 32,
+                "h": 32
+            },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32
+            },
+            "sourceSize": {
+                "w": 32,
+                "h": 32
+            },
+            "filename": "SlopeTR"
+        }
+    ],
+    "meta": {
+        "app": "https://www.codeandweb.com/texturepacker",
+        "version": "1.0",
+        "image": "spritesheet.png",
+        "format": "RGBA8888",
+        "size": {
+            "w": 102,
+            "h": 102
+        },
+        "scale": "1",
+        "comment": "Created with TexturePacker Online (free version)\nhttps://www.codeandweb.com/texturepacker-online\n\nTexturePacker desktop offers better support for Pixi and Phaser with sprite trimming, better packing algorithms, hardware texture compression, and PNG optimization.\nTry TexturePacker desktop: https://www.codeandweb.com/texturepacker"
+    }
 }

@@ -19,6 +19,9 @@ enum class TerrainType {
     Water = 31,
     Fire = 32,
     Toxic = 33,
+    ShallowSlopeBL = 40,
+    ShallowSlopeBR = 41,
+    ShallowBlock = 42
 };
 
 enum class LevelObjectType {
