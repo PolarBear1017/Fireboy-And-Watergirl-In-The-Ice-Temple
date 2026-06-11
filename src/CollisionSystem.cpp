@@ -121,7 +121,13 @@ void CollisionSystem::ResolveCharacterTerrain(
             else if (levelManager.IsRight(coord.row, coord.col, t)) t = TerrainType::ShallowSlopeBR;
             else t = TerrainType::ShallowBlock;
         }
-        if (IsSlope(t)) return false;
+        if (IsSlope(t)) {
+            if (onSlope) return false;
+            const glm::vec2 tileCenter = levelManager.TileToWorldPosition(coord.row, coord.col);
+            const float tileBottom = tileCenter.y - tileSize * 0.5F;
+            if (position.y < tileBottom - 2.0F) return true;
+            return false;
+        }
         if (t == TerrainType::ShallowBlock) return false;
 
         // 寬容下半身碰撞感測器
@@ -200,8 +206,8 @@ void CollisionSystem::ResolveCharacterTerrain(
         const float surfaceY = CalculateSlopeSurfaceY(slopeTerrain, tileCenter, tileSize, position.x);
 
         if (velocity.y <= 0.0F) {
-            // 磁鐵吸附力加大到 20.0F，確保高速下坡時不會因為慣性而飛離斜坡
-            if (position.y <= surfaceY + 20.0F) {
+            // 磁鐵吸附力加大，確保高速下坡時不會因為慣性而飛離斜坡
+            if (position.y <= surfaceY + 10.0F) {
                 position.y = surfaceY;
                 velocity.y = 0.0F;
 
