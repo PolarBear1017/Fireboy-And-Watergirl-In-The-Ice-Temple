@@ -44,21 +44,7 @@ Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element el
     AddChild(m_LegsObject);
     AddChild(m_StairsObject);
     AddChild(m_DeathObject);
-
-    // std::string debugPath = std::string(RESOURCE_DIR) + "/reference/fireboy_and_watergirl_3/images/debug_red.png";
-    // auto debugShape = std::make_shared<Util::Image>(debugPath);
-    // m_DebugBox = std::make_shared<Util::GameObject>(debugShape, 9.0F);
-    //
-    // glm::vec2 collSize = this->GetCollisionSize();
-    // m_DebugBox->m_Transform.scale = { collSize.x / 10.0F, collSize.y / 10.0F };
-    // this->AddChild(m_DebugBox); // 留一個 AddChild 就好
 }
-
-// void Character::AddChildrenTo(const std::shared_ptr<Util::GameObject>& root) {
-//     root->AddChild(m_LegsObject);
-//     root->AddChild(m_HeadObject);
-//     root->AddChild(m_StairsObject);
-// }
 
 void Character::Update() {
     if (m_IsDying) {
@@ -143,12 +129,6 @@ void Character::Update() {
     glm::vec2 visualPos = m_Transform.translation + m_VisualOffset;
     m_LegsObject->m_Transform.translation = visualPos;
     m_HeadObject->m_Transform.translation = {visualPos.x, visualPos.y + 4.0f};
-
-    // if (m_DebugBox) {
-    //     glm::vec2 pos = this->GetPosition();
-    //     glm::vec2 collSize = this->GetCollisionSize();
-    //     m_DebugBox->m_Transform.translation = {pos.x, pos.y + (collSize.y / 2.0F) + 20.0F};
-    // }
 }
 
 void Character::ProcessInput() {
@@ -156,8 +136,21 @@ void Character::ProcessInput() {
     m_RunningState = RunningState::Idle;
 
     float acceleration = (m_GroundState == GroundState::ICE) ? 0.2F : 1.0f;
-    float maxSpeed = (m_GroundState == GroundState::ICE && m_Element == Element::WATER) ? 1.0F: 5.0F;
+    float maxSpeed;
     float friction = (m_GroundState == GroundState::ICE)? 0.1F : 0.8f;
+
+    switch (m_GroundState) {
+        case GroundState::AIR:
+            maxSpeed = 6.0F;
+            break;
+        case GroundState::ICE:
+            maxSpeed = (m_Element == Element::WATER) ? 1.0F: 5.0F;
+            break;
+        default:
+            maxSpeed = 4.0F;
+    }
+
+
 
     if (m_Element == Element::FIRE) {
         if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {
@@ -200,11 +193,9 @@ void Character::ProcessInput() {
         if (m_Velocity.x > 0.0f) m_Velocity.x = 0.0f;
     }
 
-    if (m_Velocity.x > maxSpeed) {
-        m_Velocity.x = maxSpeed;
-    } else if (m_Velocity.x < -maxSpeed) {
-        m_Velocity.x = -maxSpeed;
-    }
+
+    if (m_Velocity.x > maxSpeed) m_Velocity.x = maxSpeed;
+    else if (m_Velocity.x < -maxSpeed) m_Velocity.x = -maxSpeed;
 }
 
 void Character::ApplyGravity() {
