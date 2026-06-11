@@ -10,8 +10,14 @@ uniform vec4 colorTint = vec4(1.0, 1.0, 1.0, 1.0);
 
 uniform bool useClockMask = false;
 uniform float u_TimeRatio = 1.0;
+uniform bool usePureColor = false;
 
 void main() {
+    if (usePureColor) {
+        fragColor = colorTint;
+        return;
+    }
+
     if (useClockMask) {
         vec2 pixelPos = localPos * vec2(118.0, 148.0);
         vec2 dialCenter = vec2(0.0, -27.0);

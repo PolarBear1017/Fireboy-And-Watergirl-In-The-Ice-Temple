@@ -45,6 +45,16 @@ Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, in
     m_CurrentRotation = m_TargetRotation = -0.7f; // Approx -40 degrees (Left)
 }
 
+std::optional<Collider> Lever::GetCollider() const {
+    float L = 30.0f;
+    glm::vec2 pivot = m_StickObject->m_Transform.translation;
+    glm::vec2 ballPos = pivot + L * glm::vec2(-std::sin(m_CurrentRotation), std::cos(m_CurrentRotation));
+    return Collider{
+        ballPos,
+        {24.0f, 24.0f}
+    };
+}
+
 void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
     float dt = static_cast<float>(Util::Time::GetDeltaTimeMs()) / 1000.0f;
 
@@ -52,10 +62,79 @@ void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
         m_Cooldown -= dt;
     }
 
-    // Smooth rotation animation
+    bool isBeingPushed = false;
     m_TargetRotation = m_IsOn ? 0.7f : -0.7f;
-    float lerpSpeed = 15.0f; 
-    m_CurrentRotation += (m_TargetRotation - m_CurrentRotation) * lerpSpeed * dt;
+
+    if (m_Cooldown <= 0.0f) {
+        float L = 30.0f;
+        float R = 12.0f;
+        glm::vec2 pivot = m_StickObject->m_Transform.translation;
+        glm::vec2 ballPos = pivot + L * glm::vec2(-std::sin(m_CurrentRotation), std::cos(m_CurrentRotation));
+
+        struct BoundingBox {
+            float left;
+            float right;
+            float bottom;
+            float top;
+        };
+
+        for (const auto& pos : interactorPositions) {
+            BoundingBox box;
+            if (std::abs(pos.y - m_Position.y) < 25.0f) {
+                // Character (feet position)
+                box.left = pos.x - 10.0f;
+                box.right = pos.x + 10.0f;
+                box.bottom = pos.y;
+                box.top = pos.y + 35.0f;
+            } else {
+                // Block (center position)
+                box.left = pos.x - 22.2f;
+                box.right = pos.x + 22.2f;
+                box.bottom = pos.y - 22.2f;
+                box.top = pos.y + 22.2f;
+            }
+
+            // Ball bounding box
+            float ball_left = ballPos.x - R;
+            float ball_right = ballPos.x + R;
+            float ball_bottom = ballPos.y - R;
+            float ball_top = ballPos.y + R;
+
+            bool overlap = !(box.left > ball_right || box.right < ball_left ||
+                             box.bottom > ball_top || box.top < ball_bottom);
+
+            if (overlap) {
+                float pushSpeed = 5.0f;
+                if (!m_IsOn && pos.x > ballPos.x) {
+                    // Push left (turning on)
+                    m_CurrentRotation += pushSpeed * dt;
+                    isBeingPushed = true;
+                    if (m_CurrentRotation >= 0.0f) {
+                        m_CurrentRotation = 0.0f;
+                        m_IsOn = true;
+                        m_Cooldown = 0.5f;
+                    }
+                    break;
+                } else if (m_IsOn && pos.x < ballPos.x) {
+                    // Push right (turning off)
+                    m_CurrentRotation -= pushSpeed * dt;
+                    isBeingPushed = true;
+                    if (m_CurrentRotation <= 0.0f) {
+                        m_CurrentRotation = 0.0f;
+                        m_IsOn = false;
+                        m_Cooldown = 0.5f;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!isBeingPushed) {
+        float lerpSpeed = 15.0f; 
+        m_CurrentRotation += (m_TargetRotation - m_CurrentRotation) * lerpSpeed * dt;
+    }
+
     m_StickObject->m_Transform.rotation = m_CurrentRotation;
 
     m_StickLightObj->m_Transform.translation = m_StickObject->m_Transform.translation;
@@ -68,31 +147,5 @@ void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
     } else {
         m_BaseLightSprite->SetFrame("lever_base_light_off0000");
         m_StickLightSprite->SetFrame("lever_stick_light_off0000");
-    }
-
-    if (m_Cooldown > 0.0f) return;
-
-    auto checkPush = [&](const glm::vec2& playerPos) {
-        float distX = std::abs(m_Position.x - playerPos.x);
-        float distY = std::abs(m_Position.y - playerPos.y);
-        
-        // Interaction box: +/- 35px horizontally, +/- 40px vertically
-        if (distX < 35.0f && distY < 40.0f) {
-            // Directional switch:
-            // If lever points Left (off) and player is on the Left, push to Right
-            if (!m_IsOn && playerPos.x < m_Position.x - 5.0f) {
-                m_IsOn = true;
-                m_Cooldown = 0.5f;
-            }
-            // If lever points Right (on) and player is on the Right, push to Left
-            else if (m_IsOn && playerPos.x > m_Position.x + 5.0f) {
-                m_IsOn = false;
-                m_Cooldown = 0.5f;
-            }
-        }
-    };
-
-    for (const auto& pos : interactorPositions) {
-        checkPush(pos);
     }
 }

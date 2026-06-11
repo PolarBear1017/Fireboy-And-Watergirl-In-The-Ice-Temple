@@ -135,6 +135,8 @@ private:
     bool m_GodMode = false;
     bool m_ShowDevMenu = true;
     bool m_AllLevelsUnlocked = false;
+    bool m_ShowDebugBoxes = false;
+    std::vector<std::shared_ptr<Util::GameObject>> m_DebugBoxes;
 };
 
 #endif

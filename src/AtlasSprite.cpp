@@ -38,6 +38,9 @@ void AtlasSprite::Draw(const Core::Matrices &data) {
     const GLint tintLoc = glGetUniformLocation(s_Program->GetId(), "colorTint");
     glUniform4fv(tintLoc, 1, &m_ColorTint[0]);
 
+    const GLint usePureColorLoc = glGetUniformLocation(s_Program->GetId(), "usePureColor");
+    glUniform1i(usePureColorLoc, m_UsePureColor ? 1 : 0);
+
     const GLint useMaskLoc = glGetUniformLocation(s_Program->GetId(), "useClockMask");
     glUniform1i(useMaskLoc, m_UseClockMask ? 1 : 0);
     if (m_UseClockMask) {

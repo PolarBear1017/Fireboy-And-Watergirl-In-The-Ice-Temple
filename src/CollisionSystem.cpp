@@ -1,6 +1,7 @@
 #include "CollisionSystem.hpp"
 #include "Mechanics/Elevator.hpp"
 #include "Mechanics/Block.hpp"
+#include "Mechanics/Lever.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -254,7 +255,7 @@ void CollisionSystem::ResolveCharacterMechanics(
         glm::vec2 halfColl = collider.size * 0.5f;
 
         // Check AABB overlap with a small downward tolerance (e.g., 5.0f) to catch platforms moving away
-        float downTolerance = 5.0f;
+        float downTolerance = std::dynamic_pointer_cast<Lever>(mech) ? 0.0f : 5.0f;
 
         // 🌟 這裡把原本的 pos 替換成 charCenter 來進行 AABB 檢查
         if (std::abs(charCenter.x - collider.center.x) < (halfChar.x + halfColl.x) &&
@@ -269,8 +270,12 @@ void CollisionSystem::ResolveCharacterMechanics(
             // 🌟 修正邊緣卡住問題：如果角色的腳底 (pos.y) 非常接近平台頂部 (容錯 4.0f 像素)，
             // 代表他其實是站在上面，這時就算走到邊緣 (overlapX 變得很小)，也必須強制做 Y 軸推擠，避免被橫向推開而卡住。
             bool isStandingOnTop = (pos.y >= collider.center.y + halfColl.y - 4.0f);
+            bool isLever = (std::dynamic_pointer_cast<Lever>(mech) != nullptr);
 
-            if (!isStandingOnTop && overlapX < overlapY) {
+            if (isLever) {
+                if (charCenter.x > collider.center.x) pos.x += overlapX;
+                else pos.x -= overlapX;
+            } else if (!isStandingOnTop && overlapX < overlapY) {
                 // 水平推擠 (側面撞擊)
                 auto block = std::dynamic_pointer_cast<Block>(mech);
                 if (block) {
