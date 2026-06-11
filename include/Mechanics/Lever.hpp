@@ -14,6 +14,7 @@ public:
 
     void Update(const std::vector<glm::vec2>& interactorPositions) override;
     bool IsActivated() const override { return m_IsOn; }
+    std::optional<Collider> GetCollider() const override;
 
 private:
     std::shared_ptr<AtlasSprite> m_Sprite;

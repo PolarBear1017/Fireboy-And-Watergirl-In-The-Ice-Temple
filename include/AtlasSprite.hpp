@@ -21,6 +21,9 @@ public:
     void SetColorTint(const glm::vec4 &tint) { m_ColorTint = tint; }
     glm::vec4 GetColorTint() const { return m_ColorTint; }
 
+    void SetUsePureColor(bool usePureColor) { m_UsePureColor = usePureColor; }
+    bool GetUsePureColor() const { return m_UsePureColor; }
+
     void SetClockMask(bool useMask, float timeRatio) {
         m_UseClockMask = useMask;
         m_TimeRatio = timeRatio;
@@ -44,6 +47,7 @@ private:
 
     bool m_UseClockMask = false;
     float m_TimeRatio = 1.0f;
+    bool m_UsePureColor = false;
 };
 
 #endif

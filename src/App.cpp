@@ -118,6 +118,10 @@ void App::Update() {
     m_ShowDevMenu = !m_ShowDevMenu;
   }
 
+  if (Util::Input::IsKeyDown(Util::Keycode::F4)) {
+    m_ShowDebugBoxes = !m_ShowDebugBoxes;
+  }
+
   if (m_ShowDevMenu) {
     DrawDevMenu();
   }
@@ -182,6 +186,7 @@ void App::ResetSceneRoot() {
   m_Receivers.clear();
   m_Diamonds.clear();
   m_Blocks.clear();
+  m_DebugBoxes.clear();
 }
 
 void App::BuildCoverScene() {
@@ -684,6 +689,85 @@ void App::UpdateGameScene() {
                 m_WaterGirl->PlayEnterDoorAnimation(m_WaterDoor->m_Transform.translation);
         }
     }
+
+    // Draw collision boxes
+    struct DebugColliderInfo {
+        glm::vec2 center;
+        glm::vec2 size;
+        glm::vec4 color;
+    };
+    std::vector<DebugColliderInfo> debugColliders;
+
+    if (m_ShowDebugBoxes) {
+        if (m_FireBoy && m_FireBoy->IsVisible() && !(m_IndependentRespawn && (m_FireBoy->IsDying() || m_FireBoy->IsDead()))) {
+            glm::vec2 size = m_FireBoy->GetCollisionSize();
+            glm::vec2 pos = m_FireBoy->GetPosition();
+            debugColliders.push_back({
+                {pos.x, pos.y + size.y * 0.5f},
+                size,
+                {1.0f, 0.0f, 0.0f, 0.4f} // Red
+            });
+        }
+        if (m_WaterGirl && m_WaterGirl->IsVisible() && !(m_IndependentRespawn && (m_WaterGirl->IsDying() || m_WaterGirl->IsDead()))) {
+            glm::vec2 size = m_WaterGirl->GetCollisionSize();
+            glm::vec2 pos = m_WaterGirl->GetPosition();
+            debugColliders.push_back({
+                {pos.x, pos.y + size.y * 0.5f},
+                size,
+                {0.0f, 0.0f, 1.0f, 0.4f} // Blue
+            });
+        }
+        for (const auto& block : m_Blocks) {
+            if (auto coll = block->GetCollider()) {
+                debugColliders.push_back({
+                    coll->center,
+                    coll->size,
+                    {0.0f, 1.0f, 0.0f, 0.4f} // Green
+                });
+            }
+        }
+        for (const auto& activator : m_Activators) {
+            if (auto coll = activator->GetCollider()) {
+                debugColliders.push_back({
+                    coll->center,
+                    coll->size,
+                    {0.0f, 1.0f, 0.0f, 0.4f} // Green
+                });
+            }
+        }
+        for (const auto& receiver : m_Receivers) {
+            if (auto coll = receiver->GetCollider()) {
+                debugColliders.push_back({
+                    coll->center,
+                    coll->size,
+                    {0.0f, 1.0f, 0.0f, 0.4f} // Green
+                });
+            }
+        }
+    }
+
+    while (m_DebugBoxes.size() < debugColliders.size()) {
+        auto sprite = std::make_shared<AtlasSprite>(m_MechAtlas, "movingbox0000");
+        sprite->SetUsePureColor(true);
+        auto box = std::make_shared<Util::GameObject>(sprite, 100.0f);
+        m_DebugBoxes.push_back(box);
+        m_SceneRoot->AddChild(box);
+    }
+
+    for (size_t i = 0; i < m_DebugBoxes.size(); ++i) {
+        if (i < debugColliders.size()) {
+            const auto& info = debugColliders[i];
+            m_DebugBoxes[i]->SetVisible(true);
+            m_DebugBoxes[i]->m_Transform.translation = info.center;
+            m_DebugBoxes[i]->m_Transform.scale = info.size / glm::vec2(74.0f, 76.0f);
+            auto sprite = std::make_shared<AtlasSprite>(m_MechAtlas, "movingbox0000");
+            sprite->SetUsePureColor(true);
+            sprite->SetColorTint(info.color);
+            m_DebugBoxes[i]->SetDrawable(sprite);
+        } else {
+            m_DebugBoxes[i]->SetVisible(false);
+        }
+    }
 }
 
 void App::SetupMapNodes() {
@@ -902,6 +986,7 @@ void App::DrawDevMenu() {
 
         ImGui::Checkbox("Independent Respawn", &m_IndependentRespawn);
         ImGui::Checkbox("God Mode", &m_GodMode);
+        ImGui::Checkbox("Show Colliders (F4)", &m_ShowDebugBoxes);
 
         ImGui::Separator();
 
