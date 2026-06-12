@@ -141,10 +141,10 @@ void Character::ProcessInput() {
 
     switch (m_GroundState) {
         case GroundState::AIR:
-            maxSpeed = 6.0F;
+            maxSpeed = 5.5F;
             break;
         case GroundState::ICE:
-            maxSpeed = (m_Element == Element::WATER) ? 1.0F: 5.0F;
+            maxSpeed = (m_Element == Element::WATER) ? 1.0F: 4.5F;
             break;
         default:
             maxSpeed = 4.0F;
