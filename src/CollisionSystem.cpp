@@ -111,7 +111,6 @@ void CollisionSystem::ResolveCharacterTerrain(
     }
 
     // 水平牆壁判定
-    // 增加 isBottom 參數，用來判斷現在是不是在測量腳部的碰撞
     auto IsSolidWall = [&](const GridCoord& coord, bool isBottom) {
         TerrainType t = levelManager.GetTerrain(coord.row, coord.col);
 
@@ -125,7 +124,11 @@ void CollisionSystem::ResolveCharacterTerrain(
             if (onSlope) return false;
             const glm::vec2 tileCenter = levelManager.TileToWorldPosition(coord.row, coord.col);
             const float tileBottom = tileCenter.y - tileSize * 0.5F;
-            if (position.y < tileBottom - 2.0F) return true;
+            if (isBottom) {
+                if (position.y < tileBottom - 8.0F) return true;
+            } else {
+                if (position.y < tileBottom - 2.0F) return true;
+            }
             return false;
         }
         if (t == TerrainType::ShallowBlock) return false;
