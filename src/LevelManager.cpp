@@ -249,7 +249,12 @@ bool LevelManager::LoadLevel(const LevelDefinition& level, const std::shared_ptr
                     snowObj->m_Transform.translation = { std::round(pos.x), std::round(pos.y) };
 
                     glm::vec2 snowSize = snowSprite->GetSize();
-                    snowObj->m_Transform.scale = {(m_TileSize / snowSize.x) + 0.5F, (m_TileSize / snowSize.y) + 0.5F};
+                    if (terrain == TerrainType::SnowSlopeBL || terrain == TerrainType::SnowSlopeBR) {
+                        snowObj->m_Transform.scale = {(m_TileSize / snowSize.x) + 0.25F, (m_TileSize / snowSize.y) + 0.25F};
+                    } else {
+                        // 平的雪塊：維持原本的 +0.5F，確保能包覆方塊邊緣
+                        snowObj->m_Transform.scale = {(m_TileSize / snowSize.x) + 0.5F, (m_TileSize / snowSize.y) + 0.5F};
+                    }
                     root->AddChild(snowObj);
                 }
             }
