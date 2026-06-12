@@ -308,7 +308,7 @@ void CollisionSystem::ResolveCharacterMechanics(
         glm::vec2 halfColl = collider.size * 0.5f;
 
         // Check AABB overlap with a small downward tolerance (e.g., 5.0f) to catch platforms moving away
-        float downTolerance = std::dynamic_pointer_cast<Lever>(mech) ? 0.0f : 5.0f;
+        float downTolerance = mech->IsLever() ? 0.0f : 5.0f;
 
         // 🌟 這裡把原本的 pos 替換成 charCenter 來進行 AABB 檢查
         if (std::abs(charCenter.x - collider.center.x) < (halfChar.x + halfColl.x) &&
@@ -323,17 +323,16 @@ void CollisionSystem::ResolveCharacterMechanics(
             // 🌟 修正邊緣卡住問題：如果角色的腳底 (pos.y) 非常接近平台頂部 (容錯 4.0f 像素)，
             // 代表他其實是站在上面，這時就算走到邊緣 (overlapX 變得很小)，也必須強制做 Y 軸推擠，避免被橫向推開而卡住。
             bool isStandingOnTop = (pos.y >= collider.center.y + halfColl.y - 4.0f);
-            bool isLever = (std::dynamic_pointer_cast<Lever>(mech) != nullptr);
+            bool isLever = mech->IsLever();
 
             if (isLever) {
                 if (charCenter.x > collider.center.x) pos.x += overlapX;
                 else pos.x -= overlapX;
             } else if (!isStandingOnTop && overlapX < overlapY) {
                 // 水平推擠 (側面撞擊)
-                auto block = std::dynamic_pointer_cast<Block>(mech);
-                if (block) {
-                    glm::vec2 bVel = block->GetVelocity();
-                    glm::vec2 bPos = block->GetPosition();
+                if (mech->IsBlock()) {
+                    glm::vec2 bVel = mech->GetVelocity();
+                    glm::vec2 bPos = mech->GetPosition();
                     
                     bool charPushesBlock = false;
                     if (charCenter.x > collider.center.x) {
@@ -350,18 +349,18 @@ void CollisionSystem::ResolveCharacterMechanics(
                             bPos.x += overlapX;
                             bVel.x = vel.x;
                         }
-                        block->SetPosition(bPos);
-                        block->SetVelocity(bVel);
+                        mech->SetPosition(bPos);
+                        mech->SetVelocity(bVel);
                         
-                        ResolveBlockTerrain(*block, levelManager);
+                        ResolveBlockTerrain(static_cast<Block&>(*mech), levelManager);
                         
-                        glm::vec2 newBPos = block->GetPosition();
+                        glm::vec2 newBPos = mech->GetPosition();
                         if (charCenter.x > collider.center.x) {
                             pos.x = newBPos.x + halfColl.x + halfChar.x;
                         } else {
                             pos.x = newBPos.x - halfColl.x - halfChar.x;
                         }
-                        vel.x = block->GetVelocity().x;
+                        vel.x = mech->GetVelocity().x;
                     } else {
                         // Block pushes character
                         if (charCenter.x > collider.center.x) {
@@ -378,8 +377,8 @@ void CollisionSystem::ResolveCharacterMechanics(
                         float pushBack = resolvedPos.x - pos.x;
                         if (std::abs(pushBack) > 0.001f) {
                             bPos.x += pushBack;
-                            block->SetPosition(bPos);
-                            block->SetVelocity({0, block->GetVelocity().y});
+                            mech->SetPosition(bPos);
+                            mech->SetVelocity({0, mech->GetVelocity().y});
                             
                             // Adjust character one more time to perfectly touch the block
                             if (charCenter.x > collider.center.x) {
@@ -392,20 +391,19 @@ void CollisionSystem::ResolveCharacterMechanics(
                         vel = character.GetVelocity();
                     }
                 } else {
-                    auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
-                    if (elevator) {
+                    if (mech->IsElevator()) {
                         float pushedX = (charCenter.x > collider.center.x) ? (collider.center.x + halfColl.x + halfChar.x) : (collider.center.x - halfColl.x - halfChar.x);
                         glm::vec2 resolved_pos = ResolveTerrainForPosition({pushedX, pos.y}, size, levelManager);
                         if (charCenter.x > collider.center.x) {
                             if (resolved_pos.x < pushedX) {
-                                elevator->SetPosition({resolved_pos.x - halfChar.x - halfColl.x, collider.center.y});
+                                mech->SetPosition({resolved_pos.x - halfChar.x - halfColl.x, collider.center.y});
                                 pos.x = resolved_pos.x;
                             } else {
                                 pos.x = pushedX;
                             }
                         } else {
                             if (resolved_pos.x > pushedX) {
-                                elevator->SetPosition({resolved_pos.x + halfChar.x + halfColl.x, collider.center.y});
+                                mech->SetPosition({resolved_pos.x + halfChar.x + halfColl.x, collider.center.y});
                                 pos.x = resolved_pos.x;
                             } else {
                                 pos.x = pushedX;
@@ -422,14 +420,13 @@ void CollisionSystem::ResolveCharacterMechanics(
                     float pushedY = collider.center.y + halfColl.y;
                     glm::vec2 resolved_pos = ResolveTerrainForPosition({pos.x, pushedY}, size, levelManager);
 
-                    auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
-                    if (elevator) {
+                    if (mech->IsElevator()) {
                         if (resolved_pos.y < pushedY) {
-                            elevator->SetPosition({collider.center.x, resolved_pos.y - halfColl.y});
+                            mech->SetPosition({collider.center.x, resolved_pos.y - halfColl.y});
                             pos.y = resolved_pos.y;
                         } else {
                             pos.y = pushedY;
-                            pos += elevator->GetDeltaPosition();
+                            pos += mech->GetDeltaPosition();
                         }
                         character.SetGroundState(GroundState::MOVING_PLATFORM);
                     } else {
@@ -440,10 +437,9 @@ void CollisionSystem::ResolveCharacterMechanics(
                     float pushedY = collider.center.y - halfColl.y - size.y;
                     glm::vec2 resolved_pos = ResolveTerrainForPosition({pos.x, pushedY}, size, levelManager);
 
-                    auto elevator = std::dynamic_pointer_cast<Elevator>(mech);
-                    if (elevator) {
+                    if (mech->IsElevator()) {
                         if (resolved_pos.y > pushedY) {
-                            elevator->SetPosition({collider.center.x, resolved_pos.y + size.y + halfColl.y});
+                            mech->SetPosition({collider.center.x, resolved_pos.y + size.y + halfColl.y});
                             pos.y = resolved_pos.y;
                         } else {
                             pos.y = pushedY;

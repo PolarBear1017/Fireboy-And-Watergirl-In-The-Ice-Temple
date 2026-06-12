@@ -10,19 +10,24 @@
 #include "SpriteAtlas.hpp"
 #include "Util/Transform.hpp"
 
+#include "Input/IInputController.hpp"
+#include <memory>
+
 class Character : public Util::GameObject{
 private:
     glm::vec2 m_Velocity = {0.0f, 0.0f};
     glm::vec2 m_CollisionSize = {20.0f, 35.0f};
 
     float m_Gravity = 0.5f;
-    float m_JumpForce = 10.5f;
+    float m_JumpForce = 10.0f;
     GroundState m_GroundState = GroundState::AIR;
     Element m_Element;
     RunningState m_RunningState = RunningState::Idle;
 
     bool m_InputEnabled = true;
     bool m_Visible = true;
+
+    std::unique_ptr<IInputController> m_InputController; // Composition / Aggregation
 
     std::shared_ptr<Util::GameObject> m_HeadObject;
     std::shared_ptr<Util::GameObject> m_LegsObject;
@@ -50,7 +55,7 @@ private:
     void UpdateAnimation();
 
 public:
-    Character(const std::shared_ptr<SpriteAtlas>& atlas, Element element);
+    Character(const std::shared_ptr<SpriteAtlas>& atlas, Element element, std::unique_ptr<IInputController> inputCtrl);
 
     void Update();
 

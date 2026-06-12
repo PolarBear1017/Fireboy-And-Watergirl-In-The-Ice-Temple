@@ -8,8 +8,8 @@
 #include "config.hpp"
 // #include "Util/Logger.hpp"
 
-Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element element)
-    : m_Element(element) {
+Character::Character(const std::shared_ptr<SpriteAtlas>& atlas, const Element element, std::unique_ptr<IInputController> inputCtrl)
+    : m_Element(element), m_InputController(std::move(inputCtrl)) {
 
     const float zIndex = (element == Element::FIRE) ? 10.0F : 12.0F;
     SetZIndex(zIndex);
@@ -132,7 +132,7 @@ void Character::Update() {
 }
 
 void Character::ProcessInput() {
-    if (!m_InputEnabled) return;
+    if (!m_InputEnabled || !m_InputController) return;
     m_RunningState = RunningState::Idle;
 
     float acceleration = (m_GroundState == GroundState::ICE) ? 0.2F : 1.0f;
@@ -141,48 +141,29 @@ void Character::ProcessInput() {
 
     switch (m_GroundState) {
         case GroundState::AIR:
-            maxSpeed = 5.5F;
+            maxSpeed = 6.0F;
             break;
         case GroundState::ICE:
-            maxSpeed = (m_Element == Element::WATER) ? 1.0F: 4.5F;
+            maxSpeed = (m_Element == Element::WATER) ? 1.0F: 5.0F;
             break;
         default:
             maxSpeed = 4.0F;
     }
 
-
-
-    if (m_Element == Element::FIRE) {
-        if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {
-            m_Velocity.x -= acceleration;
-            m_RunningState = RunningState::Left;
-        }
-        if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) {
-            m_Velocity.x += acceleration;
-            m_RunningState = RunningState::Right;
-        }
-        if (Util::Input::IsKeyPressed(Util::Keycode::UP) && IsGrounded()) {
-            m_Velocity.y += m_JumpForce;
-            m_GroundState = GroundState::AIR;
-            if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) m_Velocity.x = -maxSpeed;
-            if (Util::Input::IsKeyPressed(Util::Keycode::RIGHT)) m_Velocity.x = maxSpeed;
-        }
+    float axis = m_InputController->GetHorizontalAxis();
+    if (axis < 0.0f) {
+        m_Velocity.x -= acceleration;
+        m_RunningState = RunningState::Left;
+    } else if (axis > 0.0f) {
+        m_Velocity.x += acceleration;
+        m_RunningState = RunningState::Right;
     }
-    if (m_Element == Element::WATER) {
-        if (Util::Input::IsKeyPressed(Util::Keycode::A)) {
-            m_Velocity.x -= acceleration;
-            m_RunningState = RunningState::Left;
-        }
-        if (Util::Input::IsKeyPressed(Util::Keycode::D)) {
-            m_Velocity.x += acceleration;
-            m_RunningState = RunningState::Right;
-        }
-        if (Util::Input::IsKeyPressed(Util::Keycode::W) && IsGrounded()) {
-            m_Velocity.y += m_JumpForce;
-            m_GroundState = GroundState::AIR;
-            if (Util::Input::IsKeyPressed(Util::Keycode::A)) m_Velocity.x = -maxSpeed;
-            if (Util::Input::IsKeyPressed(Util::Keycode::D)) m_Velocity.x = maxSpeed;
-        }
+
+    if (m_InputController->IsJumpPressed() && IsGrounded()) {
+        m_Velocity.y += m_JumpForce;
+        m_GroundState = GroundState::AIR;
+        if (axis < 0.0f) m_Velocity.x = -maxSpeed;
+        if (axis > 0.0f) m_Velocity.x = maxSpeed;
     }
 
     if (m_Velocity.x > 0.0f) {
