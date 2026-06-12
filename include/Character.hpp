@@ -16,7 +16,7 @@ private:
     glm::vec2 m_CollisionSize = {20.0f, 35.0f};
 
     float m_Gravity = 0.5f;
-    float m_JumpForce = 10.0f;
+    float m_JumpForce = 10.5f;
     GroundState m_GroundState = GroundState::AIR;
     Element m_Element;
     RunningState m_RunningState = RunningState::Idle;
