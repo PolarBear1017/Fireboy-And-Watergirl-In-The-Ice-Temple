@@ -2,8 +2,10 @@
 #include "Util/Time.hpp"
 
 
-Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId)
-    : Activator(groupId), m_Position(pos) {
+#include "Mechanics/TriggerMediator.hpp"
+
+Lever::Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId, const std::shared_ptr<TriggerMediator>& mediator)
+    : Activator(groupId, mediator), m_Position(pos) {
     m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "lever_base0000");
     m_Sprite = std::make_shared<AtlasSprite>(atlas, "lever_stick0000"); 
     
@@ -57,6 +59,7 @@ std::optional<Collider> Lever::GetCollider() const {
 
 void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
     float dt = static_cast<float>(Util::Time::GetDeltaTimeMs()) / 1000.0f;
+    bool wasOn = m_IsOn;
 
     if (m_Cooldown > 0.0f) {
         m_Cooldown -= dt;
@@ -147,5 +150,9 @@ void Lever::Update(const std::vector<glm::vec2>& interactorPositions) {
     } else {
         m_BaseLightSprite->SetFrame("lever_base_light_off0000");
         m_StickLightSprite->SetFrame("lever_stick_light_off0000");
+    }
+
+    if (wasOn != m_IsOn && m_Mediator) {
+        m_Mediator->OnActivatorStateChanged(m_GroupId, m_IsOn);
     }
 }

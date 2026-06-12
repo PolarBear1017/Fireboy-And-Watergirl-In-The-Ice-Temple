@@ -8,13 +8,16 @@
 #include <memory>
 #include <glm/vec2.hpp>
 
+class TriggerMediator;
+
 class Lever : public Activator {
 public:
-    Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& position, int groupId);
+    Lever(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& position, int groupId, const std::shared_ptr<TriggerMediator>& mediator);
 
     void Update(const std::vector<glm::vec2>& interactorPositions) override;
     bool IsActivated() const override { return m_IsOn; }
     std::optional<Collider> GetCollider() const override;
+    bool IsLever() const override { return true; }
 
 private:
     std::shared_ptr<AtlasSprite> m_Sprite;

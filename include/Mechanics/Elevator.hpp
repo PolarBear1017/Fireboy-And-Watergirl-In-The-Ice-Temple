@@ -18,8 +18,9 @@ public:
         return Collider{ m_Transform.translation, m_Size };
     }
 
-    glm::vec2 GetDeltaPosition() const { return m_Transform.translation - m_LastPosition; }
-    void SetPosition(const glm::vec2& newPos);
+    bool IsElevator() const override { return true; }
+    glm::vec2 GetDeltaPosition() const override { return m_Transform.translation - m_LastPosition; }
+    void SetPosition(const glm::vec2& newPos) override;
 
 private:
     std::shared_ptr<AtlasSprite> m_Sprite;

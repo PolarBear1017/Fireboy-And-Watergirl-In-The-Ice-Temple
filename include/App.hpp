@@ -4,21 +4,18 @@
 #include "pch.hpp" // IWYU pragma: export
 
 #include "AtlasSprite.hpp"
-#include "Core/Drawable.hpp"
 #include "SpriteAtlas.hpp"
 #include "Util/GameObject.hpp"
-#include "Util/Image.hpp"
 #include "Util/Renderer.hpp"
-#include "CollisionSystem.hpp"
-#include "Level/LevelManager.hpp"
-#include "Character.hpp"
-#include "Door.hpp"
-#include "Overlay.hpp"
-#include "Mechanics/Activator.hpp"
-#include "Mechanics/Receiver.hpp"
-#include "Mechanics/Diamond.hpp"
-#include "Mechanics/Block.hpp"
+#include "Scene/IScene.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
+/**
+ * @brief Main application driver (Context class for the State Pattern).
+ * Acts as a central cache for game resources and global state.
+ */
 class App {
 public:
     enum class State {
@@ -26,89 +23,6 @@ public:
         UPDATE,
         END,
     };
-
-    enum class Scene {
-        Cover,
-        Map,
-        Game,
-    };
-
-    State GetCurrentState() const { return m_CurrentState; }
-
-    void Start();
-
-    void Update();
-
-    void End(); // NOLINT(readability-convert-member-functions-to-static)
-
-private:
-    void SwitchScene(Scene scene);
-    void ResetSceneRoot();
-    void BuildCoverScene();
-    void BuildGameScene();
-    void UpdateCoverScene();
-    void UpdateGameScene();
-    void BuildMapScene();
-    void UpdateMapScene();
-    void DrawPathLine(const glm::vec2& start, const glm::vec2& end);
-    void MarkCurrentLevelCompleted();
-    void SetupMapNodes();
-    void DrawDevMenu();
-
-private:
-    State m_CurrentState = State::START;
-    Scene m_CurrentScene = Scene::Cover;
-    Util::Renderer m_Root;
-    std::shared_ptr<Util::GameObject> m_SceneRoot;
-
-    std::shared_ptr<SpriteAtlas> m_MenuAtlas;
-    std::shared_ptr<SpriteAtlas> m_MenuBackgroundAtlas;
-    std::shared_ptr<SpriteAtlas> m_FontAtlas;
-    struct BeamData {
-        float speed;
-        float offset;
-        float baseScale;
-    };
-    std::shared_ptr<AtlasSprite> m_StartButtonSprite;
-    std::shared_ptr<Util::GameObject> m_StartButtonObject;
-    std::vector<std::shared_ptr<Util::GameObject>> m_Beams;
-    std::vector<BeamData> m_BeamDatas;
-    std::shared_ptr<AtlasSprite> m_GamePlaceholderSprite;
-    float m_StartButtonBaseScale = 1.0F;
-    float m_PlayTextBaseScale = 1.0F;
-    std::vector<std::shared_ptr<Util::GameObject>> m_PlayTextObjects;
-    std::vector<std::shared_ptr<Util::GameObject>> m_MoreGamesTextObjects;
-    std::vector<std::shared_ptr<Util::GameObject>> m_WalkthroughTextObjects;
-
-    std::shared_ptr<SpriteAtlas> m_GameAtlas;
-    std::shared_ptr<SpriteAtlas> m_GroundAtlas;
-    std::shared_ptr<SpriteAtlas> m_OverlayAtlas;
-    std::shared_ptr<SpriteAtlas> m_TempleAtlas;
-    std::shared_ptr<LevelManager> m_LevelManager;
-    std::shared_ptr<SpriteAtlas> m_MechAtlas;
-
-    CollisionSystem m_CollisionSystem;
-
-    std::shared_ptr<Character> m_FireBoy;
-    std::shared_ptr<Character> m_WaterGirl;
-
-    std::shared_ptr<Door> m_FireDoor;
-    std::shared_ptr<Door> m_WaterDoor;
-
-    std::vector<std::shared_ptr<Overlay>> m_Overlays;
-
-    // Mechanics
-    std::vector<std::shared_ptr<Activator>> m_Activators;
-    std::vector<std::shared_ptr<Receiver>> m_Receivers;
-    std::vector<std::shared_ptr<Diamond>> m_Diamonds;
-    std::vector<std::shared_ptr<Block>> m_Blocks;
-    
-    int m_FireboyGems = 0;
-    int m_WatergirlGems = 0;
-    
-    // Level State
-    bool m_LevelFinished = false;
-    float m_LevelFinishTimer = 0.0f;
 
     struct MapNode {
         int id;
@@ -127,16 +41,74 @@ private:
         std::shared_ptr<Util::GameObject> maskObject;
     };
 
+    State GetCurrentState() const { return m_CurrentState; }
+
+    void Start();
+    void Update();
+    void End();
+
+    /**
+     * @brief Performs scene switching by resetting the active renderer and initializing the next scene.
+     */
+    void SwitchScene(std::unique_ptr<IScene> nextScene);
+
+    /**
+     * @brief Marks a level completion in global node records.
+     */
+    void MarkCurrentLevelCompleted();
+
+    // Global resource accessors (Dependency Injection facilitation)
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetMenuAtlas() const { return m_MenuAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetMenuBackgroundAtlas() const { return m_MenuBackgroundAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetFontAtlas() const { return m_FontAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetGameAtlas() const { return m_GameAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetGroundAtlas() const { return m_GroundAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetOverlayAtlas() const { return m_OverlayAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetTempleAtlas() const { return m_TempleAtlas; }
+    [[nodiscard]] std::shared_ptr<SpriteAtlas> GetMechAtlas() const { return m_MechAtlas; }
+
+    [[nodiscard]] Util::Renderer& GetRenderer() { return m_Root; }
+    [[nodiscard]] float GetMapBackgroundScale() const { return m_MapBackgroundScale; }
+    [[nodiscard]] std::vector<MapNode>& GetMapNodes() { return m_MapNodes; }
+    [[nodiscard]] std::string& GetCurrentLevelPath() { return m_CurrentLevelPath; }
+
+    // Cheat tool variables & toggles (read-write access)
+    [[nodiscard]] bool& GetIndependentRespawn() { return m_IndependentRespawn; }
+    [[nodiscard]] bool& GetGodMode() { return m_GodMode; }
+    [[nodiscard]] bool& GetShowDebugBoxes() { return m_ShowDebugBoxes; }
+    [[nodiscard]] bool& GetAllLevelsUnlocked() { return m_AllLevelsUnlocked; }
+
+private:
+    void SetupMapNodes();
+    void DrawDevMenu();
+
+private:
+    State m_CurrentState = State::START;
+    std::unique_ptr<IScene> m_CurrentScene; // Current State / Polymorphic Scene Reference
+    Util::Renderer m_Root;
+    std::shared_ptr<Util::GameObject> m_SceneRoot;
+
+    // Sprite atlas resource caches (shared across multiple scenes)
+    std::shared_ptr<SpriteAtlas> m_MenuAtlas;
+    std::shared_ptr<SpriteAtlas> m_MenuBackgroundAtlas;
+    std::shared_ptr<SpriteAtlas> m_FontAtlas;
+    std::shared_ptr<SpriteAtlas> m_GameAtlas;
+    std::shared_ptr<SpriteAtlas> m_GroundAtlas;
+    std::shared_ptr<SpriteAtlas> m_OverlayAtlas;
+    std::shared_ptr<SpriteAtlas> m_TempleAtlas;
+    std::shared_ptr<SpriteAtlas> m_MechAtlas;
+
+    // Persistent game context
     std::vector<MapNode> m_MapNodes;
     std::string m_CurrentLevelPath;
     float m_MapBackgroundScale = 1.5F;
 
+    // Dev settings
     bool m_IndependentRespawn = false;
     bool m_GodMode = false;
     bool m_ShowDevMenu = true;
     bool m_AllLevelsUnlocked = false;
     bool m_ShowDebugBoxes = false;
-    std::vector<std::shared_ptr<Util::GameObject>> m_DebugBoxes;
 };
 
-#endif
+#endif // APP_HPP

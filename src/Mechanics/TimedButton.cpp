@@ -2,8 +2,10 @@
 #include "Util/Time.hpp"
 #include <algorithm>
 
-TimedButton::TimedButton(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId, float durationMs)
-    : Activator(groupId), m_DurationMs(durationMs) {
+#include "Mechanics/TriggerMediator.hpp"
+
+TimedButton::TimedButton(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId, float durationMs, const std::shared_ptr<TriggerMediator>& mediator)
+    : Activator(groupId, mediator), m_DurationMs(durationMs) {
     
     // Scale factor
     m_Transform.scale = {0.6f, 0.6f};
@@ -87,6 +89,7 @@ void TimedButton::Update(const std::vector<glm::vec2>& interactorPositions) {
         }
     }
 
+    bool wasActive = m_IsActive;
     // 2. Timing State Machine
     if (m_IsPressed) {
         m_IsActive = true;
@@ -99,6 +102,10 @@ void TimedButton::Update(const std::vector<glm::vec2>& interactorPositions) {
                 m_TimeRemainingMs = 0.0f;
             }
         }
+    }
+
+    if (wasActive != m_IsActive && m_Mediator) {
+        m_Mediator->OnActivatorStateChanged(m_GroupId, m_IsActive);
     }
 
     // 3. Dial visual feedback using clock shader mask

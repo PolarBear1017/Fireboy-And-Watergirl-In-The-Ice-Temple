@@ -2,8 +2,10 @@
 #include "Util/Time.hpp"
 
 
-Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId)
-    : Activator(groupId) {
+#include "Mechanics/TriggerMediator.hpp"
+
+Button::Button(const std::shared_ptr<SpriteAtlas>& atlas, const glm::vec2& pos, int groupId, const std::shared_ptr<TriggerMediator>& mediator)
+    : Activator(groupId, mediator) {
     
     // 1. Base Structure
     m_BaseSprite = std::make_shared<AtlasSprite>(atlas, "pusher_block0000");
@@ -62,12 +64,17 @@ void Button::Update(const std::vector<glm::vec2>& interactorPositions) {
                (posRight > btnLeft && posLeft < btnRight);
     };
 
+    bool wasPressed = m_IsPressed;
     m_IsPressed = false;
     for (const auto& pos : interactorPositions) {
         if (checkPressed(pos)) {
             m_IsPressed = true;
             break;
         }
+    }
+
+    if (wasPressed != m_IsPressed && m_Mediator) {
+        m_Mediator->OnActivatorStateChanged(m_GroupId, m_IsPressed);
     }
 
     // 2. Animation Logic (Sinking)

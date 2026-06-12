@@ -10,12 +10,13 @@ public:
     Block(std::shared_ptr<SpriteAtlas> atlas, const glm::vec2& pos);
     
     std::optional<Collider> GetCollider() const override;
+    bool IsBlock() const override { return true; }
 
-    void SetVelocity(const glm::vec2& vel) { m_Velocity = vel; }
-    glm::vec2 GetVelocity() const { return m_Velocity; }
+    void SetVelocity(const glm::vec2& vel) override { m_Velocity = vel; }
+    glm::vec2 GetVelocity() const override { return m_Velocity; }
     
-    void SetPosition(const glm::vec2& pos) { m_Transform.translation = pos; }
-    glm::vec2 GetPosition() const { return m_Transform.translation; }
+    void SetPosition(const glm::vec2& pos) override { m_Transform.translation = pos; }
+    glm::vec2 GetPosition() const override { return m_Transform.translation; }
     
     glm::vec2 GetSize() const { return m_Size; }
 

@@ -37,6 +37,17 @@ public:
     int GetGroupId() const { return m_GroupId; }
     virtual std::optional<Collider> GetCollider() const { return std::nullopt; }
 
+    // Polymorphic queries to eliminate RTTI type casting (C++ OOP Pattern)
+    virtual bool IsLever() const { return false; }
+    virtual bool IsBlock() const { return false; }
+    virtual bool IsElevator() const { return false; }
+    
+    virtual glm::vec2 GetDeltaPosition() const { return {0.0f, 0.0f}; }
+    virtual void SetPosition(const glm::vec2& pos) { m_Transform.translation = pos; }
+    virtual glm::vec2 GetPosition() const { return m_Transform.translation; }
+    virtual void SetVelocity(const glm::vec2& vel) {}
+    virtual glm::vec2 GetVelocity() const { return {0.0f, 0.0f}; }
+
 protected:
     int m_GroupId;
 };
