@@ -36,13 +36,13 @@
   "objects": [
     {
       "type": "fire_spawn",
-      "row": 28,
-      "col": 28
+      "row": 5,
+      "col": 2
     },
     {
       "type": "water_spawn",
-      "row": 28,
-      "col": 30
+      "row": 5,
+      "col": 4
     },
     {
       "type": "diamond",
@@ -65,7 +65,7 @@
     {
       "type": "diamond",
       "element": "water",
-      "row": 12,
+      "row": 13,
       "col": 15
     },
     {
