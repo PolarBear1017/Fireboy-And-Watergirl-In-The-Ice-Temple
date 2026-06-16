@@ -2,9 +2,9 @@
 #define OVERLAY_HPP
 
 #include "Util/GameObject.hpp"
-#include "Element.hpp"
-#include "AtlasSprite.hpp"
-#include "SpriteAtlas.hpp"
+#include "../Element.hpp"
+#include "../AtlasSprite.hpp"
+#include "../SpriteAtlas.hpp"
 
 class Overlay : public Util::GameObject {
 private:

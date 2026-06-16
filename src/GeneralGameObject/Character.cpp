@@ -1,4 +1,4 @@
-#include "Character.hpp"
+#include "../../include/GeneralGameObject/Character.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Time.hpp"

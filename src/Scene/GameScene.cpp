@@ -13,10 +13,10 @@
 #include "Mechanics/TimedButton.hpp"
 #include "Mechanics/Lever.hpp"
 #include "Mechanics/Elevator.hpp"
-#include "Mechanics/Diamond.hpp"
+#include "../../include/GeneralGameObject/Diamond.hpp"
 #include "Mechanics/Block.hpp"
-#include "Overlay.hpp"
-#include "Door.hpp"
+#include "../../include/GeneralGameObject/Overlay.hpp"
+#include "../../include/GeneralGameObject/Door.hpp"
 #include <algorithm>
 #include <cmath>
 

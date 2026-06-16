@@ -1,4 +1,4 @@
-#include "Door.hpp"
+#include "../../include/GeneralGameObject/Door.hpp"
 #include <glm/geometric.hpp>
 #include <iomanip>
 #include <sstream>
