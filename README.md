@@ -97,33 +97,30 @@
 graph TD
 
 
-    Util::GameObject --> AnimationObject
-    Util::GameObject --> ImageObject
-    Util::GameObject --> TextObject
-    Util::GameObject --> BackGroundImage
+    Util::GameObject --> Character
+    Util::GameObject --> Door
+    Util::GameObject --> Overlay
+    Util::GameObject --> BaseMechanism
+    Util::GameObject --> Diamond
     
-    AnimationObject --> Thing
+    BaseMechanism --> Activator
+    BaseMechanism --> Receiver
+    BaseMechanism --> Block
     
-    Thing --> Road
-    Thing --> Enemy
-    Thing --> Item
-    Thing --> NPC
-    Thing --> Door
-    Thing --> Stair
-    Thing --> Shop
+    Activator --> Button
+    Activator --> Lever
+    Activator --> TimedButton
+    Receiver --> Elevator
     
-    Enemy --> BigEnemy
-    Enemy --> FakePrincess
+    std::enable_shared_from_this<TriggerMediator> --> TriggerMediator
     
-    Dialog --> ItemDialog
-    Dialog --> NPCDialog
-    Dialog --> ShopDialog
+    Core::Drawable --> AtlasSprite
     
-    EnemyDataManager
-    Fighting
-    Fly
-    SceneManager
-    MapManager
+    IInputController --> KeyboardInputController
+    
+    LevelManager
+    CollisionSystem
+    SpriteAtlas
     App
 
 ```
