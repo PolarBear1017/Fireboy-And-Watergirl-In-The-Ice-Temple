@@ -187,6 +187,9 @@ graph TD
 - Google Gemini
   - 程式實作建議與討論
   - 協助 Debug
+- Codex
+    - 程式實作建議與討論
+    - 協助 Debug
 
 ## 結語
 
