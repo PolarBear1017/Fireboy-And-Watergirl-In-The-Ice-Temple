@@ -39,6 +39,26 @@
 
 ### 遊戲規則
 ### 遊戲畫面
+|   階段   |                        遊戲畫面                        |
+|:------:|:--------------------------------------------------:|
+|  開始畫面  |  <img src="FinalProjectImg/game_cover.png" width="400">  |
+|  關卡選單  |  <img src="FinalProjectImg/level_menu.png" width="400">  |
+|  第一關  |  <img src="FinalProjectImg/level0.png" width="400">  |
+| 第二關  | <img src="FinalProjectImg/level2.png" width="400">  |
+|  第三關  |  <img src="FinalProjectImg/level6.png" width="400">  |
+|  第四關  |  <img src="FinalProjectImg/level7.png" width="400">  |
+|  第五關  |  <img src="FinalProjectImg/level21.png" width="400">  |
+|  角色泡水顯示  |  <img src="FinalProjectImg/character_in_pool.png" width="400">  |
+| 角色死亡 | <img src="FinalProjectImg/character_died_animation.gif" width="400"> |
+|  搖桿觸發  |  <img src="FinalProjectImg/trigger_lever.gif" width="400">  |
+|  按鈕觸發  |  <img src="FinalProjectImg/trigger_button.gif" width="400">  |
+|  白色按鈕觸發  |  <img src="FinalProjectImg/white_button.gif" width="400">  |
+|  倒計時按鈕觸發   |  <img src="FinalProjectImg/timed_button_trigger.gif" width="400">   |
+|  雪地效果   |  <img src="FinalProjectImg/snow_feature.gif" width="400">   |
+| 過關動畫 | <img src="FinalProjectImg/pass_level_animation.gif" width="400"> |
+| 開發者外掛介面 | <img src="FinalProjectImg/dev_tools.png" width="400"> |
+| 碰撞箱顯示 | <img src="FinalProjectImg/show_colliders.png" width="400"> |
+
 
 ## 程式設計
 
