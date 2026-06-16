@@ -2,9 +2,9 @@
 #define DOOR_HPP
 
 #include "Util/GameObject.hpp"
-#include "Element.hpp"
-#include "SpriteAtlas.hpp"
-#include "AtlasSprite.hpp"
+#include "../Element.hpp"
+#include "../SpriteAtlas.hpp"
+#include "../AtlasSprite.hpp"
 #include <glm/vec2.hpp>
 #include <memory>
 #include <string>

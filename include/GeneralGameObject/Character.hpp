@@ -4,13 +4,13 @@
 
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
-#include "Element.hpp"
-#include "GroundState.hpp"
-#include "AtlasSprite.hpp"
-#include "SpriteAtlas.hpp"
+#include "../Element.hpp"
+#include "../GroundState.hpp"
+#include "../AtlasSprite.hpp"
+#include "../SpriteAtlas.hpp"
 #include "Util/Transform.hpp"
 
-#include "Input/IInputController.hpp"
+#include "../Input/IInputController.hpp"
 #include <memory>
 
 class Character : public Util::GameObject{

@@ -43,7 +43,7 @@
 - 地圖場景實作（地圖素材切割、地圖資料讀取與顯示）
 - 斜坡顯示與碰撞
 - 水池動畫、碰撞與凍結融化機制
-- 雪面地形碰撞
+- 冰雪地形碰撞
 
 
 ## 遊戲介紹
@@ -116,7 +116,6 @@
 ```mermaid
 graph TD
 
-
     Util::GameObject --> Character
     Util::GameObject --> Door
     Util::GameObject --> Overlay
@@ -132,7 +131,9 @@ graph TD
     Activator --> TimedButton
     Receiver --> Elevator
     
-    std::enable_shared_from_this<TriggerMediator> --> TriggerMediator
+    IScene --> CoverScene
+    IScene --> GameScene
+    IScene --> MapScene
     
     Core::Drawable --> AtlasSprite
     
@@ -142,11 +143,41 @@ graph TD
     CollisionSystem
     SpriteAtlas
     App
-
 ```
 
+- `Util::GameObject` - PTSD 定義的遊戲物件
+  - `Character` - 主角色（水娃與火娃）
+  - `Door` - 終點門物件
+  - `Overlay` - 場景覆蓋物（元素池）
+  - `Diamond` - 寶石物件
+  - `BaseMechanism` - 機關物件
+    - `Block` - 方形石塊物件
+    - `Activator` - 觸發器物件
+      - `Button` - 按鈕物件
+      - `Lever` - 搖桿物件
+      - `TimedButton` - 計時按鈕物件
+    - `Receiver` - 接收器物件
+      - `Elevator` - 移動平台物件
+- `IScene` - 場景（介面）
+  - `CoverScene` - 開始畫面場景
+  - `MapScene` - 關卡選單場景
+  - `GameScene` - 關卡內部場景
+- `Core::Drawable` - PTSD 定義的可繪製物件
+  - `AtlasSprite` -
+- `IInputController` -
+  - `KeyboardInputController` -
+- `LevelManager` - 關卡系統（資訊讀取與顯示）
+- `CollisionSystem` - 碰撞器統
+- `SpriteAtlas` -
+- `App` - 主遊戲架構
+
+
 ### 程式技術
+
 ### 使用到 AI/AI Agent 的部分 (沒有用到者，不需要寫這篇)
+- Google Gemini
+  - 程式實作建議與討論
+  - 協助 Debug
 
 ## 結語
 
@@ -164,9 +195,9 @@ graph TD
 
 ### 心得
 
-- 113590028 黃暉帆
+- **113590028 黃暉帆**
 
-- 113590001 楊竣升
+- **113590001 楊竣升**
 
 ### 貢獻比例
 

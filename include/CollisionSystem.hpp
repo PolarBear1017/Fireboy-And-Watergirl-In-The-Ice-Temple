@@ -1,7 +1,7 @@
 #ifndef COLLISION_SYSTEM_HPP
 #define COLLISION_SYSTEM_HPP
 
-#include "Character.hpp"
+#include "GeneralGameObject/Character.hpp"
 #include "Level/LevelManager.hpp"
 #include "Mechanics/BaseMechanism.hpp"
 #include "Mechanics/Block.hpp"
