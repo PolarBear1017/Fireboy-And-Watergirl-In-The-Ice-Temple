@@ -97,7 +97,6 @@
 |  第三關  |  <img src="FinalProjectImg/level6.png" width="400">  |
 |  第四關  |  <img src="FinalProjectImg/level7.png" width="400">  |
 |  第五關  |  <img src="FinalProjectImg/level21.png" width="400">  |
-|  角色泡水顯示  |  <img src="FinalProjectImg/character_in_pool.png" width="400">  |
 | 角色死亡 | <img src="FinalProjectImg/character_died_animation.gif" width="400"> |
 |  搖桿觸發  |  <img src="FinalProjectImg/trigger_lever.gif" width="400">  |
 |  按鈕觸發  |  <img src="FinalProjectImg/trigger_button.gif" width="400">  |
@@ -107,6 +106,7 @@
 | 過關動畫 | <img src="FinalProjectImg/pass_level_animation.gif" width="400"> |
 | 開發者外掛介面 | <img src="FinalProjectImg/dev_tools.png" width="400"> |
 | 碰撞箱顯示 | <img src="FinalProjectImg/show_colliders.png" width="400"> |
+|  角色泡水顯示  |  <img src="FinalProjectImg/character_in_pool.png" width="400">  |
 
 
 ## 程式設計
@@ -173,6 +173,15 @@ graph TD
 
 
 ### 程式技術
+- 機關物件繼承鏈
+    - 在實作機關時，我們發現各個機關有很多重複的地方，所以我們拉出了 `BaseMechanism` 繼承`Game Object`。然後因為機關有分為兩類：觸發器 `Activator` 和接收器 `Reciver`，我們將他們繼承 `BaseMechanism`來實現物件的基本機制。然後在 `Activator` 和 `Reciver` 的子類別各自放該功能的機關Object。
+- 從原版地圖 convert 成我們地圖的格式
+    - 在製作地圖時，因為考慮到需要批量產出地圖，所以我們有寫了一個 `convert.py` 的轉換程式，能夠將原版的地圖格式架構轉換成我們遊戲中的格式架構，幫助我們減少了很多需要自行製作還原地圖的時間。
+- Spirit Sheet 大圖切圖功能
+    - 在一開始搜集素材時，因為我們找到的素材都是使用 `Spirit Sheet` （整張大圖有很多小圖素材，需要使用附檔的.json來切圖，這樣在讀檔時會比需要連續讀好幾十張圖的動話還方便快速），但是我們有詢問過製作 PTSD 架構的學長有沒有支援 Spirit Sheet 的功能，不過很可惜沒有，所以我們自行撰寫實作了 Spirit Sheet 大圖切圖的邏輯並應用在我們的專案中。
+- 介面使用
+    - `IScene`：將各個場景都會用到的基礎部分寫在`IScene`讓其他的Scene當作介面引入。實作了像是場景的初始化、更新、以及畫上DevMenu(開發者外掛)的純虛擬函數。
+    - `IInputController`：將按鍵輸入的控制獨立拉出成介面，設定左右方向以及是否跳起的純虛擬函式，之後再做擴充時，像是如果要換成使用遊戲搖桿來玩，擴充就更方便。
 
 ### 使用到 AI/AI Agent 的部分 (沒有用到者，不需要寫這篇)
 - Google Gemini
