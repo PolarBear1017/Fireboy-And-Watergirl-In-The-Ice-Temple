@@ -43,12 +43,14 @@ void GameScene::Init(std::shared_ptr<Util::GameObject> sceneRoot) {
 }
 
 void GameScene::BuildGameScene() {
-    // 1. Clear the renderer completely to prevent old overlays/children from leaking
-    m_App.GetRenderer() = Util::Renderer{};
+    if (!m_SceneRoot) {
+        return;
+    }
 
-    // 2. Recreate m_SceneRoot and register it to the new renderer
-    m_SceneRoot = std::make_shared<Util::GameObject>();
-    m_App.GetRenderer().AddChild(m_SceneRoot);
+    const auto oldChildren = m_SceneRoot->GetChildren();
+    for (const auto& child : oldChildren) {
+        m_SceneRoot->RemoveChild(child);
+    }
 
     // Clear dynamic vectors first (cleanup on restart)
     m_Overlays.clear();
@@ -57,6 +59,11 @@ void GameScene::BuildGameScene() {
     m_Diamonds.clear();
     m_Blocks.clear();
     m_DebugBoxes.clear();
+    m_DebugBoxSprites.clear();
+    m_FireBoy.reset();
+    m_WaterGirl.reset();
+    m_FireDoor.reset();
+    m_WaterDoor.reset();
     m_TriggerMediator->Reset();
 
     // 1. Build Background (MenuBackground0000 Tiling)
@@ -95,7 +102,7 @@ void GameScene::BuildGameScene() {
             overlayData.width,
             level.tileSize
         );
-        m_App.GetRenderer().AddChild(dynamicOverlay);
+        m_SceneRoot->AddChild(dynamicOverlay);
         m_Overlays.push_back(dynamicOverlay);
     }
 
@@ -433,6 +440,7 @@ void GameScene::Update() {
         auto sprite = std::make_shared<AtlasSprite>(m_App.GetMechAtlas(), "movingbox0000");
         sprite->SetUsePureColor(true);
         auto box = std::make_shared<Util::GameObject>(sprite, 100.0f);
+        m_DebugBoxSprites.push_back(sprite);
         m_DebugBoxes.push_back(box);
         m_SceneRoot->AddChild(box);
     }
@@ -443,10 +451,7 @@ void GameScene::Update() {
             m_DebugBoxes[i]->SetVisible(true);
             m_DebugBoxes[i]->m_Transform.translation = info.center;
             m_DebugBoxes[i]->m_Transform.scale = info.size / glm::vec2(74.0f, 76.0f);
-            auto sprite = std::make_shared<AtlasSprite>(m_App.GetMechAtlas(), "movingbox0000");
-            sprite->SetUsePureColor(true);
-            sprite->SetColorTint(info.color);
-            m_DebugBoxes[i]->SetDrawable(sprite);
+            m_DebugBoxSprites[i]->SetColorTint(info.color);
         } else {
             m_DebugBoxes[i]->SetVisible(false);
         }
