@@ -6,22 +6,23 @@
 #include "../Element.hpp"
 
 enum class TerrainType {
-    Empty = 0,
-    Block = 1,
-    SlopeBL = 10,
-    SlopeBR = 11,
-    SlopeTL = 12,
-    SlopeTR = 13,
-    SnowSlopeBL = 20,
-    SnowSlopeBR = 21,
-    SnowBlock = 22,
-    Ice = 30,
-    Water = 31,
-    Fire = 32,
-    Toxic = 33,
-    ShallowSlopeBL = 40,
-    ShallowSlopeBR = 41,
-    ShallowBlock = 42
+    Empty = 0,              // 空氣
+    Block = 1,              // 普通滿格磚塊
+    SlopeBL = 10,           // 左斜坡
+    SlopeBR = 11,           // 右斜坡
+    SlopeTL = 12,           // 左斜頂
+    SlopeTR = 13,           // 右斜頂
+    SnowSlopeBL = 20,       // 積雪左斜坡
+    SnowSlopeBR = 21,       // 積雪右斜坡
+    SnowBlock = 22,         // 積雪磚塊
+    Ice = 30,               // 冰（凍結水池）
+    Water = 31,             // 水池
+    Fire = 32,              // 岩漿
+    Toxic = 33,             // 毒沼
+    // 淺坑系列（Shallow_）為虛擬地形，作為水池池底，便於碰撞系統分類，並未實際存在於關卡的 TerrainArray 中
+    ShallowSlopeBL = 40,    // 淺坑左斜坡
+    ShallowSlopeBR = 41,    // 淺坑右斜坡
+    ShallowBlock = 42       // 淺坑平地
 };
 
 enum class LevelObjectType {
