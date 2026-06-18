@@ -53,6 +53,7 @@ private:
     float m_LevelFinishTimer = 0.0f;
 
     std::vector<std::shared_ptr<Util::GameObject>> m_DebugBoxes;
+    std::vector<std::shared_ptr<AtlasSprite>> m_DebugBoxSprites;
 
     void BuildGameScene();
 
