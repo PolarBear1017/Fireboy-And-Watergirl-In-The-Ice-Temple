@@ -166,13 +166,33 @@ graph TD
   - `AtlasSprite` -
 - `IInputController` -
   - `KeyboardInputController` -
-- `LevelManager` - 關卡系統（資訊讀取與顯示）
-- `CollisionSystem` - 碰撞器統
+- `LevelManager` - 關卡物件管理系統（資訊讀取與顯示）
+- `CollisionSystem` - 碰撞系統
 - `SpriteAtlas` -
 - `App` - 主遊戲架構
 
 
 ### 程式技術
+- **機關物件繼承鏈**
+    - 在實作機關時，我們發現各個機關有很多重複的地方，所以我們拉出了 `BaseMechanism` 繼承`Game Object`。然後因為機關有分為兩類：觸發器 `Activator` 和接收器 `Reciver`，我們將他們繼承 `BaseMechanism`來實現物件的基本機制。然後在 `Activator` 和 `Reciver` 的子類別各自放該功能的機關Object。
+- **從原版地圖 convert 成我們地圖的格式**
+    - 在製作地圖時，因為考慮到需要批量產出地圖，所以我們有寫了一個 `convert.py` 的轉換程式，能夠將原版的地圖格式架構轉換成我們遊戲中的格式架構，幫助我們減少了很多需要自行製作還原地圖的時間。
+- **Spirit Sheet 大圖切圖功能**
+    - 在一開始搜集素材時，因為我們找到的素材都是使用 `Spirit Sheet` （整張大圖有很多小圖素材，需要使用附檔的.json來切圖，這樣在讀檔時會比需要連續讀好幾十張圖的動話還方便快速），但是我們有詢問過製作 PTSD 架構的學長有沒有支援 Spirit Sheet 的功能，不過很可惜沒有，所以我們自行撰寫實作了 Spirit Sheet 大圖切圖的邏輯並應用在我們的專案中。
+- **介面使用**
+    - `IScene`：將各個場景都會用到的基礎部分寫在`IScene`讓其他的Scene當作介面引入。實作了像是場景的初始化、更新、以及畫上DevMenu(開發者外掛)的純虛擬函數。
+    - `IInputController`：將按鍵輸入的控制獨立拉出成介面，設定左右方向以及是否跳起的純虛擬函式，之後再做擴充時，像是如果要換成使用遊戲搖桿來玩，擴充就更方便。
+- **定義列舉型別 (enum)**
+  - 元素 `Element`：定義元素（如 Water, Fire 等），統一不同類別（如 Character, Overlay, Diamond, Door 等）的相同屬性標籤，有效將物件間的互動邏輯解耦。進行碰撞或觸發判定時，只需比對 `Element` 即可決定相容性或危害判定，無須為每種物件組合寫死判斷式。
+  - 踩踏狀態 `GroundState`：表示角色當前的腳底物理狀態（如 Air, Ground, Ice 等），主要用於碰撞偵測以及動態調整角色的摩擦力與速限。
+  - 地形　`TerrainType`（In `LevelDefinition.hpp`）：關卡地磚類型（如 Block, SlopeBL, SnowBlock 等），表示關卡內部地形，具備相應 int 值，利於從 Json 讀取整數陣列後直接轉型，同時也用於碰撞判別。
+- **斜坡與淺坑的進階碰撞**
+  - 在 `CollisionSystem.cpp` 中，透過 `IsSlope()` 與 `CalculateSlopeSurfaceY()` 判斷斜坡並採取平滑位移。
+  - 內部判定函式 `IsSolidWall()`，
+  - 針對水池（如 Water, Fire 等地形）轉換為淺坑地形，用於
+- **動態速度計算**
+  - 摩擦力
+  - 動態速限
 - 機關物件繼承鏈
     - 在實作機關時，我們發現各個機關有很多重複的地方，所以我們拉出了 `BaseMechanism` 繼承`Game Object`。然後因為機關有分為兩類：觸發器 `Activator` 和接收器 `Receiver`，我們將他們繼承 `BaseMechanism`來實現物件的基本機制。然後在 `Activator` 和 `Receiver` 的子類別各自放該功能的機關Object。
 - 關卡地圖
@@ -209,6 +229,14 @@ graph TD
 ## 結語
 
 ### 問題與解決方法
+
+- **地圖讀取與轉換**
+- **地磚素材裁切**
+- **碰撞機制修正**
+- **搖桿偵測機制**
+- **地圖轉換**
+- 
+
 ### 自評
 
 | 項次 | 項目                   | 完成 |
@@ -218,7 +246,7 @@ graph TD
 | 3    | 具有 debug mode 的功能  | V  |
 | 4    | 解決專案上所有 Memory Leak 的問題  |    |
 | 5    | 報告中沒有任何錯字，以及沒有任何一項遺漏  |    |
-| 6    | 報告至少保持基本的美感，人類可讀  |    |
+| 6    | 報告至少保持基本的美感，人類可讀  | V  |
 
 ### 心得
 
