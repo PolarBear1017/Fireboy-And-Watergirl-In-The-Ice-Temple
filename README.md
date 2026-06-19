@@ -4,7 +4,8 @@
 
 組別：第61組<br>
 組員：113590028 黃暉帆、113590001 楊竣升<br>
-復刻遊戲：Fireboy & Watergirl In The Ice Temple（冰火姊弟 3 冰宮冒險）
+復刻遊戲：Fireboy & Watergirl In The Ice Temple（冰火姊弟 3 冰宮冒險）<br>
+專案介紹影片連結：https://youtu.be/qBqOakWozzs
 
 ## 專案簡介
 
