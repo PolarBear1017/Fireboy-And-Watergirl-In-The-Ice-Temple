@@ -181,7 +181,7 @@ graph TD
 ### 程式技術
 
 - **機關物件繼承鏈**
-    - 在實作機關時，我們發現各個機關有很多重複的地方，所以我們拉出了`BaseMechanism`繼承`Game Object`。然後因為機關有分為兩類：觸發器`Activator`和接收器`Receiver`，我們將他們繼承`BaseMechanism`來實現物件的基本機制。然後在 `Activator` 和 `Receiver` 的子類別各自放該功能的機關Object。
+    - 在實作機關時，我們發現各個機關有很多重複的地方，所以我們拉出了`BaseMechanism`繼承`Game Object`。然後因為機關有分為兩類：觸發器`Activator`和接收器`Receiver`，我們將它們繼承`BaseMechanism`來實現物件的基本機制。然後在 `Activator` 和 `Receiver` 的子類別各自放該功能的機關Object。
 - **關卡地圖**
   - 在製作地圖時，因為考慮到需要批量產出地圖，所以我們有寫了一個`convert.py`的轉換程式，能夠將原版的地圖格式架構轉換成我們遊戲中的格式，幫助我們減少了很多需要自行製作還原地圖的時間。
 - **關卡系統**
@@ -226,7 +226,7 @@ graph TD
 ### 問題與解決方法
 
 - **地圖讀取與轉換**
-  - 我們最初在實作讀取關卡的 Json 檔的部分時，是直接讀到數字陣列後把每格對應的地形圖片顯示出來，但這樣在判斷碰撞時可讀性很差，而且不好對特定物件時做動畫（像元素池會有流動的視覺效果）。所以我們只好大改原有的程式邏輯，先定義好 enum `TerrainType`並為每個地形賦予相應的 int 型別，在`LevelLoader.cpp`把讀到的陣列直接用`static_cast<TerrainType>`轉型後存入關卡的地形陣列`level.terrainLayer`，在後續判斷碰撞時輕鬆很多；同時若地形剛好為元素池，會額外在`level.overlayLayer`陣列存入元素池的位置、元素與寬度等資訊，以便在`GameScene.cpp`創建動態元素池物件。
+  - 我們最初在實作讀取關卡的 Json 檔的部分時，是直接讀到數字陣列後把每格對應的地形圖片顯示出來，但這樣在判斷碰撞時可讀性很差，而且不好對特定物件實作動畫（像元素池會有流動的視覺效果）。所以我們只好大改原有的程式邏輯，先定義好 enum `TerrainType`並為每個地形賦予相應的 int 型別，在`LevelLoader.cpp`把讀到的陣列直接用`static_cast<TerrainType>`轉型後存入關卡的地形陣列`level.terrainLayer`，在後續判斷碰撞時輕鬆很多；同時若地形剛好為元素池，會額外在`level.overlayLayer`陣列存入元素池的位置、元素與寬度等資訊，以便在`GameScene.cpp`創建動態元素池物件。
 - **地磚素材裁切**
   - 一開始要顯示基本地磚（`Resources/reference/fireboy_and_watergirl_3/atlasses/GroundAssets.png`內的圖像）時，我們發現原版似乎是直接框出一個不規則的大多邊形作為地圖顯示與碰撞的框架，然後只用一個大圖片連續拼接去填入那個框架就可以了。但我們使用的 PTSD 不確定有沒有辦法實現這個功能，就算有我們也不知道如何實作，我們當下手邊能用的就只有從`Sprite Sheet`切出小圖搭配`Tilemap`拼貼成地圖的功能。所以我們找到的辦法是，先自己用`Photopea`把地圖中會用到的各種形狀的方塊切好（切成地圖網格的最小單位）變成一張張獨立的小圖，然後用`Free Sprite Sheet Packer`把這些小圖包成一張大圖，才終於讓地磚們成功在地圖上顯示。
 - **碰撞機制修正**
